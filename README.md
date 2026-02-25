@@ -9,5 +9,10 @@ The ROS2 package (the code), STL files, Isaac Sim stage will only be released wh
 ... update soon
 
 # Design
+
 # Algorithms
+
+# Isaac Sim
+
 # Hardware
+
