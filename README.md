@@ -5,7 +5,7 @@ The ROS2 package (the code), STL files, Isaac Sim stage will only be released wh
 
 *I use a little bit of ai for the sake of writing.
 
-# Prereq information
+## Prereq information
 
 ### Part List
   - Raspberry Pi 5B
@@ -21,9 +21,9 @@ The ROS2 package (the code), STL files, Isaac Sim stage will only be released wh
   - Raspberry Pi OS running ROS2 docker image on the Pi
   - Isaac Sim 4.5.0
 
-# Design
+## Design
 
-# Algorithms
+## Algorithms
 ### Inverse Kinematics
 In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space. There are many way to solve IK but for the sake of simplicity and interpretability I will start with the geometric approach.
 
@@ -32,7 +32,7 @@ In robotics, inverse kinematics (IK) is the process of calculating the joint par
 ### Movement
 
 
-# Isaac Sim
+## Isaac Sim
 
-# Hardware
+## Hardware
 
