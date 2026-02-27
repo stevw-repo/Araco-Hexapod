@@ -27,6 +27,11 @@ The ROS2 package (the code), STL files, Isaac Sim stage will only be released wh
 ### Inverse Kinematics
 In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space. There are many way to solve IK but for the sake of simplicity and interpretability I will start with the geometric approach.
 
+
+
+
+
+
 ### Gait Control
 
 ### Movement
