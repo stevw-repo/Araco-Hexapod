@@ -5,8 +5,6 @@ Araco is a robotics passion project started in late 2022 and currently on its th
 
 The ROS2 package (the code), STL files, Isaac Sim stage will only be released when this generation is consider completed, however, I belive this documentation will be sufficient for anyone to build their own hexapod from scratch.
 
-*I use a little bit of ai for the sake of writing.
-
 ## Prereq information
 
 ### Part List
