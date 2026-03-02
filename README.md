@@ -80,8 +80,11 @@ Araco adopts the most common gait for hexapods - the tripod gait, for its speed,
 
 _Source: Luneckas, M., Luneckas, T., Kriaučiūnas, J., Udris, D., Plonis, D., Damaševičius, R., & Maskeliūnas, R. (2021). Hexapod Robot Gait Switching for Energy Consumption and Cost of Transport Management Using Heuristic Algorithms. Applied Sciences, 11(3), 1339. https://doi.org/10.3390/app11031339_
 
+Lets focus on 1 cycle for 1 leg first, blue line represents z axis, red line represents y axis.
 
+<img width="800" height="800" alt="desmos-graph" src="https://github.com/user-attachments/assets/d65f5e15-9996-4b2b-8b08-6e159986efd6" />
 
+This graph represents the y and z position through the 100 steps of each cycle stitched together with several functions. To find these fucntions, you can set f(a)=m, f(b)=n, f'(a)=p etc. and solve for it either by hand or use any LLM. I recommend setting the first derivative f'(x) as a variable so that you can tune the graph in your graphing software by changing that variable. 
 
 ### Movement
 
