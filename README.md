@@ -60,7 +60,7 @@ Now for the plane along all the joints:
   6. use the 3 DoF IK to solve the rest of the joints
   7. lastly solve for the end effector joint
 
-(might write a detail solution in the future)
+_(might write a detail solution for this in the future)_
 
 ### Gait Control
 
