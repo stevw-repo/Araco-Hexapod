@@ -67,7 +67,7 @@ Now for the plane along all the joints:
   6. use the 3 DoF IK to solve the rest of the joints
   7. lastly solve for the end effector joint
 
-_(might write a detail solution for this in the future but this is my drawing notes for coding this)_
+_(might write a detailed solution for this in the future but this is my drawing notes for coding this)_
 <img width="414" height="245" alt="Screenshot 2026-03-02 114028" src="https://github.com/user-attachments/assets/a41a8386-3501-475b-a06b-2ddd6b1a51eb" />
 <img width="372" height="275" alt="Screenshot 2026-03-02 114049" src="https://github.com/user-attachments/assets/a8fa6966-b2d2-4d10-a11c-0af053705282" />
 
