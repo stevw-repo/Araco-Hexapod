@@ -78,7 +78,7 @@ Araco adopts the most common gait for hexapods - the tripod gait, for its speed,
 
 <img width="239" height="211" alt="applsci-11-01339-g001" src="https://github.com/user-attachments/assets/d1b4b857-0500-4f2d-beb9-4b7a30e08241" />
 
-_Source: Luneckas, M., Luneckas, T., Kriaučiūnas, J., Udris, D., Plonis, D., Damaševičius, R., & Maskeliūnas, R. (2021). Hexapod Robot Gait Switching for Energy Consumption and Cost of Transport Management Using Heuristic Algorithms. Applied Sciences, 11(3), 1339. https://doi.org/10.3390/app11031339_
+> _Source: Luneckas, M., Luneckas, T., Kriaučiūnas, J., Udris, D., Plonis, D., Damaševičius, R., & Maskeliūnas, R. (2021). Hexapod Robot Gait Switching for Energy Consumption and Cost of Transport Management Using Heuristic Algorithms. Applied Sciences, 11(3), 1339. https://doi.org/10.3390/app11031339_
 
 Lets focus on 1 cycle for 1 leg first, blue line represents z axis, red line represents y axis.
 
