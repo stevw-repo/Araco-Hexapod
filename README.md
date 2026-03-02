@@ -86,7 +86,9 @@ Lets focus on 1 cycle for 1 leg first, blue line represents z axis, red line rep
 
 <img width="400" height="254" alt="desmos-graph" src="https://github.com/user-attachments/assets/0c36e5da-95ab-4f20-ada2-0509c0da67f0" />
 
-This graph represents the y and z position through the 100 steps of each cycle stitched together with several functions. To find these fucntions, you can set f(a)=m, f(b)=n, f'(a)=p etc. and solve for it either by hand or use any LLM. I recommend setting the first derivative f'(x) as a variable so that you can tune the graph in your graphing software by changing that variable. 
+This graph represents the y and z position through the 100 steps of each cycle stitched together with several functions. To find these fucntions, you can set f(a)=m, f(b)=n, f'(a)=p etc. and solve for it either by hand or use any LLM. I recommend setting the first derivative f'(x) as a variable so that you can tune the graph in your graphing software by changing that variable.
+
+
 
 ### Movement
 
