@@ -69,6 +69,14 @@ _(might write a detail solution for this in the future but this is my drawing no
 <img width="372" height="275" alt="Screenshot 2026-03-02 114049" src="https://github.com/user-attachments/assets/a8fa6966-b2d2-4d10-a11c-0af053705282" />
 
 ### Gait Control
+Gait is the pattern of movement of the limbs of animals, including humans, during locomotion over a solid substrate. In order to let the robot walk, we need to devise a gait algorithm to control the sequence of movement for each of the 6 end effectors. 
+
+Araco adopts the most common gait for hexapods - the tripod gait, for its speed, simplicity, and stability. Other common gaits include the ripple gait, tetrapod gait and the wave gait.        _The tripod gait draws a lot of power and torque as it only has 3 supporting legs at any point of time._
+<img width="1012" height="422" alt="applsci-11-01339-g001" src="https://github.com/user-attachments/assets/5643e5d2-713d-430e-a9dd-81146db50ab1" />
+_Source: Luneckas, M., Luneckas, T., Kriaučiūnas, J., Udris, D., Plonis, D., Damaševičius, R., & Maskeliūnas, R. (2021). Hexapod Robot Gait Switching for Energy Consumption and Cost of Transport Management Using Heuristic Algorithms. Applied Sciences, 11(3), 1339. https://doi.org/10.3390/app11031339_
+
+
+
 
 ### Movement
 
