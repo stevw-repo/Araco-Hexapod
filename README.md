@@ -15,6 +15,7 @@ _The aim of this is only for education and research. I belive this documentation
   - Hiwonder 32 Channel Digital Servo Controller
   - ORBBEC Gemini 335
   - Raspberry Pi Camera Module 3
+  - PiSugar 3 Plus
   - 7.4V 7200mah lithium battery
 
 ### Development platform
