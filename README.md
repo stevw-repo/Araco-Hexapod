@@ -14,6 +14,7 @@ _The aim of this is only for education and research. I belive this documentation
   - DS5160 60kg Servo _x6_
   - Hiwonder 32 Channel Digital Servo Controller
   - ORBBEC Gemini 335
+  - Raspberry Pi Camera Module 3
   - 7.4V 7200mah lithium battery
 
 ### Development platform
