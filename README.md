@@ -82,7 +82,7 @@ _Source: Luneckas, M., Luneckas, T., Kriaučiūnas, J., Udris, D., Plonis, D., D
 
 Lets focus on 1 cycle for 1 leg first, blue line represents z axis, red line represents y axis.
 
-<img width="400" height="200" alt="desmos-graph" src="https://github.com/user-attachments/assets/d65f5e15-9996-4b2b-8b08-6e159986efd6" />
+<img width="400" height="400" alt="desmos-graph" src="https://github.com/user-attachments/assets/811f5640-314f-4d98-ad71-3fad9aaa0886" />
 
 This graph represents the y and z position through the 100 steps of each cycle stitched together with several functions. To find these fucntions, you can set f(a)=m, f(b)=n, f'(a)=p etc. and solve for it either by hand or use any LLM. I recommend setting the first derivative f'(x) as a variable so that you can tune the graph in your graphing software by changing that variable. 
 
