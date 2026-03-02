@@ -6,7 +6,9 @@
 
 _The aim of this is for education and research only. I belive this documentation will be sufficient for anyone to build their own hexapod from scratch._
 
-# Chapters
+## Demo
+
+## Chapters
 
 
 ## Prereq information
