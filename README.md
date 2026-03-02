@@ -28,6 +28,7 @@ The ROS2 package (the code), STL files, Isaac Sim stage will only be released wh
 In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space. There are many way to solve IK but for the sake of simplicity and interpretability I will start with the geometric approach.
 
 <img width="827" height="1169" alt="IK demo drawio" src="https://github.com/user-attachments/assets/be8004bd-e082-4b7a-b6bf-6620a96c8e67" />
+<img width="827" height="1169" alt="IK demo drawio (1)" src="https://github.com/user-attachments/assets/9da2aa4d-96e2-4416-9b16-05347bdb78cb" />
 
 
 
