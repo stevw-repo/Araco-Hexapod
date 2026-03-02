@@ -25,14 +25,42 @@ The ROS2 package (the code), STL files, Isaac Sim stage will only be released wh
 
 ## Algorithms
 ### Inverse Kinematics
-In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space. There are many way to solve IK but for the sake of simplicity and interpretability I will start with the geometric approach.
+In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space.
 
-<img width="827" height="1169" alt="IK demo drawio" src="https://github.com/user-attachments/assets/be8004bd-e082-4b7a-b6bf-6620a96c8e67" />
-<img width="827" height="1169" alt="IK demo drawio (1)" src="https://github.com/user-attachments/assets/9da2aa4d-96e2-4416-9b16-05347bdb78cb" />
+Starts simple, take a leg with **3 DoF** as an example.
+
+Set (x,y,z) as the target coordinates of our end effector. We are trying to find the position of the three joints denoted by θ1, θ2, and θ3. This can be solved by simple trigonometry.
+
+First we look at the xy plane (top down view):
+
+<img width="2228" height="1671" alt="IK1" src="https://github.com/user-attachments/assets/46baad9b-4b4d-4fe0-ac35-3d3156a4952d" />
+
+θ1 can be easily solved by atan2. 
 
 
 
+Now for the plane along all the joints:
 
+<img width="2471" height="1853" alt="IK2" src="https://github.com/user-attachments/assets/511cc7ba-7dbc-447d-a88d-bb66f701024c" />
+
+θ2  =  φ2 - φ4  =  φ2 - (π/2 - φ3)  , where we use the laws of cosines to find φ2 and use the trigonometric ratios to find φ3.
+
+θ2  =  π - φ5  , where we can again use laws of cosines to find φ5
+
+
+
+**Araco adopts a 4 DoF configuration for each leg, and I want L4 to always be vertical to the ground in this plane, no matter the orientation of the body.**
+<img width="2347" height="1760" alt="4DoF drawio" src="https://github.com/user-attachments/assets/f9c63ff8-51ec-4c15-878a-408e7abe8133" />
+**This become a bit trickier, but in simple terms,**
+  1. set up a unit vector
+  2. apply the same tranformations (rotations) from the body on this unit vector
+  3. set up the plane along all the joints
+  4. project the unit vector onto the plane to get a new vector
+  5. scale the vector by L4 and find the coordinates of the end effector joint
+  6. use the 3 DoF IK to solve the rest of the joints
+  7. lastly solve for the end effector joint
+
+(might write a detail solution in the future)
 
 ### Gait Control
 
