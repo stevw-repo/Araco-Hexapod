@@ -9,7 +9,7 @@ _The aim of this is for education and research only. I belive this documentation
 ## Demo
 
 ## Chapters
-- [Foundational Hexapod Algorithms](#Algorithms)
+- [Fundamental Hexapod Algorithms and Logic](#Algorithms)
 - 
 
 ## Prereq information
