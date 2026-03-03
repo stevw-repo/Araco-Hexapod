@@ -9,7 +9,7 @@ _The aim of this is for education and research only. I belive this documentation
 ## Demo
 
 ## Chapters
-- [Parts Modelling and 3D printing](#Modelling and Printing)
+- [Parts Modelling and 3D printing](#Modelling-and-Printing)
 - [Fundamental Hexapod Algorithms and Logic](#Algorithms)
 - 
 
