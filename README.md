@@ -1,6 +1,7 @@
 # Araco - Hexapod
 <img width="1452" height="602" alt="araco - assembly v24(1) (1)" src="https://github.com/user-attachments/assets/35a75d7c-4a59-4b06-9095-5b99abdd390b" />
 
+<br>
 
 **Araco is a robotics passion project started in late 2022 and currently on its third generation. This repo is mainly to document the very whole process of building this hexapod, including designing, 3d-printing, coding, hardware, and further integration with depth vision, SLAM, Nav2 and potentially reinforcement learning using Isaac Lab.**
 
