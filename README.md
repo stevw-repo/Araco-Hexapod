@@ -17,7 +17,7 @@ _The aim of this is for education and research only. I belive this documentation
 
 ## Prereq information
 
-### Part List
+### Parts List
   - Raspberry Pi 5B
   - DS3235 35kg Servo _x18_
   - DS5160 60kg Servo _x6_
