@@ -34,7 +34,9 @@ _The aim of this is for education and research only. I belive this documentation
   - Isaac Sim 4.5.0
 
 
-## Algorithms
+<br>
+
+# Algorithms
 ### 3 DoF Inverse Kinematics
 In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space.
 
@@ -136,6 +138,9 @@ In order to move freely as shown in the demo, we need to combine traverse with r
 ***
 
 ### Orientation
+
+
+<br>
 
 ## Isaac Sim
 
