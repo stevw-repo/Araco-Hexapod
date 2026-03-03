@@ -1,4 +1,7 @@
-## Algorithms
+# Algorithms
+
+This page explains everything about the fundamental algorithm and logic of the hexapod.
+
 ### 3 DoF Inverse Kinematics
 In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space.
 
