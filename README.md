@@ -72,7 +72,7 @@ This allows for a larger contact area between the end effector and the ground, i
   2. apply the same tranformations (rotations) from the body on this unit vector
   3. set up the plane along all the joints
   4. project the unit vector onto the plane to get a new vector
-  5. scale the vector by L4 and find the coordinates of the end effector joint
+  5. scale the new vector by L4 and find the coordinates of the end effector joint
   6. use the 3 DoF IK to solve the rest of the joints
   7. lastly solve for the end effector joint
 
