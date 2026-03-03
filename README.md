@@ -105,7 +105,7 @@ We can use this to construct a coordinate/vector of (x,y,z) **that centers at (0
 
 ***
 
-### Movement (Traversing)
+### Movement - Traversing
 
 Now you can walk, but in one single direction. We have to do some maths to make the hexapod able to **traverse**.
 
@@ -117,13 +117,13 @@ Take the vector we have just constructed and multiple it by this rotation matrix
 
 **We now offset each of the 6 sets of coordinates by their relative position from the center of the hexapod for calculatioin convenience.**
 
-### Movement (Rotation)
+### Movement - Rotation
 
 At the same time we want to be able to rotate our hexapod. To do this we need to first construct a seperated cycle for rotational movement. This is done similarly as the gait control cycle, but we are drawing an arc of length same as the step length above around the center of the hexapod as shown:
 
 ![Video Project 1](https://github.com/user-attachments/assets/c4626d85-4fe1-4120-b65e-9635eeea9934)
 
-### Movement (Integration)
+### Movement - Integration
 
 In order to move freely as shown in the demo, we need to combine traverse with rotation. Rather than simple taking the average, we use the absolute scaler of controller input for traverse (t) and rotation (r), and weight traversing coordinates (denoted by T) and rotation coordinates (denoted by R). The final coordinate set is given by:
 
