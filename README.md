@@ -57,6 +57,8 @@ Now for the plane along all the joints:
 
 θ2  =  π - φ5  , where we can again use laws of cosines to find φ5
 
+***
+
 ### 4 DoF Inverse Kinematics
 **Araco adopts a 4 DoF configuration for each leg, and I want L4 to always be vertical to the ground in this plane, no matter the orientation of the body.**
 
@@ -74,6 +76,8 @@ Now for the plane along all the joints:
 _(might write a detailed solution for this in the future but this is my drawing notes for coding this)_
 <img width="414" height="245" alt="Screenshot 2026-03-02 114028" src="https://github.com/user-attachments/assets/a41a8386-3501-475b-a06b-2ddd6b1a51eb" />
 <img width="372" height="275" alt="Screenshot 2026-03-02 114049" src="https://github.com/user-attachments/assets/a8fa6966-b2d2-4d10-a11c-0af053705282" />
+
+***
 
 ### Gait Control
 Gait is the pattern of movement of the limbs of animals, including humans, during locomotion over a solid substrate. In order to let the robot walk, we need to devise a gait algorithm to control the sequence of movement for each of the 6 end effectors. 
@@ -97,6 +101,8 @@ This graph represents the y and z position loops through the step cycle x=0 to x
 The 6 legs are divded into two sets, with one set having an offset of -50 (lets call it set A for now). A starts from step -50 and goes to step 100, and loops again starting from step 0. Note that the z axis line from x=-50 to x=0 is slightly different from x=0 to x=100. This is for a smoother starting sequence.
 
 We can use this to construct a coordinate/vector of (x,y,z) **that centers at (0,0,0)**
+
+***
 
 ### Movement (Traversing)
 
@@ -123,6 +129,8 @@ In order to move freely as shown in the demo, we need to combine traverse with r
 <img width="331" height="64" alt="image" src="https://github.com/user-attachments/assets/65be95d6-d4b8-4d24-b3db-9f99bdbecfef" />
 
 10^(-10) is simply for avoiding divide-by-zero error.
+
+***
 
 ### Orientation
 
