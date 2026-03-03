@@ -7,7 +7,9 @@
 _The aim of this is for education and research only. I belive this documentation will be sufficient for anyone to build their own hexapod from scratch._
 
 ## Demo
-![Araco_watermark](https://github.com/user-attachments/assets/8e72a6dd-b17d-4039-9ce4-7ce6d8a5c0ae)
+
+https://github.com/user-attachments/assets/82de1216-7bb2-4774-97b5-327e6fd750a7
+
 
 
 
