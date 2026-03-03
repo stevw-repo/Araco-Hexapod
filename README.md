@@ -106,12 +106,23 @@ This is the rotation matrix along the z axis. Parameter θ is for the angle we w
 
 Take the vector we have just constructed and multiple it by this rotation matrix. We will have the same step cycle but rotated to angle θ which allows us to move in any direction desired.
 
+**We now offset each of the 6 sets of coordinates by their relative position from the center of the hexapod for calculatioin convenience.**
+
 ### Movement (Rotation)
 
-At the same time we want to be able to rotate our hexapod. To do this we need to first construct a seperated cycle for rotational movement. This is done similarly as the gait control cycle, but we are 
+At the same time we want to be able to rotate our hexapod. To do this we need to first construct a seperated cycle for rotational movement. This is done similarly as the gait control cycle, but we are drawing an arc of length same as the step length above around the center of the hexapod as shown:
 
+![Video Project 1](https://github.com/user-attachments/assets/c4626d85-4fe1-4120-b65e-9635eeea9934)
 
+### Movement (Integration)
 
+In order to move freely as shown in the demo, we need to combine traverse with rotation. Rather than simple taking the average, we use the absolute scaler of controller input for traverse (t) and rotation (r), and weight traversing coordinates (denoted by T) and rotation coordinates (denoted by R). The final coordinate set is given by:
+
+<img width="331" height="64" alt="image" src="https://github.com/user-attachments/assets/65be95d6-d4b8-4d24-b3db-9f99bdbecfef" />
+
+10^(-10) is simply for avoiding divide-by-zero error.
+
+### Orientation
 
 ## Isaac Sim
 
