@@ -11,7 +11,8 @@ _The aim of this is for education and research only. I belive this documentation
 ## Chapters
 - [Parts Modelling and 3D printing](#Modelling-and-Printing)
 - [Fundamental Hexapod Algorithms and Logic](#Algorithms)
-- 
+- [Simulation and Testing](#Isaac-Sim)
+- [Build, Assembly and Software](#Build,-Assembly-and-Software)
 
 ## Prereq information
 
@@ -136,5 +137,5 @@ In order to move freely as shown in the demo, we need to combine traverse with r
 
 ## Isaac Sim
 
-## Hardware
+## Build, Assembly and Software
 
