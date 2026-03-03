@@ -7,8 +7,9 @@
 _The aim of this is for education and research only. I belive this documentation will be sufficient for anyone to build their own hexapod from scratch._
 
 ## Demo
+https://github.com/user-attachments/assets/e7c51a29-50aa-4744-9adf-de52c152a2cf
 
-https://github.com/user-attachments/assets/82de1216-7bb2-4774-97b5-327e6fd750a7
+
 
 
 
