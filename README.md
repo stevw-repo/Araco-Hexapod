@@ -95,7 +95,7 @@ Araco adopts the most common gait for hexapods - the tripod gait, for its speed,
 
 Instead of the common simple approach of setting a few targets points for the legs to move to, Araco uses functions to define the whole walking cycle. This made speed variation and accurate positioning possible.
 
-Lets focus on 1 cycle for 1 leg first, blue line represents z axis, red line represents y axis.
+Lets focus on 1 cycle for 1 leg first, blue line represents z axis, red line represents y axis. (_notetoself: include rviz visualisation here_)
 
 <img width="400" height="254" alt="desmos-graph" src="https://github.com/user-attachments/assets/0c36e5da-95ab-4f20-ada2-0509c0da67f0" />
 
@@ -133,7 +133,7 @@ In order to move freely as shown in the demo, we need to combine traverse with r
 
 <img width="331" height="64" alt="image" src="https://github.com/user-attachments/assets/65be95d6-d4b8-4d24-b3db-9f99bdbecfef" />
 
-10^(-10) is simply for avoiding divide-by-zero error.
+> _*10^(-10) has no meaning and simply for avoiding divide-by-zero error_
 
 ***
 
