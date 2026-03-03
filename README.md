@@ -9,7 +9,6 @@ _The aim of this is for education and research only. I belive this documentation
 ## Demo
 
 ## Chapters
-- [Parts Modelling and 3D printing](#Modelling-and-Printing)
 - [Fundamental Hexapod Algorithms and Logic](#Algorithms)
 - [Simulation and Testing](#Isaac-Sim)
 - [Build, Assembly and Software](#Build,-Assembly-and-Software)
@@ -32,7 +31,7 @@ _The aim of this is for education and research only. I belive this documentation
   - Raspberry Pi OS running ROS2 docker image on the Pi
   - Isaac Sim 4.5.0
 
-## Modelling and Printing
+***
 
 ## Algorithms
 ### 3 DoF Inverse Kinematics
