@@ -13,6 +13,7 @@ _The aim of this is for education and research only. I belive this documentation
 - [Fundamental Hexapod Algorithms and Logic](#Algorithms)
 - [Simulation and Testing](#Isaac-Sim)
 - [Build, Assembly and Software](#Build,-Assembly-and-Software)
+- [High Level Visual & Navigation Integration](#Visual-&-Navigation-Integration)
 
 
 ## Prereq information
@@ -142,7 +143,15 @@ In order to move freely as shown in the demo, we need to combine traverse with r
 
 <br>
 
-## Isaac Sim
+# Isaac Sim
 
-## Build, Assembly and Software
+
+<br>
+
+# Build, Assembly and Software
+
+
+<br>
+
+# Visual & Navigation Integration
 
