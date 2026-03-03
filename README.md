@@ -31,7 +31,7 @@ _The aim of this is for education and research only. I belive this documentation
   - ROS2 Jazzy
   - Ubuntu 24.04 running ROS2 from my laptop
   - Raspberry Pi OS running ROS2 docker image on the Pi
-  - Isaac Sim 4.5.0
+  - [Isaac Sim 4.5.0](https://github.com/isaac-sim/IsaacSim)
 
 
 <br>
