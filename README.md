@@ -61,7 +61,7 @@ Now for the plane along all the joints:
 ***
 
 ### 4 DoF Inverse Kinematics
-**Araco adopts a 4 DoF configuration for each leg, which allows L4 to always be vertical to the ground in this plane, no matter the orientation of the body.**
+**Araco adopts a 4 DoF configuration for each leg, which allows L4 to always be vertical to the ground in this plane, no matter the orientation of the body.** This allows for a larger contact area between the end effector and the ground, increasing its grip and stability.
 
 <img width="800" height="600" alt="4DoF drawio" src="https://github.com/user-attachments/assets/f9c63ff8-51ec-4c15-878a-408e7abe8133" />
 
