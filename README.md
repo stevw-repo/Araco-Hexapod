@@ -28,8 +28,8 @@ _The aim of this is for education and research only. I belive this documentation
   - 7.4V 7200mah lithium battery
 
 ### Development platform
-  - ROS2 Jazzy
-  - Ubuntu 24.04 running ROS2 from my laptop
+  - [ROS2 Jazzy](https://docs.ros.org/en/jazzy/index.html)
+  - [Ubuntu 24.04](https://ubuntu.com/download/desktop) running ROS2 from my laptop
   - Raspberry Pi OS running ROS2 docker image on the Pi
   - [Isaac Sim 4.5.0](https://github.com/isaac-sim/IsaacSim)
 
