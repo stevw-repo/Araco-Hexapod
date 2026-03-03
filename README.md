@@ -14,6 +14,7 @@ _The aim of this is for education and research only. I belive this documentation
 - [Simulation and Testing](#Isaac-Sim)
 - [Build, Assembly and Software](#Build,-Assembly-and-Software)
 - [High Level Visual & Navigation Integration](#Visual-&-Navigation-Integration)
+- [Reinforcement Learning & AI stuff](#Reinforcement-Learning)
 
 
 ## Prereq information
@@ -155,3 +156,7 @@ In order to move freely as shown in the demo, we need to combine traverse with r
 
 # Visual & Navigation Integration
 
+
+<br>
+
+# Reinforcement Learning
