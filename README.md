@@ -82,15 +82,35 @@ Araco adopts the most common gait for hexapods - the tripod gait, for its speed,
 
 > _Source: Luneckas, M., Luneckas, T., Kriaučiūnas, J., Udris, D., Plonis, D., Damaševičius, R., & Maskeliūnas, R. (2021). Hexapod Robot Gait Switching for Energy Consumption and Cost of Transport Management Using Heuristic Algorithms. Applied Sciences, 11(3), 1339. https://doi.org/10.3390/app11031339_
 
+Instead of the common simple approach of setting a few targets points for the legs to move to, Araco uses functions to define the whole walking cycle. This made speed variation and accurate positioning possible.
+
 Lets focus on 1 cycle for 1 leg first, blue line represents z axis, red line represents y axis.
 
 <img width="400" height="254" alt="desmos-graph" src="https://github.com/user-attachments/assets/0c36e5da-95ab-4f20-ada2-0509c0da67f0" />
 
-This graph represents the y and z position through the 100 steps of each cycle stitched together with several functions. To find these fucntions, you can set f(a)=m, f(b)=n, f'(a)=p etc. and solve for it either by hand or use any LLM. I recommend setting the first derivative f'(x) as a variable so that you can tune the graph in your graphing software by changing that variable.
+This graph represents the y and z position loops through the step cycle x=0 to x=100, stitched together with several functions. To find these fucntions, you can set f(a)=m, f(b)=n, f'(a)=p etc. and solve for it either by hand or use any LLM model. I recommend setting the first derivative f'(x) as a variable so that you can tune the graph in your graphing software by changing that variable.
+
+> Exaple prompt: Give me a function where f(0)=0, f(50)=45, f'(0)=0, f'(45)=k
+
+The 6 legs are divded into two sets, with one set having an offset of -50 (lets call it set A for now). A starts from step -50 and goes to step 100, and loops again starting from step 0. Note that the z axis line from x=-50 to x=0 is slightly different from x=0 to x=100. This is for a smoother starting sequence.
+
+We can use this to construct a coordinate/vector of (x,y,z) **that centers at (0,0,0)**
+
+### Movement (Traversing)
+
+Now you can walk, but in one single direction. We have to do some maths to make the hexapod able to **traverse**.
+
+<img width="279" height="103" alt="Screenshot 2026-03-03 at 12 39 07 PM" src="https://github.com/user-attachments/assets/372e6338-f6eb-47c1-b3fe-267c52707107" />
+
+This is the rotation matrix along the z axis. Parameter θ is for the angle we want to transform by 
+
+Take the vector we have just constructed and multiple it by this rotation matrix. We will have the same step cycle but rotated to angle θ which allows us to move in any direction desired.
+
+### Movement (Rotation)
+
+At the same time we want to be able to rotate our hexapod. To do this we need to first construct a seperated cycle for rotational movement. This is done similarly as the gait control cycle, but we are 
 
 
-
-### Movement
 
 
 ## Isaac Sim
