@@ -1,1 +1,92 @@
-s
+## Algorithms
+### 3 DoF Inverse Kinematics
+In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space.
+
+Starts simple, take a leg with **3 DoF** as an example.
+
+Set (x,y,z) as the target coordinates of our end effector. We are trying to find the position of the three joints denoted by θ1, θ2, and θ3. This can be solved by simple trigonometry.
+
+First we look at the xy plane (top down view):
+
+<img width="800" height="600" alt="IK1" src="https://github.com/user-attachments/assets/46baad9b-4b4d-4fe0-ac35-3d3156a4952d" />
+
+θ1 can be easily solved by atan2. 
+
+
+
+Now for the plane along all the joints:
+
+<img width="800" height="600" alt="IK2" src="https://github.com/user-attachments/assets/511cc7ba-7dbc-447d-a88d-bb66f701024c" />
+
+θ2  =  φ2 - φ4  =  φ2 - (π/2 - φ3)  , where we use the laws of cosines to find φ2 and use the trigonometric ratios to find φ3.
+
+θ2  =  π - φ5  , where we can again use laws of cosines to find φ5
+
+### 4 DoF Inverse Kinematics
+**Araco adopts a 4 DoF configuration for each leg, and I want L4 to always be vertical to the ground in this plane, no matter the orientation of the body.**
+
+<img width="800" height="600" alt="4DoF drawio" src="https://github.com/user-attachments/assets/f9c63ff8-51ec-4c15-878a-408e7abe8133" />
+
+**This become a bit trickier, but in simple terms,**
+  1. set up a unit vector
+  2. apply the same tranformations (rotations) from the body on this unit vector
+  3. set up the plane along all the joints
+  4. project the unit vector onto the plane to get a new vector
+  5. scale the vector by L4 and find the coordinates of the end effector joint
+  6. use the 3 DoF IK to solve the rest of the joints
+  7. lastly solve for the end effector joint
+
+_(might write a detailed solution for this in the future but this is my drawing notes for coding this)_
+<img width="414" height="245" alt="Screenshot 2026-03-02 114028" src="https://github.com/user-attachments/assets/a41a8386-3501-475b-a06b-2ddd6b1a51eb" />
+<img width="372" height="275" alt="Screenshot 2026-03-02 114049" src="https://github.com/user-attachments/assets/a8fa6966-b2d2-4d10-a11c-0af053705282" />
+
+### Gait Control
+Gait is the pattern of movement of the limbs of animals, including humans, during locomotion over a solid substrate. In order to let the robot walk, we need to devise a gait algorithm to control the sequence of movement for each of the 6 end effectors. 
+
+Araco adopts the most common gait for hexapods - the tripod gait, for its speed, simplicity, and stability. Other common gaits include the ripple gait, tetrapod gait and the wave gait.        _The tripod gait draws a lot of power and torque as it only has 3 supporting legs at any point of time._
+
+<img width="239" height="211" alt="applsci-11-01339-g001" src="https://github.com/user-attachments/assets/d1b4b857-0500-4f2d-beb9-4b7a30e08241" />
+
+> _Source: Luneckas, M., Luneckas, T., Kriaučiūnas, J., Udris, D., Plonis, D., Damaševičius, R., & Maskeliūnas, R. (2021). Hexapod Robot Gait Switching for Energy Consumption and Cost of Transport Management Using Heuristic Algorithms. Applied Sciences, 11(3), 1339. https://doi.org/10.3390/app11031339_
+
+Instead of the common simple approach of setting a few targets points for the legs to move to, Araco uses functions to define the whole walking cycle. This made speed variation and accurate positioning possible.
+
+Lets focus on 1 cycle for 1 leg first, blue line represents z axis, red line represents y axis.
+
+<img width="400" height="254" alt="desmos-graph" src="https://github.com/user-attachments/assets/0c36e5da-95ab-4f20-ada2-0509c0da67f0" />
+
+This graph represents the y and z position loops through the step cycle x=0 to x=100, stitched together with several functions. To find these fucntions, you can set f(a)=m, f(b)=n, f'(a)=p etc. and solve for it either by hand or use any LLM model. I recommend setting the first derivative f'(x) as a variable so that you can tune the graph in your graphing software by changing that variable.
+
+> Exaple prompt: Give me a function where f(0)=0, f(50)=45, f'(0)=0, f'(45)=k
+
+The 6 legs are divded into two sets, with one set having an offset of -50 (lets call it set A for now). A starts from step -50 and goes to step 100, and loops again starting from step 0. Note that the z axis line from x=-50 to x=0 is slightly different from x=0 to x=100. This is for a smoother starting sequence.
+
+We can use this to construct a coordinate/vector of (x,y,z) **that centers at (0,0,0)**
+
+### Movement (Traversing)
+
+Now you can walk, but in one single direction. We have to do some maths to make the hexapod able to **traverse**.
+
+<img width="279" height="103" alt="Screenshot 2026-03-03 at 12 39 07 PM" src="https://github.com/user-attachments/assets/372e6338-f6eb-47c1-b3fe-267c52707107" />
+
+This is the rotation matrix along the z axis. Parameter θ is for the angle we want to transform by 
+
+Take the vector we have just constructed and multiple it by this rotation matrix. We will have the same step cycle but rotated to angle θ which allows us to move in any direction desired.
+
+**We now offset each of the 6 sets of coordinates by their relative position from the center of the hexapod for calculatioin convenience.**
+
+### Movement (Rotation)
+
+At the same time we want to be able to rotate our hexapod. To do this we need to first construct a seperated cycle for rotational movement. This is done similarly as the gait control cycle, but we are drawing an arc of length same as the step length above around the center of the hexapod as shown:
+
+![Video Project 1](https://github.com/user-attachments/assets/c4626d85-4fe1-4120-b65e-9635eeea9934)
+
+### Movement (Integration)
+
+In order to move freely as shown in the demo, we need to combine traverse with rotation. Rather than simple taking the average, we use the absolute scaler of controller input for traverse (t) and rotation (r), and weight traversing coordinates (denoted by T) and rotation coordinates (denoted by R). The final coordinate set is given by:
+
+<img width="331" height="64" alt="image" src="https://github.com/user-attachments/assets/65be95d6-d4b8-4d24-b3db-9f99bdbecfef" />
+
+10^(-10) is simply for avoiding divide-by-zero error.
+
+### Orientation
