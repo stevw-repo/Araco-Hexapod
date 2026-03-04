@@ -151,6 +151,10 @@ In order to move freely as shown in the demo, we need to combine traverse with r
 ### Orientation
 
 
+
+<img width="907" height="194" alt="Screenshot 2026-03-04 at 12 42 20 PM" src="https://github.com/user-attachments/assets/0d6d64d8-5142-4e97-8468-69b43bae6f3e" />
+
+
 <br>
 
 # Isaac Sim
