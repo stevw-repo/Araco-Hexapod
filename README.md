@@ -149,7 +149,7 @@ In order to move freely as shown in the demo, we need to combine traverse with r
 ***
 
 ### Orientation
-
+Now offset the coordinates back to the corresponding resting positions where hexapod centre (0,0,0). Use this set of 3D rotation matrices for the orientation of the hexapod body.
 
 
 <img width="907" height="194" alt="Screenshot 2026-03-04 at 12 42 20 PM" src="https://github.com/user-attachments/assets/0d6d64d8-5142-4e97-8468-69b43bae6f3e" />
