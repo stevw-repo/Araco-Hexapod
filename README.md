@@ -45,7 +45,7 @@ https://github.com/user-attachments/assets/e7c51a29-50aa-4744-9adf-de52c152a2cf
 <br>
 
 # Algorithms
-### 3 DoF Inverse Kinematics
+### Inverse Kinematics - 3 DoF
 In robotics, inverse kinematics (IK) is the process of calculating the joint parameters required for a robot manipulator to place its end-effector (in this case its the tip of the legs) at a desired position and orientation in space.
 
 Starts simple, take a leg with **3 DoF** as an example.
@@ -70,7 +70,7 @@ Now for the plane along all the joints:
 
 ***
 
-### 4 DoF Inverse Kinematics
+### Inverse Kinematics - 4 DoF
 **Araco adopts a 4 DoF configuration for each leg, which allows L4 to always be vertical to the ground in this plane, no matter the orientation of the body.** 
 
 ![20260303_182102_watermark](https://github.com/user-attachments/assets/fe73a489-d2bf-43e3-bbfe-83d9886de7c5)
