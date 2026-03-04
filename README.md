@@ -117,6 +117,7 @@ This graph represents the y and z position loops through the step cycle x=0 to x
 The 6 legs are divded into two sets, with one set having an offset of -50 (lets call it set A for now). A starts from step -50 and goes to step 100, and loops again starting from step 0. Note that the z axis line from x=-50 to x=0 is slightly different from x=0 to x=100. This is for a smoother starting sequence.
 
 We can use this to construct a coordinate/vector of (x,y,z) **that centers at (0,0,0)**
+![Untitled design](https://github.com/user-attachments/assets/27ebb3be-7f65-4e22-83c9-23e668205027)
 
 ***
 
