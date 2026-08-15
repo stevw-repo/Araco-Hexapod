@@ -1,0 +1,161 @@
+{
+  "schema": "araco.rough_mass_estimates.v1",
+  "estimate_id": "rough_estimate_v0",
+  "effective_date": "2026-08-15",
+  "status": "simulation_only_rough_estimate",
+  "source_export": {
+    "filename": "araco_-_assembly_ros-description_v1_v2_robot_description_export.json",
+    "sha256": "843974cc090e76d17c691d4e097c602ccd4e966e07e158ba392ae1bef54b7352"
+  },
+  "material_densities_kg_m3": {
+    "PETG": 1270.0,
+    "Steel": 7850.0
+  },
+  "method_notes": [
+    "The source Fusion export is immutable evidence and is never edited.",
+    "For mixed PETG/Steel occurrences, the source mass and volume are decomposed using the two exported material densities; the Steel-derived mass is then replaced by component masses.",
+    "Occurrence center of mass is retained from Fusion and inertia terms are scaled uniformly by estimated_mass/raw_mass. This is deliberately coarse because the current export lacks per-body physical properties.",
+    "Missing base electronics are included only in the total mass budget. Their poses and inertias remain unresolved.",
+    "This file is suitable for an initial Gazebo model, not hardware validation, actuator sizing, tip-over certification, or structural analysis."
+  ],
+  "component_masses": {
+    "DS3235_servo": {
+      "unit_mass_kg": 0.060,
+      "quantity": 19,
+      "evidence": "datasheet_copy_and_consistent_supplier_listings",
+      "source": "https://github.com/microrobotics/DS3235-270/blob/master/DS3235-270_datasheet.pdf"
+    },
+    "DS5160_servo": {
+      "unit_mass_kg": 0.158,
+      "quantity": 6,
+      "evidence": "manufacturer_formatted_datasheet_copy",
+      "source": "https://robojax.com/file_download.php?id=521&tid=720"
+    },
+    "ORBBEC_Gemini_335": {
+      "unit_mass_kg": 0.097,
+      "quantity": 1,
+      "evidence": "manufacturer_datasheet",
+      "source": "https://www.orbbec.com/wp-content/uploads/2025/06/Gemini-330-series-Datasheet-V1.6.pdf"
+    },
+    "Raspberry_Pi_Camera_Module_3": {
+      "unit_mass_kg": 0.004,
+      "quantity": 1,
+      "evidence": "manufacturer_hardware_table",
+      "source": "https://www.raspberrypi.com/documentation/accessories/camera.html"
+    },
+    "Raspberry_Pi_5_installed": {
+      "unit_mass_kg": 0.050,
+      "quantity": 1,
+      "evidence": "round_estimate",
+      "rough_uncertainty_kg": 0.020
+    },
+    "Hiwonder_LSC_32": {
+      "unit_mass_kg": 0.026,
+      "quantity": 1,
+      "evidence": "manufacturer_manual_controller_identity_not_physically_verified",
+      "source": "https://docs.hiwonder.com/projects/32-Channel-Servo-Controller/en/latest/docs/1_User_Manual_checked.html"
+    },
+    "PiSugar_3_Plus_installed": {
+      "unit_mass_kg": 0.150,
+      "quantity": 1,
+      "evidence": "round_estimate",
+      "rough_uncertainty_kg": 0.050
+    },
+    "main_7_4V_7200mAh_battery": {
+      "unit_mass_kg": 0.400,
+      "quantity": 1,
+      "evidence": "round_estimate_exact_model_unknown",
+      "rough_uncertainty_kg": 0.150
+    }
+  },
+  "occurrence_rules": [
+    {
+      "id": "keep_printed_base_parts",
+      "name_regex": "^araco - (bottom_cover|battery_holder|top_cover)",
+      "method": "keep_raw",
+      "reason": "Exported occurrence is already PETG-only."
+    },
+    {
+      "id": "raspberry_pi_5",
+      "name_regex": "^RASPBERRY_PI_5 ",
+      "method": "fixed_mass",
+      "fixed_mass_kg": 0.050,
+      "components": ["Raspberry_Pi_5_installed"],
+      "component_quantities": [1]
+    },
+    {
+      "id": "gimbal_servo_mount",
+      "name_regex": "^araco - gimbal_mount ",
+      "method": "petg_plus_components",
+      "components": ["DS3235_servo"],
+      "component_quantities": [1]
+    },
+    {
+      "id": "base_frame_and_coxa_servos",
+      "name_regex": "^araco - frame ",
+      "method": "petg_plus_components",
+      "components": ["DS3235_servo"],
+      "component_quantities": [6]
+    },
+    {
+      "id": "moving_gimbal_and_cameras",
+      "name_regex": "^araco - gimbal ",
+      "method": "petg_plus_components",
+      "components": ["ORBBEC_Gemini_335", "Raspberry_Pi_Camera_Module_3"],
+      "component_quantities": [1, 1]
+    },
+    {
+      "id": "coxa_link_and_femur_servo",
+      "name_regex": "^araco - coxa ",
+      "method": "petg_plus_components",
+      "components": ["DS5160_servo"],
+      "component_quantities": [1]
+    },
+    {
+      "id": "keep_printed_femur_link",
+      "name_regex": "^araco - femur ",
+      "method": "keep_raw",
+      "reason": "Exported occurrence is already PETG-only."
+    },
+    {
+      "id": "two_leg_servos_in_tibia_assembly",
+      "name_regex": "^araco - tibia ",
+      "method": "fixed_mass",
+      "fixed_mass_kg": 0.120,
+      "components": ["DS3235_servo"],
+      "component_quantities": [2]
+    },
+    {
+      "id": "keep_printed_foot_link",
+      "name_regex": "^araco - end ",
+      "method": "keep_raw",
+      "reason": "Exported occurrence is already PETG-only."
+    }
+  ],
+  "missing_base_proxies": [
+    {
+      "id": "pisugar_3_plus",
+      "component": "PiSugar_3_Plus_installed",
+      "mass_kg": 0.150,
+      "pose": "unresolved",
+      "include_in_total_mass": true,
+      "include_in_inertia": false
+    },
+    {
+      "id": "main_servo_battery",
+      "component": "main_7_4V_7200mAh_battery",
+      "mass_kg": 0.400,
+      "pose": "unresolved",
+      "include_in_total_mass": true,
+      "include_in_inertia": false
+    },
+    {
+      "id": "servo_controller",
+      "component": "Hiwonder_LSC_32",
+      "mass_kg": 0.026,
+      "pose": "unresolved",
+      "include_in_total_mass": true,
+      "include_in_inertia": false
+    }
+  ]
+}

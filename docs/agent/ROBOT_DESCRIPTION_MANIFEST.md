@@ -1,6 +1,6 @@
 # Araco Robot Description Manifest
 
-Status: **PROPOSED — not approved for implementation or hardware use**  
+Status: **ACCEPTED AS SIMULATOR-AUTHORING EVIDENCE — not hardware validated**
 Inventory date: 2026-08-15  
 Semantic confirmations: 2026-08-15  
 Target convention: ROS REP-103, ROS 2 Jazzy, Gazebo Harmonic
@@ -8,12 +8,16 @@ Target convention: ROS REP-103, ROS 2 Jazzy, Gazebo Harmonic
 ## Purpose and gate
 
 This document reconciles the current Fusion export with the legacy URDF, inverse
-kinematics, and servo driver. It proposes the canonical ROS link and joint
-contract. It does not authorize mesh conversion, URDF/Xacro generation,
-controller configuration, or physical actuation.
+kinematics, and servo driver. It records the accepted simulator-authoring
+baseline for the canonical ROS link and joint contract. It does not itself
+authorize mesh conversion, URDF/Xacro generation, controller configuration, or
+physical actuation.
 
-Implementation may begin only after the naming, base frame, kinematic tree, and
-open items at the end of this document are reviewed and accepted.
+The accepted topology, naming, base frame, joint origins/axes, nominal pose,
+and rough dynamics may be implemented and validated in the simulator after the
+separate phase authorization. Unresolved physical zeros, directions, limits,
+calibration, and inertial fidelity remain explicit hardware blockers rather
+than blockers to Phase 0 scaffolding or provisional Gazebo authoring.
 
 ## User-confirmed semantic facts
 
@@ -22,8 +26,9 @@ The following facts were confirmed by the user on 2026-08-15:
 - Robot forward is toward the gimbal and cameras.
 - `L1`/`R1` are the front legs, `L2`/`R2` are the middle legs, and `L3`/`R3`
   are the rear legs.
-- Raspberry Pi Camera Module 3 is physically installed and is included in the
-  operational robot description.
+- Raspberry Pi Camera Module 3 is physically installed, but its software support
+  is deferred and it may be omitted entirely. It is not required for simulator
+  locomotion or the operational robot description.
 - Gemini 335 rotates with the yaw gimbal.
 - The descriptive canonical link and joint names proposed here are accepted.
 - The legacy-compatible `base_link` datum at Fusion root coordinates
@@ -40,6 +45,8 @@ The following facts were confirmed by the user on 2026-08-15:
 | Initial Fusion API JSON export | Read-only version-25 inventory before gimbal joint | `54c6b29580641dd56b63c2912185a8132895e42ba09bd947c8bb09d41d19d582` |
 | `araco - assembly ros-description v1.step` | AP214 export of the Fusion working copy after adding gimbal yaw | `4e1c14424110d750c2290d1556cfbb3f521503b0eff847f33f3814402732ea04` |
 | Working-copy Fusion API JSON export | Read-only 25-joint inventory after adding gimbal yaw | `17be93c81e8773dff7ddfba7c48ec3938c40286a567877eb77b91117a16f057e` |
+| `araco - assembly ros-description v1.step`, Fusion version 2 re-export | Geometry/placement comparison after partial material correction | `fbfe11ebba5ef3cb914293f267454aa009adec1a7307fbbf334af1188ec39c9a` |
+| Fusion version 2 API JSON export | Partial material-correction inventory; latest snapshot | `843974cc090e76d17c691d4e097c602ccd4e966e07e158ba392ae1bef54b7352` |
 | Legacy `Araco.urdf` | Prior 26-link/25-joint topology, transforms, and inertial estimates | Not a new-model authority |
 | Legacy `algo.py` | Prior link lengths, leg ordering, and commanded joint order | Behavioral reference only |
 | Legacy `servodriver.py` | Prior servo IDs, signs, offsets, and PWM calibration | Unverified hardware reference |
@@ -74,14 +81,18 @@ gimbal mount, Raspberry Pi 5, Gemini 335, and Raspberry Pi camera.
   occurrences, and still contains no kinematic-pair or mechanism entities. This
   is expected: the new Fusion as-built joint is evidenced by the API JSON, not
   by AP214 STEP.
+- The later Fusion version 2 STEP re-export again has 236 products and 255
+  assembly occurrences and contains no kinematic-pair, material-designation, or
+  material-property entities. Its changed file hash does not provide new
+  dynamics evidence.
 
 ## Fusion API inventory findings
 
 The read-only exporter ran against Fusion application `2704.1.53`. The initial
 cloud design version 25 reported 24 regular joints and zero as-built joints. The
-`ros-description v1` working copy now reports 24 regular joints plus one
-revolute as-built joint, with 32 direct root occurrences and 269 total Fusion
-occurrences.
+`ros-description v1` working copy and its latest version 2 snapshot report 24
+regular joints plus one revolute as-built joint, with 32 direct root
+occurrences and 269 total Fusion occurrences.
 
 - All 24 joints are healthy revolute joints with coincident geometry origins;
   the largest reported separation between the two sides of a joint is about
@@ -94,9 +105,23 @@ occurrences.
 - No minimum or maximum motion limit is enabled on any joint. Rest values are
   enabled on 23 of 25 joints, but they are assembly-pose metadata rather than
   validated mechanical limits.
-- All 732 exported B-Rep body occurrences report material `Steel`. The resulting
-  total mass is `15.552194 kg` with average density `7850 kg/m³`. These physical
-  properties are invalid for the mixed-material robot and must not enter URDF.
+- The first physical-property snapshot reported all 732 B-Rep body occurrences
+  as `Steel`, producing an invalid `15.552194 kg` assembly mass.
+- The latest version 2 snapshot has no exporter errors and preserves all 25
+  joint definitions. All 32 direct-root physical-property records are present;
+  their positive masses sum to the root mass and their principal inertia
+  triples are positive and satisfy the rigid-body triangle inequalities.
+- Material correction remains incomplete: 707 body occurrences still report
+  `Steel` and only 25 report `PETG`. The root mass is still an implausible
+  `9.804328 kg`, compared with the user's `2–4 kg` physical estimate.
+- The largest suspect subtotals are six tibia assemblies at `4.158309 kg`, six
+  coxa assemblies at `2.734060 kg`, the base frame at `1.422909 kg`, and the
+  gimbal plus mount at `0.773974 kg`. These dynamics remain rejected for URDF.
+- The user identifies the remaining Steel bodies in the coxa, tibia, frame,
+  gimbal-mount, and gimbal groups as servo geometry. They must not be relabeled
+  PETG; their effective density must reproduce the real servo mass. Composite
+  electronics likewise need measured or manufacturer-mass-informed effective
+  properties rather than a literal homogeneous material guess.
 
 ### Gimbal yaw from the Fusion working copy
 
@@ -172,14 +197,22 @@ names remain the canonical interface.
 | Mirrored coxa, femur, tibia, end | 3 each | Left front/middle/rear leg links |
 | Gimbal | 1 | `gimbal_yaw_link` |
 | Gemini 335 | 1 under gimbal | Fixed visual/sensor frames under `gimbal_yaw_link` |
-| Raspberry Pi Camera Module 3 | 1 under gimbal | Fixed visual/sensor frames under `gimbal_yaw_link`; inclusion confirmed |
+| Raspberry Pi Camera Module 3 | 1 under gimbal | Optional fixed visual/sensor frames under `gimbal_yaw_link`; omission is allowed |
 | Gemini internal products | 223 nested occurrences, including intermediate assemblies | Collapse; never expose as independent robot links |
 
 The primary articulated model is therefore 26 rigid bodies: `base_link`, 24 leg
 links, and `gimbal_yaw_link`. Fixed sensor and optical frames may increase the
 URDF link count but do not add actuated degrees of freedom.
 
-## Proposed base-frame conversion
+The Fusion archive also embeds detailed vendor/component CAD for the Gemini,
+Raspberry Pi, camera, servos, and electronics whose redistribution terms have
+not been established. Their geometry is placement/mass evidence only and must
+not be copied automatically into the public ROS package. Phase 1 either records
+rights-compatible source/license/attribution metadata for a bundled asset or
+uses project-authored simplified proxy geometry. The repository's GPL-3.0-only
+selection cannot grant rights in those imported models.
+
+## Accepted base-frame conversion
 
 The top-view screenshot and Fusion joint coordinates confirm that Fusion uses
 `+X` toward the robot's right side, `+Y` toward the confirmed physical front,
@@ -207,7 +240,7 @@ the legacy coxa-joint Z coordinate `-26.75 mm`. It supersedes the earlier
 placement-only Z inference. The datum is now accepted and may be changed only
 through an explicit robot-description contract revision.
 
-### Proposed coxa mount origins
+### Accepted coxa mount origins
 
 These ROS-frame positions now match both the exported Fusion joint centers and
 the legacy URDF under the accepted `base_link` datum.
@@ -227,7 +260,7 @@ while the legacy yaw origin is `72.35 mm`. A component origin is not necessarily
 a joint pivot. The gimbal yaw origin must therefore come from the Fusion joint
 or a direct measurement, not from the STEP component origin.
 
-## Proposed canonical tree
+## Accepted canonical tree
 
 ```text
 base_link
@@ -259,10 +292,10 @@ base_link
     ├── camera_link
     │   ├── camera_color_optical_frame
     │   └── camera_depth_optical_frame
-    └── rpi_camera_link
+    └── rpi_camera_link [optional]
 ```
 
-Proposed canonical axes use a consistent leg-local convention:
+The accepted simulator-authoring axis convention is:
 
 - Coxa yaw: local `+Z`.
 - Femur, tibia, and foot pitch: one common leg-plane axis, proposed local `+Y`.
@@ -270,13 +303,18 @@ Proposed canonical axes use a consistent leg-local convention:
 - Physical servo reversal belongs in calibration/hardware configuration rather
   than inconsistent URDF axes where possible.
 
-The precise leg-mount rotations and the relationship between canonical positive
-motion and legacy positive motion remain review items.
+The expanded model must derive and Gate 0 must verify the precise leg-mount
+rotations against the immutable Fusion joint evidence. The relationship between
+canonical positive motion and the legacy physical servo direction remains a
+hardware-validation item and is not inferred from simulator success.
 
-## Proposed 25-joint manifest
+## Accepted 25-joint topology
 
-All entries are proposed finite `revolute` joints. Lower/upper position limits,
-velocity limits, and effort limits are intentionally unset until validated.
+All entries are finite `revolute` joints in the simulator topology. The
+simulator uses the explicitly provisional ranges, velocity caps, and effort
+caps accepted in `RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md`; those values are
+not installed mechanical or actuator limits and are forbidden in a future
+physical profile.
 
 In the `Legacy map` column, the expression is the input passed to
 `numpy.interp`; the two PWM values correspond to interpolation input
@@ -320,7 +358,7 @@ mapping keys.
   segment `50 mm`.
 - Legacy joint publication order is `L1`, `L2`, `L3`, `R1`, `R2`, `R3`, with
   `C/F/T/E` per leg, followed by gimbal yaw.
-- The legacy URDF has 26 links and 25 joints, which agrees with the proposed
+- The legacy URDF has 26 links and 25 joints, which agrees with the accepted
   primary articulated topology.
 - Every legacy joint is `continuous`; there are no finite position, velocity,
   or effort limits. This must not be carried forward.
@@ -333,11 +371,11 @@ mapping keys.
   physical explanation.
 - The current STEP contains no mass or material records, so updated inertias must
   come from validated Fusion physical properties or measured masses.
-- The Fusion API export cannot currently supply those updated inertias because
-  every exported body is assigned Steel, producing an impossible `15.552194 kg`
-  assembly mass.
+- The latest Fusion API export is structurally and mathematically complete but
+  cannot yet supply trusted inertias: 707 of 732 body occurrences remain Steel,
+  producing an implausible `9.804328 kg` assembly mass.
 
-## Fields intentionally unresolved
+## Fields intentionally unresolved for physical use or higher fidelity
 
 The following facts remain unresolved after reconciling STEP and the Fusion API
 export:
@@ -352,27 +390,132 @@ export:
    transition after physical validation.
 6. Current per-rigid-body mass, center of mass, and inertia tensor after
    correcting the all-Steel material assignments.
-7. Exact Raspberry Pi Camera Module 3 frame transforms.
+7. Exact Raspberry Pi Camera Module 3 frame transforms, only if that optional
+   camera is later included.
 8. Exact Gemini 335 optical-frame transforms and whether the yaw joint remains
    locked at gimbal yaw zero for the first SLAM milestone.
 9. Foot collision/contact shape and self-collision exclusions.
 
-## Evidence needed from Fusion before mesh generation
+## Researched component-mass evidence
+
+Research on 2026-08-15 established the following candidate masses. Published
+mass does not include unmodeled mounting hardware, cables, heatsinks, cases, or
+other installed additions unless the source explicitly includes them.
+
+| Component | Quantity | Candidate unit mass | Evidence and status |
+|---|---:|---:|---|
+| DS3235 35 kg servo | 19 | `0.060 kg` | DS3235-270 datasheet copies and multiple product listings consistently report `60 g`; weigh an installed-equivalent unit if practical |
+| DS5160 60 kg servo | 6 | `0.158 kg` | Manufacturer-formatted DS5160 datasheet reports `158 g`; direct manufacturer hosting was not located, so measurement remains preferable |
+| ORBBEC Gemini 335 | 1 | `0.097 kg` | Orbbec Gemini 330-series datasheet and store both specify `97 g` |
+| Raspberry Pi Camera Module 3 | 1 | `0.004 kg` | Official Raspberry Pi hardware table specifies `4 g` |
+| Hiwonder LSC-32 controller | 1 | about `0.026 kg` | Official Hiwonder manual specifies about `26 g`; physical controller identity remains to be checked |
+
+The 19 DS3235 and 6 DS5160 servos contribute a candidate total of
+`2.088 kg` before horns, brackets, cabling, or fasteners not included in the
+published unit masses.
+
+Authoritative published masses were not found for the installed Raspberry Pi 5
+configuration or PiSugar 3 Plus, and the exact model of the separate 7.4 V
+7200 mAh battery is unknown. Those installed assemblies should be weighed. The
+Fusion inventory also has no clearly named PiSugar, main battery, or LSC-32
+occurrence; their geometry/location must be confirmed before their mass can be
+included in a corrected rigid-body model.
+
+Sources:
+
+- DS3235-270 datasheet copy:
+  `https://github.com/microrobotics/DS3235-270/blob/master/DS3235-270_datasheet.pdf`
+- DS5160 manufacturer-formatted datasheet copy:
+  `https://robojax.com/file_download.php?id=521&tid=720`
+- Orbbec Gemini 330-series datasheet:
+  `https://www.orbbec.com/wp-content/uploads/2025/06/Gemini-330-series-Datasheet-V1.6.pdf`
+- Raspberry Pi camera hardware table:
+  `https://www.raspberrypi.com/documentation/accessories/camera.html`
+- Hiwonder LSC-32 manual:
+  `https://docs.hiwonder.com/projects/32-Channel-Servo-Controller/en/latest/docs/1_User_Manual_checked.html`
+
+The raw Fusion JSON remains immutable evidence. A derived dynamics snapshot is
+generated separately from a versioned mass-override file and retains source
+URLs, evidence status, target masses, occurrence rules, and the raw-export
+hash. The current exporter provides body material names but not per-body
+volume, center of mass, or inertia, so it supports only a coarse occurrence-
+level correction. An enhanced per-body physical-property export would be
+required to preserve the changed mass distribution accurately.
+
+## `rough_estimate_v0` simulation dynamics
+
+On 2026-08-15 the user accepted rough mass properties for initial simulator
+development. The immutable Fusion source remains rejected as direct dynamics
+input, but an explicitly provisional derived estimate is now available:
+
+- Override manifest: `tools/fusion/rough_mass_estimates_v0.json`
+- Reproducible generator: `tools/fusion/generate_rough_dynamics.py`
+- Derived snapshot: `tools/fusion/araco_rough_dynamics_v0.json`
+- Raw source SHA-256:
+  `843974cc090e76d17c691d4e097c602ccd4e966e07e158ba392ae1bef54b7352`
+
+The correction decomposes mixed occurrences from their exported mass and
+volume using PETG at `1270 kg/m³` and Steel at `7850 kg/m³`. It keeps the PETG
+contribution, rejects the Steel-derived contribution, and inserts the following
+component budget:
+
+| Assembly group | Quantity | Raw mass | Estimated mass | Replacement interpretation |
+|---|---:|---:|---:|---|
+| Printed covers/holders | 4 | `0.120036 kg` | `0.120036 kg` | Keep exported PETG mass |
+| Raspberry Pi 5 | 1 | `0.145767 kg` | `0.050000 kg` | Round installed-Pi estimate |
+| Gimbal mount | 1 | `0.238234 kg` | `0.090906 kg` | PETG plus one DS3235 |
+| Frame | 1 | `1.422909 kg` | `0.538934 kg` | PETG plus six DS3235 |
+| Moving gimbal | 1 | `0.535740 kg` | `0.277432 kg` | PETG plus Gemini 335 and Pi camera |
+| Coxa links | 6 | `2.734060 kg` | `1.101811 kg` | PETG plus six DS5160 total |
+| Femur links | 6 | `0.312462 kg` | `0.312462 kg` | Keep exported PETG mass |
+| Tibia assemblies | 6 | `4.158309 kg` | `0.720000 kg` | Two DS3235 per occurrence |
+| Foot links | 6 | `0.136811 kg` | `0.136811 kg` | Keep exported PETG mass |
+
+The 32 represented occurrences total `3.348393 kg`. Three unmodeled base
+proxies add `0.576 kg`: PiSugar `0.150 kg`, the unknown 7.4 V 7200 mAh battery
+`0.400 kg`, and the probable LSC-32 `0.026 kg`. The central whole-robot estimate
+is therefore `3.924393 kg`.
+
+For each represented occurrence, the derived snapshot retains the exported
+center of mass and uniformly scales its inertia by the mass ratio. This is a
+deliberate coarse approximation. Aggregate center of mass and inertia are left
+unavailable rather than fabricating poses for the three missing base proxies.
+The estimate may seed Gazebo but is not valid for hardware safety, actuator
+sizing, structural analysis, or a claim of sim-to-real fidelity.
+
+## Remaining evidence for hardware validation or higher fidelity
 
 The repeatable exporter now supplies the complete occurrence inventory and all
-25 joint origins and axes. Fusion or direct measurement still needs:
+25 joint origins and axes. These remaining items do not block Phase 0 or
+provisional Gazebo authoring, but Fusion or direct measurement is still needed
+before the corresponding hardware or high-fidelity claims:
 
 - Validated finite joint limits; current lower and upper limits are disabled.
-- Correct material assignments followed by a new physical-property export.
-- Named reference points or joint origins for both camera optical frames.
+- If higher-fidelity dynamics become necessary, complete the remaining
+  material/effective-mass assignments followed by a new physical-property
+  export. The current derived estimate is intentionally simulator-only.
+- A material-only correction requires rerunning the Fusion API exporter, which
+  reads material, mass, center of mass, and inertia. It does not require another
+  AP214 STEP export; re-export STEP only after geometry, placement, joint, or
+  assembly-structure changes.
+- Purchased composite assemblies and infill-printed parts should use measured
+  mass-informed effective properties where practical; assigning a generic
+  homogeneous library material can still produce misleading dynamics.
+- For a modeled electrical/servo volume `V`, use an effective density
+  `rho = measured_mass / V`, apply it only to that component's bodies, and
+  verify the resulting component mass before rerunning the exporter.
+- Named reference points or joint origins for the Gemini optical frames and,
+  only if later included, the optional Raspberry Pi camera frames.
 
 If Fusion joints are missing or stale, the same data must be established by
 explicit design dimensions and physical measurements before the model is called
 hardware-accurate.
 
-## Acceptance checklist
+## Simulator-authoring acceptance and physical deferrals
 
-Before creating `araco_description`, confirm or correct:
+The checked items are accepted for the first simulator model. Unchecked items
+remain physical-validation or fidelity work and do not block creation of the
+package skeleton:
 
 - [x] Descriptive joint/link names in this manifest.
 - [x] Mapping `L1/L2/L3` to left front/middle/rear and `R1/R2/R3` to right
@@ -381,15 +524,20 @@ Before creating `araco_description`, confirm or correct:
   `+X`.
 - [x] `base_link` datum `[-0.313602, 0, 8.072807] mm` in Fusion.
 - [x] Four-link chain order `coxa → femur → tibia → foot` for all legs.
-- [x] Inclusion of the Raspberry Pi camera.
+- [x] Raspberry Pi camera policy: physically installed but software support and
+  description frames are deferred/optional; omission is allowed.
 - [x] Gimbal and Gemini frame ownership.
 - [x] Parent/child pairs, origins, and axes for all 25 actuated joints.
 - [x] Approximate simulation home pose `nominal_standing_reference_v0`.
 - [ ] Canonical joint zeros and finite safe limits.
 - [ ] Servo IDs, models, directions, and calibration evidence.
-- [ ] Mass/inertia evidence and resolution of the `L1E1` mass outlier.
+- [x] Rough simulator mass estimate (`rough_estimate_v0`).
+- [ ] Physical mass/inertia validation and resolution of the legacy `L1E1`
+  outlier.
 
-After acceptance, the next implementation stage is a canonical Xacro package
-with one six-instance leg macro, separate visual and simplified collision
-geometry, simulator-neutral joints/frames, and isolated Gazebo/
-`gz_ros2_control` overlays.
+After explicit Phase 0 authorization creates the package skeleton, Phase 1 may
+author the canonical model using one six-instance leg mechanism, separate
+reviewed visual and simplified collision geometry, simulator-neutral
+joints/frames, and isolated Gazebo/`gz_ros2_control` overlays. Gate 0 must verify
+the expanded model against this evidence and the accepted provisional runtime
+artifacts before any live Gazebo gate is claimed.

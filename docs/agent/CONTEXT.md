@@ -1,6 +1,6 @@
 # Araco Hexapod — Project Context
 
-Last verified: 2026-08-15
+Last verified: 2026-08-16
 
 ## Goal
 
@@ -35,17 +35,46 @@ Build a new ROS 2 software system for the Araco hexapod from the ground up, incl
 - Hiwonder 32-channel digital servo controller
 - PiSugar 3 Plus Raspberry Pi battery module
 - 7.4 V 7200 mAh lithium battery
+- ORBBEC Gemini 335, installed on and rotating with the yaw gimbal
+- Raspberry Pi Camera Module 3, physically installed
 
 The Raspberry Pi is powered by the PiSugar battery module. The servo controller and servos are powered by the separate 7.4 V battery. Exact power distribution, protection, grounding, and regulator details remain unknown.
 
-Planned but not installed:
+Neither camera has been integrated into the ROS system. The Gemini IMU may be
+usable but has not been integrated. No actuator, joint, force/contact, power, or
+other robot-state feedback is currently integrated. The servo system is
+believed to be strictly open-loop.
 
-- ORBBEC Gemini 335 depth camera; its IMU may be usable but has never been integrated
-- Raspberry Pi Camera Module 3
-
-No actuator, joint, force/contact, power, or other robot-state feedback is currently integrated. The servo system is believed to be strictly open-loop.
+The Raspberry Pi Camera Module 3 is explicitly deferred and may be omitted from
+the operational software entirely. It must not constrain simulator development
+or the Pi OS/runtime choice. Gemini 335 remains the primary planned RGB-D sensor.
 
 The physical robot is confirmed unchanged from the hardware used with the legacy code and March 2026 documentation. Total mass is not measured; the user's estimate is 2–4 kg.
+
+The raw Fusion version 2 physical-property export remains unsuitable as direct
+dynamics input. Although its 32 direct occurrence records are complete and
+mathematically valid, 707 of 732 body occurrences are still assigned Steel and
+the calculated assembly mass is `9.804328 kg`.
+
+The user confirms that the remaining Steel bodies in the coxa, tibia, frame,
+gimbal-mount, and gimbal groups represent servos rather than printed structure.
+They must receive measured/manufacturer-mass-informed effective density, not be
+changed to PETG. The same mass-equivalent treatment applies to composite
+electrical assemblies such as the Raspberry Pi and cameras.
+
+Initial component-mass research found candidate masses of `60 g` for each of 19
+DS3235 servos, `158 g` for each of six DS5160 servos, `97 g` for the Gemini 335,
+`4 g` for Camera Module 3, and about `26 g` for the probable Hiwonder LSC-32.
+The candidate servo total is `2.088 kg`. The user explicitly accepts a rough
+initial simulator estimate rather than requiring full physical accuracy. The
+derived `rough_estimate_v0` preserves the raw export, replaces Steel-derived
+servo/electronics contributions, and estimates total robot mass at
+`3.924393 kg`. It uses round assumptions of `0.050 kg` for the installed Pi,
+`0.150 kg` for PiSugar, and `0.400 kg` for the unknown main battery. Aggregate
+center of mass and inertia remain unresolved because the missing electronics'
+poses and per-body physical properties are unavailable. The derived files are
+under `tools/fusion/`; measured evidence is still required before physical
+validation.
 
 ## Legacy software inventory
 
@@ -88,6 +117,8 @@ joy_node
 - Servo IDs used: right-side groups `1–13`, left-side groups `16–30`, gimbal `31`; the exact gaps and ordering are encoded in `servodriver.py`.
 - Each servo has a separate measured PWM endpoint pair in the legacy driver. Preserve these values as migration data until they are revalidated; do not treat them as safe without a hardware calibration procedure.
 - The user confirms those PWM calibrations remain valid, were produced using calibration tools, and no servo or horn position has changed.
+- The user reports nominal `270 deg` servo travel. Installed mechanical joint
+  limits remain unknown; servo travel alone is not a safe joint limit.
 - From the six nominal foot-center positions at a 280 mm radius, the code implies a nominal foot-center bounding box of approximately 560 mm × 448 mm. This excludes the physical foot dimensions and is not a measured overall footprint.
 
 ## Verified legacy deployment and operation
@@ -107,30 +138,17 @@ The legacy protocol and vendor documentation strongly indicate that the controll
 
 ## Current development workstation
 
-Read-only inspection on 2026-08-14 found:
+The workstation was reinstalled and revalidated on 2026-08-15:
 
 - MSI Stealth 14 Studio-class host (`Stealth-14Studio-A13VF` hostname)
-- Ubuntu 26.04 LTS, x86-64
+- Windows/Ubuntu dual boot with Ubuntu 24.04.4 LTS, x86-64
 - Intel Core i9-13900H, 14 cores / 20 logical CPUs
 - 61 GiB RAM and 8 GiB swap
 - Intel Iris Xe plus NVIDIA GeForce RTX 4060 Laptop GPU
-- Approximately 112 GiB free on the repository filesystem
-- No ROS distribution under `/opt/ros`
-- NVIDIA kernel modules are loaded, but `nvidia-smi` cannot currently communicate with the driver
-
-This is the intended development laptop. Ubuntu 26.04 was installed because it was the newest Ubuntu release, not because the project required it. The user is willing to return to Ubuntu 24.04. No environment mutation is authorized yet.
-
-The supported workstation direction is now approved as Windows/Ubuntu dual boot: Windows remains available for Fusion 360, while Ubuntu 24.04 is the intended ROS 2 development environment. Reinstallation or other environment mutation has not yet been authorized.
-
-Read-only reinstall preflight on 2026-08-15 found:
-
-- The 1 TB NVMe drive already has a Windows/Ubuntu dual-boot layout.
-- `/dev/nvme0n1p6` is the current 149.5 GiB ext4 Ubuntu root partition and contains both the new repository and the legacy workspace.
-- `/dev/nvme0n1p1` through `p5` contain the EFI, Microsoft reserved, Windows, Windows recovery, and vendor recovery partitions; these must be preserved during any Ubuntu reinstall.
-- The new repository's `docs/agent/` continuity files are currently untracked and therefore are not protected by Git or the remote.
-- The legacy workspace at `/home/stevw-s14/Desktop/Araco` is approximately 2.2 GiB and is not a Git repository.
-- A clean Ubuntu 24.04 reinstall should not begin until the new repository, continuity files, legacy workspace, and any other required Linux-side data have been copied to storage outside `p6` and a restore check has succeeded.
-- The current official Ubuntu 24.04 desktop point release is 24.04.4. Use the official amd64 image and verify its published checksum when installation is authorized.
+- Validated NVIDIA driver
+- ROS 2 Jazzy Desktop installed and automatically sourced in new Bash terminals
+- `rosdep`, Gazebo Harmonic, `ros_gz`, `ros2_control`, and `gz_ros2_control`
+  installed and validated
 
 There is no project need to install Isaac Sim, Isaac Lab, or a standalone CUDA toolkit as part of the initial workstation bootstrap. The initial post-install gate is a working NVIDIA driver, ROS 2 Jazzy, Gazebo Harmonic through the supported Jazzy integration, RViz, and basic ROS/Gazebo/joystick smoke tests.
 
@@ -140,8 +158,188 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 
 - Raspberry Pi 5B with 4 GiB RAM
 - Debian GNU/Linux 13.2 (`trixie`)
-- The Pi is intended for lightweight onboard work; heavy simulation, training, and possibly higher-level perception/planning will be offboard.
-- Final onboard ROS installation/container strategy, storage capacity, and performance budget remain undecided.
+- Accepted deployment split: the Pi will eventually own the physical servo
+  interface, `ros2_control`, safety/watchdogs, kinematics, gait generation, and
+  physical startup/shutdown behavior. The workstation initially owns Gazebo,
+  RViz/development tools, RGB-D SLAM, and Nav2.
+- Development remains simulator-first. The Pi and physical hardware are not on
+  the critical path until simulator milestones and safety contracts pass.
+- Heavy simulation and training remain offboard.
+- Onboard OS/container choice remains open. Current recommendation is Ubuntu
+  Server 24.04 LTS arm64 with native ROS 2 Jazzy for the robot-core processes,
+  but the user has not yet accepted it.
+- Important OS tradeoff: ROS 2 Jazzy supports Ubuntu 24.04 arm64 as Tier 1,
+  whereas current Debian 13.2 is not a Jazzy target. Canonical documents the
+  Raspberry Pi CSI camera stack as non-operational on Ubuntu releases before
+  25.04, but Camera Module 3 is now deferred/optional and therefore does not
+  block the recommended Noble host. Raspberry Pi OS provides the supported
+  `rpicam`/Picamera2 stack if this camera is reconsidered later.
+- Storage capacity and performance budget remain undecided.
+
+## Accepted simulator control architecture
+
+- The canonical control path is command sources → command arbitration → an
+  independent safety supervisor → locomotion → `ros2_control` → a replaceable
+  backend.
+- One deterministic locomotion process owns body-motion generation, tripod-gait
+  phase, foot trajectories, and inverse kinematics. Kinematics remains a pure,
+  independently testable library used inside that process rather than a
+  separately scheduled ROS node.
+- `ros2_control` uses separate control paths for the 24 leg joints and the one
+  gimbal-yaw joint, plus joint-state publication.
+- Gazebo Harmonic connects through `gz_ros2_control` during simulator
+  development. A later Raspberry Pi/servo hardware interface must implement the
+  same command/state boundary without changing higher-level locomotion.
+- Gazebo provides simulated joint, IMU, and contact state to control,
+  supervision, TF, diagnostics, and tests. Simulator ground truth may score or
+  diagnose behavior but must not be used as evidence that an estimator works.
+- The accepted initial ROS packages are `araco_interfaces`,
+  `araco_description`, `araco_kinematics`, `araco_locomotion`,
+  `araco_supervision`, `araco_teleop`, `araco_gazebo`, `araco_bringup`, and
+  `araco_system_tests`.
+- `araco_hardware`, `araco_perception`, `araco_navigation`, and `araco_isaac`
+  are phased packages added only when their prerequisite milestone begins.
+- The complete accepted responsibility and dependency map is maintained in
+  `docs/agent/REPOSITORY_ARCHITECTURE.md`.
+- The accepted command path uses four stage-specific interfaces:
+  `MotionIntent`, `CommandCandidate`, `SelectedCommand`, and `SafeCommand`.
+- Candidate sources use separate configured inputs. Source identity, priority,
+  and timeout are assigned by trusted configuration rather than claimed by a
+  publisher. Receipt freshness uses local steady time; ROS timestamps remain
+  provenance for simulation, logs, and replay.
+- The accepted command fields atomically carry planar velocity, an absolute
+  body-pose offset, and stand/tripod intent. Sources cannot directly command
+  joints, the gimbal, controller topics, or safety state.
+- Full field and semantic definitions are maintained in
+  `docs/agent/INTERFACE_CONTRACTS.md`.
+- `/joint_states` remains the standard 25-joint state interface. The accepted
+  `JointStateProvenance` contract identifies each position/velocity/effort
+  channel as unavailable, simulated physics, hardware sensed, command derived,
+  or estimator produced. Missing velocity/effort stays absent rather than being
+  published as misleading zeros.
+- The accepted `LocomotionStatus` reports locomotion mode, gait phase/cycle,
+  processed safety/selection epochs, per-leg kinematic validity, and whole-
+  trajectory validity without claiming controller acceptance or tracking.
+- The accepted controller set is `joint_state_broadcaster`, a 24-joint
+  `leg_trajectory_controller`, and a separate one-joint
+  `gimbal_trajectory_controller`; both controllers use the standard
+  `joint_trajectory_controller/JointTrajectoryController` with position
+  command interfaces.
+- Locomotion sends complete named 24-joint, positions-only, one-point,
+  short-horizon `JointTrajectory` messages through the topic interface. Partial
+  trajectories and gimbal commands in the leg stream are forbidden.
+- Physical joint state remains command-derived until sensors exist. Controller
+  feedback/error based on it is not evidence that a servo reached its target.
+- Software safety uses eight states independent of ROS lifecycle state, with
+  explicit readiness, enable, fresh-source-edge, controlled-stop, stable-hold,
+  reset, and shutdown gates.
+- Source loss never silently transfers motion to a lower-priority source or
+  restores prior permission. Deliberate higher-priority preemption crosses a
+  controlled-stop and stable six-foot hold barrier.
+- Locomotion commits gait/IK state transactionally across all six legs and 24
+  joints. Ordinary hold continuously commands the last validated stance.
+- Watchdogs are layered across arbitration, supervision, locomotion,
+  controllers, and the backend. Software hold is not an emergency stop, and
+  physical servo power-off is not assumed safe.
+- The accepted safety states, action/status contracts, readiness/fault masks,
+  reason codes, handover semantics, and lifecycle ordering are maintained in
+  `docs/agent/SAFETY_ARCHITECTURE.md`.
+- Configuration ownership, evidence classes, motion-affecting immutability,
+  named profile composition, and fail-closed validation are accepted. Bringup
+  composes values from their owning packages rather than redefining them.
+- Effective joint limits are the intersection of the canonical model range,
+  the later verified actuator range for physical deployment, and a narrower
+  operational range. Provisional simulator limits cannot authorize hardware.
+- Gazebo progression uses seven ordered blocking gates from static model checks
+  through a reproducible headless control/safety baseline. A pass proves
+  functional simulator behavior, not physical safety or sim-to-real fidelity.
+- The complete configuration and validation contract is maintained in
+  `docs/agent/CONFIGURATION_AND_VALIDATION_ARCHITECTURE.md`.
+- The accepted simulator runtime baseline uses `1000 Hz` physics, a `250 Hz`
+  controller manager, `100 Hz` arbitration/safety/locomotion loops, and `50 Hz`
+  teleop publication. It uses a `0.040 s` leg-trajectory horizon and layered
+  steady-time watchdogs, with a JTC last-line hold at about `0.144 s` after the
+  last trajectory receipt.
+- Gait/trajectory progression uses ROS simulation time; motion-authority and
+  readiness watchdogs use steady time. Pausing Gazebo therefore revokes motion
+  readiness and cannot cause surprise gait resumption.
+- Source candidates are best-effort latest-value streams. Trusted selected and
+  safe commands are reliable latest-value streams. Concrete project topics,
+  source IDs/priorities/timeouts, and status QoS are accepted.
+- Initial simulator motion is deliberately slow: planar speed is limited to
+  `0.050 m/s`, yaw rate to `0.300 rad/s`, the tripod cycle is `1.200 s`, and a
+  healthy controlled stop must reach stable hold within `1.500 s`.
+- Provisional joint ranges, command-rate/effort caps, damping, friction, DART
+  physics settings, and quantitative Gate 0–6 thresholds are simulator-only and
+  forbidden as physical calibration or safety evidence.
+- The complete accepted numerical contract is maintained in
+  `docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md`.
+
+## Accepted configuration composition
+
+- A complete parameter, artifact, profile, override, deterministic-preflight,
+  runtime-bundle, and fingerprint contract is accepted in
+  `docs/agent/PARAMETER_AND_CONFIGURATION_COMPOSITION.md`.
+- The contract keeps human-reviewed source artifacts in their owning packages,
+  uses generated typed ROS parameters for project nodes, and has bringup emit a
+  validated immutable runtime bundle for each run.
+- Joint lists and controller partitions are generated from the canonical
+  model registry rather than maintained in controller YAML.
+- `gazebo_dev_v0` and `gazebo_ci_v0` select identical behavior artifacts;
+  only presentation/reporting fields and closed input-adapter presence recorded
+  in the input-selection/run identity may differ. Both use seed `42`, the same
+  physics, and the same source registry.
+- Acceptance did not authorize or create any ROS package, schema, YAML, Xacro,
+  launch file, or test.
+
+## Accepted phased simulator delivery
+
+- `docs/agent/PHASED_DELIVERY_PLAN.md` defines one repository-foundation phase
+  followed by one blocking implementation phase for each accepted Gate 0–6.
+- Gate 1 establishes the real simulator/controller/lifecycle hold path from the
+  single nominal standing reference. Gate 2 then replaces transitional
+  target production with typed computed FK/IK using that reference as its
+  oracle; it does not introduce another standing authority.
+- Gate 3 onward uses the real system-test candidate → arbitration → safety
+  → locomotion → controller → Gazebo path for scored behavior.
+- Each gate retains structured evidence, reruns all prior gates, forbids
+  silent threshold/configuration relaxation, and invalidates all later evidence
+  after an affected earlier-gate change.
+- Gate 6 requires three clean no-retry headless runs with the accepted
+  reproducibility thresholds. It unlocks later simulator phases, not
+  hardware.
+- Acceptance did not authorize Phase 0 or create `src/`.
+
+## Completed architecture closeout and license selection
+
+- The final cross-contract review is complete in
+  `docs/agent/FINAL_ARCHITECTURE_REVIEW.md`; architecture is ready for a
+  separate explicit Phase 0 authorization.
+- Project-authored code, configuration, documentation, tests, and original
+  assets will use GNU GPL version 3 only (`GPL-3.0-only`), superseding the
+  earlier Apache-2.0 plan on 2026-08-16. The unmodified GPLv3 text is present
+  in root `LICENSE`; package-local copies and source SPDX headers remain part
+  of authorized Phase 0.
+- Package manifests will use
+  `<license file="LICENSE">GPL-3.0-only</license>` and project-authored source
+  files will carry SPDX identifiers where their format supports comments.
+- Phase 0 must audit linked/bundled dependencies for GPLv3 compatibility and
+  record the source-distribution and attribution obligations of distributed
+  combined/object-code forms.
+- Covered generated meshes require publishable preferred editable source and
+  generation tooling when distributed. The existing Fusion add-in's Autodesk
+  API boundary and the future Isaac adapter's proprietary SDK boundary require
+  explicit compatibility review.
+- Vendor CAD and other third-party assets are not relicensed. A bundled asset
+  requires exact provenance, license/attribution, modification, and
+  redistribution metadata; unknown-rights geometry is excluded or replaced by
+  project-authored simplified proxies.
+- The review reconciled source-registry ownership, profile naming/seed/input
+  selection, startup watchdog arming, gimbal hold ownership, backend readiness,
+  orderly shutdown, and the simulator-versus-physical robot-description gate.
+- The user explicitly authorized committing and pushing the licensed
+  architecture/evidence checkpoint on 2026-08-16. That authorization does not
+  authorize Phase 0; `src/` remains absent.
 
 ## Cloud simulation evidence (2026-08-14)
 
@@ -239,24 +437,22 @@ Important limitations and implications:
 
 ## Current unknowns
 
-The following must be established with the user and/or physical measurements before architecture is finalized:
+The following still require later decisions, implementation evidence, or
+physical measurements:
 
-- Exact measurable acceptance criteria beyond “works”
+- Physical acceptance criteria beyond the accepted simulator Gate 0–6 baseline
 - Exact Hiwonder controller model/revision and physical power/signal behavior beyond the confirmed UART link and hold-last-command behavior
-- Final compute split between laptop, Raspberry Pi, servo controller, and simulators
-- Required real-time behavior and acceptable control/communications latency
+- Physical real-time behavior and acceptable Pi/controller/network latency
 - Desired future feedback additions, if any
 - Power-distribution/protection details and software safety behavior
-- Final leg/joint naming, joint zero definitions, safe mechanical limits, and verified kinematic dimensions
+- Physical joint-zero verification, safe mechanical limits, and verified
+  kinematic dimensions
 - Quantified terrain, speed, payload, and endurance goals
 - Required Isaac Sim/Isaac Lab fidelity and sim-to-real boundary
 - Depth-camera mounting location and whether the gimbal will remain fixed during mapping/navigation
 - Odometry source for simulation acceptance and for the later physical robot
-- Future command arbitration
-- Deployment, networking, container, launch, logging, diagnostics, calibration, and update workflows
-- Available Fusion 360 export/parameter data, joint limits, masses, inertias, and collision geometry
-- Exact Ubuntu 24.04 restoration/dual-boot/container workflow and disk allocation
-- Exact RTX 4060 VRAM and which Isaac Sim version/performance level is feasible on the laptop
+- Later physical deployment, networking, calibration, and update workflows
+- Verified physical mass/inertia, collision fidelity, and electronics proxy poses
 - Cloud simulator/training provider, GPU class, storage/persistence model, remote visualization method, and spending controls
 - Exact current Isaac Sim/Isaac Lab release selected at implementation time and the effort required to migrate useful legacy Isaac Sim 4.5 assets
 - Initial RL scope: high-level gait adaptation/residual control versus raw 24-joint locomotion, required observations, and whether physical deployment is expected before feedback sensors are added
@@ -293,4 +489,8 @@ The following must be established with the user and/or physical measurements bef
 
 ## Evidence boundary
 
-Facts above marked as legacy behavior describe inspected files, not necessarily the current physical robot or desired future behavior. No new architecture has been selected yet.
+Facts above marked as legacy behavior describe inspected files, not necessarily
+the current physical robot or desired future behavior. The new simulator
+architecture recorded above is accepted; the configuration-composition section
+is also accepted. Physical-hardware behavior and the phased implementation plan
+remain later decisions.

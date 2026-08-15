@@ -54,3 +54,21 @@ Fusion automatically discovers scripts placed in this Windows directory:
 
 The folder, Python file, and manifest share the same base name as required by
 Fusion's script loader.
+
+## Generate the rough simulation dynamics snapshot
+
+The raw Fusion JSON is preserved as evidence. On Ubuntu, generate the separate
+`rough_estimate_v0` snapshot with:
+
+```bash
+python3 tools/fusion/generate_rough_dynamics.py \
+  '/media/stevw-s14/DATA-ST/New folder/araco_-_assembly_ros-description_v1_v2_robot_description_export.json' \
+  tools/fusion/rough_mass_estimates_v0.json \
+  tools/fusion/araco_rough_dynamics_v0.json
+```
+
+The estimate replaces Steel-derived servo and electronics mass with researched
+or explicitly rough component values. It retains occurrence centers of mass and
+uniformly scales their inertia values. Missing base electronics contribute to
+the total mass only because their poses are not yet known. This output is an
+initial Gazebo input, not physically validated dynamics.

@@ -56,18 +56,291 @@ Consequences:
 
 ## Pending decisions
 
-- System boundary and compute/deployment topology
-- ROS 2 package and node boundaries
-- Command, state, diagnostics, calibration, and safety interfaces
-- Control-loop ownership, rates, timing model, and language(s)
-- Kinematics/dynamics libraries versus custom implementations
-- `ros2_control` adoption and hardware-interface design
-- Source-of-truth and conversion workflow between Fusion 360, URDF/Xacro, and Isaac USD
-- Navigation, perception, and autonomy scope
-- 3D SLAM implementation and map products, odometry source, Nav2 costmap projection, and camera/gimbal operating policy
-- Testing gates and phased delivery plan
-- Safe behavior on command loss, process failure, Wi-Fi loss, low power, invalid commands, startup, and shutdown
+- Detailed later `ros2_control` physical-hardware-interface design
+- Verified physical low-power, local-stop, support/lowering, startup, and shutdown behavior
 - Detailed local-versus-cloud workflow, GPU instance class, persistence, remote rendering, and exact cost controls
+
+## 2026-08-15 — Physical compute ownership and simulator-first sequence
+
+Status: accepted by the user on 2026-08-15; Pi OS/container choice remains open.
+
+Decisions:
+
+- The Raspberry Pi will eventually own the physical servo interface,
+  `ros2_control`, command watchdogs and safety supervision, kinematics, gait
+  generation, and physical startup/shutdown behavior.
+- The workstation will initially own Gazebo, RViz and development tooling,
+  RGB-D SLAM, and Nav2.
+- The project remains simulator-first. The same high-level command and joint
+  contracts must run against a simulator backend before a physical-hardware
+  backend is enabled.
+- Loss of the workstation or Wi-Fi must be handled locally by the Pi; physical
+  safety must never depend on receiving the next offboard command.
+- Raspberry Pi Camera Module 3 support is deferred and may be omitted entirely;
+  it does not constrain the simulator architecture or Pi OS choice. Gemini 335
+  remains the primary planned RGB-D sensor.
+
+Rationale: keeping the complete robot-control and safety path onboard removes
+Wi-Fi latency and disconnection from the actuator-control dependency chain,
+while offloading compute-heavy perception and development workloads from the
+4 GiB Pi. Simulator-first sequencing lets these boundaries be tested without
+actuating the robot.
+
+## 2026-08-15 — Simulator control pipeline and locomotion boundary
+
+Status: accepted by the user on 2026-08-15.
+
+Decisions:
+
+- Use the canonical runtime path: command sources → command arbitration → an
+  independent safety supervisor → locomotion → `ros2_control` controllers → a
+  replaceable simulator or physical backend.
+- Keep body-motion generation, tripod-gait phase, foot-trajectory generation,
+  and inverse kinematics in one deterministic locomotion process.
+- Implement kinematics as a pure, independently testable library used by the
+  locomotion process, not as a separately scheduled ROS node.
+- Use separate `ros2_control` control paths for the 24 leg joints and the one
+  gimbal-yaw joint, with joint-state publication alongside them.
+- Use `gz_ros2_control` as the first backend. The later Raspberry Pi/servo
+  hardware interface must preserve the same higher-level command/state
+  boundary.
+- Return simulated joint, IMU, and contact state to locomotion, safety,
+  TF/visualization, diagnostics, and tests as appropriate. Ground truth is
+  permitted for scoring and diagnostics, not as an input to a claimed state-
+  estimation result.
+
+Rationale: gait phase, body motion, foot trajectories, and IK form one tightly
+coupled deterministic calculation. Splitting them across ROS processes would
+introduce avoidable scheduling, synchronization, and intermediate-interface
+complexity. Keeping the safety supervisor independent permits it to gate or
+stop motion without depending on the locomotion process, while a replaceable
+`ros2_control` backend preserves simulator-to-hardware portability.
+
+Consequences:
+
+- Package names were resolved by the following repository-boundary decision.
+  ROS messages/actions, loop rates, controller types, and lifecycle/fault
+  semantics remain to be designed.
+- This approval authorizes architecture progression only; it does not authorize
+  package scaffolding or implementation.
+
+## 2026-08-15 — Repository and ROS package boundaries
+
+Status: accepted by the user on 2026-08-15.
+
+Decisions:
+
+- Use nine initial packages: `araco_interfaces`, `araco_description`,
+  `araco_kinematics`, `araco_locomotion`, `araco_supervision`, `araco_teleop`,
+  `araco_gazebo`, `araco_bringup`, and `araco_system_tests`.
+- Keep canonical model data in `araco_description`; keep kinematics as a pure
+  C++ library without a ROS node.
+- Place command arbitration and safety supervision in the cohesive
+  `araco_supervision` package but run them as separate lifecycle processes.
+- Keep core control independent of simulator and physical-hardware APIs.
+  `araco_gazebo` and the later `araco_hardware` package are backend adapters.
+- Add `araco_hardware`, `araco_perception`, `araco_navigation`, and
+  `araco_isaac` only when their prerequisite phases begin.
+- Keep unit tests with their owning packages and cross-package launch/simulator
+  acceptance tests in `araco_system_tests`.
+
+Rationale: this split gives each package a cohesive domain without creating a
+package for every class. It prevents a monolithic control package, preserves
+one-way dependencies, keeps Gazebo replaceable, and avoids adding hardware,
+autonomy, or Isaac complexity to the first simulator milestone.
+
+Consequences:
+
+- Package responsibility and dependency rules in
+  `docs/agent/REPOSITORY_ARCHITECTURE.md` are now accepted architecture.
+- ROS interface fields, topic/service/action names, QoS, controller types,
+  rates, lifecycle transitions, and fault behavior remain open.
+- This approval does not authorize package scaffolding or implementation.
+
+## 2026-08-15 — High-level command interface and authority contract
+
+Status: accepted by the user on 2026-08-15.
+
+Decisions:
+
+- Use four stage-specific project messages: `MotionIntent`,
+  `CommandCandidate`, `SelectedCommand`, and `SafeCommand`.
+- Carry planar velocity, absolute body-pose offset, and stand/tripod selection
+  atomically in `MotionIntent`, using SI units and canonical REP-103 axes.
+- Give every source a separate candidate input. Trusted bringup configuration,
+  not the publisher, assigns numeric identity, priority, and timeout.
+- Use source generation stamps for provenance and local steady-clock receipt
+  time for motion-authority freshness. A source cannot extend its own lease.
+- Preserve source sequence and selection/safety epochs through arbitration and
+  supervision for observability and transition detection.
+- Only the arbiter may publish `SelectedCommand`; only the safety supervisor may
+  publish `SafeCommand`; locomotion consumes only `SafeCommand`.
+- Exclude direct joint/PWM/controller commands, active gimbal control, safety-
+  state requests, source-supplied priority, and source-supplied validity
+  duration from the high-level source contract.
+
+Rationale: one atomic intent avoids cross-topic synchronization errors, while
+separate message types encode each component's authority instead of trusting a
+generic envelope. Receiver-owned freshness prevents stale or malformed sources
+from granting themselves continued motion authority.
+
+Consequences:
+
+- Exact fields and semantics in `docs/agent/INTERFACE_CONTRACTS.md` are accepted
+  architecture.
+- Feedback, diagnostics, and controller output were resolved by the following
+  decision. Safety-state meanings, disposition reason codes, rates, concrete
+  topic names, and QoS remain open.
+- This approval does not authorize IDL creation, package scaffolding, or
+  implementation.
+
+## 2026-08-15 — Feedback truthfulness and controller contract
+
+Status: accepted by the user on 2026-08-15.
+
+Decisions:
+
+- Keep standard `sensor_msgs/JointState` for all 25 joints and add the
+  `JointStateProvenance` project message to classify position, velocity, and
+  effort as unavailable, simulated physics, hardware sensed, command derived,
+  or estimator produced.
+- On the open-loop physical robot, publish only command-derived joint position;
+  leave velocity and effort unavailable until supported. Never describe
+  command-derived TF or controller error as measured tracking.
+- Add `LocomotionStatus` for locomotion mode, gait phase/cycle, processed
+  command epochs, per-leg kinematic validity, and whole-trajectory validity.
+- Use `joint_state_broadcaster` plus two separate
+  `joint_trajectory_controller/JointTrajectoryController` instances:
+  `leg_trajectory_controller` for 24 joints and
+  `gimbal_trajectory_controller` for `gimbal_yaw_joint`.
+- Use position command interfaces, require complete named trajectories, disable
+  partial goals, interpolate continuously replaced references from desired
+  state, and configure a non-zero controller command timeout.
+- Send the leg controller one positions-only point at a positive short horizon
+  with zero header stamp (“start now”) through the topic interface. Do not use
+  `FollowJointTrajectory` actions for the continuous gait loop.
+- Keep gimbal yaw out of the leg trajectory and held at zero in the first
+  simulator milestone. This does not authorize physical gimbal startup.
+- Use typed controller/lifecycle state for machine decisions and
+  `diagnostic_msgs/DiagnosticArray` for observability; never parse diagnostic
+  text as a safety-control input.
+- Keep Gazebo contacts and base-pose ground truth in explicit simulation/test
+  interfaces rather than making feedback unavailable on the current physical
+  robot part of the core locomotion dependency.
+
+Rationale: named, time-interpolated standard trajectories avoid order-only
+controller commands and support smooth streamed gait references. Explicit
+provenance prevents simulated or command-derived values from being presented as
+physical measurements. Separate leg and gimbal ownership preserves the
+accepted 24+1 control boundary.
+
+Consequences:
+
+- Exact accepted fields, validation rules, controller parameters, and command
+  semantics are maintained in `docs/agent/INTERFACE_CONTRACTS.md`.
+- Safety states and reason codes are resolved by the following decision. Rates,
+  horizons, timeout values, QoS, topic names, provisional simulation limits,
+  and physical startup behavior remain open.
+- This approval does not authorize IDL, controller configuration, package
+  scaffolding, or implementation.
+
+## 2026-08-15 — Safety state, handover, lifecycle, and watchdog contract
+
+Status: accepted by the user on 2026-08-15.
+
+Decisions:
+
+- Use eight software safety states independent of ROS lifecycle state:
+  `INITIALIZING`, `INACTIVE`, `HOLDING`, `ENABLING`, `MOTION_ENABLED`,
+  `STOPPING`, `FAULT_HOLD`, and `SHUTTING_DOWN`.
+- Add one guarded `SafetyTransition` action and typed `SafetyStatus` state,
+  with the accepted readiness/fault masks and common reason codes `0–30`.
+- Require readiness, an explicit trusted enable request, and a fresh source
+  activation edge before motion. Never restore prior motion permission after
+  startup, reset, source loss, Wi-Fi loss, or process/publisher restart.
+- Quarantine stale or invalid sources until a valid release and fresh
+  activation edge. Never automatically execute a lower-priority source after
+  loss of the selected source.
+- Permit deliberate higher-priority preemption only through a controlled-stop,
+  verified stable six-foot hold, and hold-dwell barrier; failure ends in
+  `HOLDING`.
+- Make locomotion updates transactional across all six legs and 24 joints.
+  Normal `HOLDING` continuously commands the last validated stable stance;
+  controller timeout is a fallback rather than the hold mechanism.
+- Latch kinematic, control-component, backend/time, internal, and trusted
+  software-hold faults. Quarantine an invalid ordinary source without globally
+  latching the robot when the trusted control path remains healthy.
+- Use strict Gazebo lifecycle ordering and layered steady-time watchdogs at the
+  source, selection, safety, locomotion, controller, and backend boundaries.
+- Treat software hold as distinct from an emergency stop. Never assume that
+  cutting physical servo power is safe, because the standing robot collapses
+  when unpowered.
+
+Rationale: motion permission must be explicit, fail closed, and unable to
+resume unexpectedly across source or process discontinuities. Controlled
+handover and transactional gait updates preserve deterministic whole-robot
+state, while truthful fault reporting avoids claiming safety that open-loop
+physical hardware cannot provide.
+
+Consequences:
+
+- The complete accepted contract is maintained in
+  `docs/agent/SAFETY_ARCHITECTURE.md`.
+- Exact rates, timeouts, priorities, stop profiles, hold dwell, simulator
+  limits, QoS, and topic names were later accepted in the runtime/timing
+  decision. Physical safety and lifecycle behavior remain later design gates.
+- This approval does not authorize IDL, configuration, package scaffolding,
+  implementation, or physical actuation.
+
+## 2026-08-15 — Configuration, calibration, and simulator validation architecture
+
+Status: accepted by the user on 2026-08-15.
+
+Decisions:
+
+- Give every model, algorithm, supervision, simulator, controller-composition,
+  test, and future hardware-calibration value one owning package. Bringup
+  selects and composes owned artifacts rather than maintaining competing
+  values.
+- Distinguish CAD-supported design facts, canonical model parameters,
+  provisional simulator estimates, simulator identification, measured physical
+  calibration, and operational policy. None is promoted into another evidence
+  class without explicit validation.
+- Require schema/version identity, SI/REP-103 conventions, fail-closed static
+  validation, reproducible configuration fingerprints, and lifecycle
+  reconfiguration plus a fresh enable after any motion-affecting change.
+- Use a nested joint-limit hierarchy: canonical model range intersected with a
+  verified actuator range for physical deployments and then with the narrower
+  operational range. Provisional simulator limits are forbidden in a physical
+  profile.
+- Keep `gazebo_dev_v0` and `gazebo_ci_v0` behaviorally equivalent and use seed
+  `42` in both. CI may differ only in presentation, logging, recording,
+  rendering, reporting, and closed input-adapter presence recorded outside the
+  behavior fingerprint. Test-only fault injection cannot be selected by normal
+  bringup.
+- Require seven ordered blocking gates: model/configuration integrity;
+  spawn/controller/stable hold; kinematics/standing validity; static body pose;
+  tripod locomotion/controlled stop; supervision/fault injection; and a
+  reproducible headless baseline.
+- Record machine-readable outcomes, source/dependency/configuration identities,
+  seeds, physics settings, metrics, and focused failure evidence. Passing the
+  gates demonstrates functional simulator behavior, not physical safety or
+  sim-to-real fidelity.
+
+Rationale: explicit ownership prevents duplicated or hidden configuration,
+while evidence classes prevent simulator estimates from being represented as
+physical calibration. Ordered blocking gates make progress and failure
+objective before implementation begins.
+
+Consequences:
+
+- The complete accepted contract is maintained in
+  `docs/agent/CONFIGURATION_AND_VALIDATION_ARCHITECTURE.md`.
+- Exact parameter schemas, values, rates, timeouts, QoS, topic names, test
+  tolerances, physical calibration procedures, and implementation mechanisms
+  remain later decisions.
+- This approval does not authorize configuration creation, test
+  implementation, package scaffolding, or physical actuation.
 
 ## 2026-08-15 — Two-simulator portfolio
 
@@ -138,3 +411,256 @@ Consequences:
 - Isaac Lab remains in the planned simulator portfolio but is not on the critical path for initial functionality.
 - No initial RL task, reward, observation space, action space, training pipeline, or policy deployment is required.
 - Later RL should demonstrate measurable improvement over the algorithmic baseline rather than replace it without comparison.
+
+## 2026-08-15 — Rough initial simulator dynamics
+
+Status: accepted by the user on 2026-08-15.
+
+Decision: Use an explicitly provisional `rough_estimate_v0` for initial Gazebo
+development. Preserve the raw Fusion JSON unchanged, replace Steel-derived
+servo and electronics contributions with researched or clearly labeled round
+masses, and keep the result separate and reproducible. A fully corrected Fusion
+material model, enhanced per-body exporter, and physical weighing are deferred
+until higher-fidelity or physical validation requires them.
+
+Rationale: the user does not require exact mass properties for the first
+simulator milestone. A bounded, traceable estimate is more useful than the
+known-invalid `9.804328 kg` all/mixed-Steel result and avoids unnecessary Fusion
+rework before the kinematic and control architecture is exercised.
+
+Consequences:
+
+- The central whole-robot estimate is `3.924393 kg`, including `0.576 kg` of
+  missing base-electronics proxies.
+- Per-occurrence centers of mass are retained and inertia values are uniformly
+  scaled by mass ratio; this is not a body-accurate reconstruction.
+- Aggregate center of mass and inertia remain unresolved until proxy poses and
+  better body-level evidence exist.
+- The estimate is simulator-only and cannot be promoted into a physical profile
+  or used as hardware-safety evidence.
+
+## 2026-08-15 — Runtime timing, QoS, topics, and simulator values
+
+Status: accepted by the user on 2026-08-15.
+
+Decision:
+
+- Use the concrete project topics, source registry, QoS profiles, dual-clock
+  rules, rates, horizons, watchdogs, motion envelopes, provisional simulator
+  joint/dynamics values, and Gate 0–6 thresholds in
+  `docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md`.
+- Use `1000 Hz` Gazebo physics, a synchronous `250 Hz` controller manager,
+  `100 Hz` arbitration/safety/locomotion, `50 Hz` teleop, and a `0.040 s`
+  one-point trajectory horizon for the initial simulator baseline.
+- Use steady time for motion-authority/readiness expiry and ROS simulation time
+  for gait/trajectory progression. A Gazebo pause revokes readiness and cannot
+  resume prior motion automatically.
+- Keep source candidates best-effort/latest-value while selected, safe, and
+  controller commands are reliable/latest-value.
+- Limit initial simulator motion to the accepted slow envelope and treat all
+  joint limits, effort/velocity caps, damping, friction, mass/inertia, and
+  controller gains as provisional simulator values only.
+
+Rationale: the chosen hierarchy leaves multiple controller updates per
+trajectory and physics steps per controller update, keeps watchdog expiry ahead
+of the JTC fallback, prevents ROS-time pauses from extending authority, and
+provides objective pass/fail thresholds without pretending the rough dynamics
+are physically calibrated.
+
+Consequences:
+
+- The runtime values are now architecture targets and cannot be changed merely
+  to make a test pass; revisions require explicit evidence and review.
+- Configuration schemas and composition must encode these accepted values
+  without introducing duplicate authorities.
+- Position-only JTC interpolation remains an acknowledged velocity-continuity
+  limitation monitored by Gate 4.
+- Acceptance does not authorize IDL, ROS packages, configuration files, Xacro,
+  launch code, tests, or physical commands.
+
+## 2026-08-15 — Parameter, artifact, and runtime composition
+
+Status: accepted by the user on 2026-08-15.
+
+Decision:
+
+- Use strict, JSON-compatible package-owned YAML artifacts with a common
+  versioned envelope, package-owned schemas, evidence/deployment labels, exact
+  dependencies, and fail-closed offline validation.
+- Use the C++ or Python form of `generate_parameter_library` for typed project
+  node parameters. Motion-affecting values have no silent defaults and are
+  immutable for the v0 process lifetime.
+- Make deployment profiles exact artifact-selection graphs. Do not permit
+  generic deep merge, arbitrary motion parameter overrides, or source-tree
+  resource resolution in accepted launch paths.
+- Have `araco_bringup` run deterministic preflight before Gazebo, derive joint
+  lists and upstream representations from the canonical model registry, and
+  emit an immutable per-run bundle plus non-circular configuration identities.
+- Require `gazebo_dev_v0` and `gazebo_ci_v0` to resolve the same production
+  behavior fingerprint; only closed presentation/reporting choices may differ.
+- Follow Jazzy controller integration rules: separate controller-manager and
+  controller parameter files, pass each controller file to its spawner with
+  `--param-file`, and deliver the robot description through the supported topic
+  mechanism.
+
+Rationale: this preserves one authority per value while still producing the
+duplicated file shapes required by upstream ROS and Gazebo components. Strict
+selection and fingerprints make simulator results reproducible and prevent
+hidden launch overrides from becoming unreviewed motion policy.
+
+Consequences:
+
+- Exact artifact paths, profile roles, runtime-bundle contents, validation
+  layers, and fingerprint semantics are frozen in
+  `docs/agent/PARAMETER_AND_CONFIGURATION_COMPOSITION.md`.
+- A motion-affecting change requires controlled hold, lifecycle deactivation,
+  process replacement with a newly composed bundle, readiness revalidation,
+  and a fresh enable/source edge.
+- Acceptance does not authorize schemas, YAML, Xacro, launch code, ROS package
+  scaffolding, tests, or physical commands.
+
+## 2026-08-15 — Phased simulator delivery plan
+
+Status: accepted by the user on 2026-08-15.
+
+Decision:
+
+- Use one non-gate repository-foundation phase followed by one blocking
+  implementation phase for each accepted Gazebo Gate 0–6.
+- Gate 1 establishes the real simulator/controller/lifecycle hold path using
+  the single accepted nominal standing reference. Gate 2 replaces transitional
+  target production with computed FK/IK while retaining that reference as the
+  validation oracle.
+- Gate 3 onward scores commands only through the production system-test
+  candidate → arbitration → safety → locomotion → controller → Gazebo path.
+- Write tests with each increment, rerun every prior gate at a phase exit, and
+  retain typed evidence for successes and failures. Required gates have no
+  retry, expected-failure, easier-CI, or silent-threshold-relaxation escape.
+- Use narrow test-only dependency injection for impossible internal fault
+  branches without adding production fault backdoors.
+- Treat Gate 6's three clean headless no-retry runs as the functional Gazebo
+  baseline that unlocks later simulator work, not physical deployment.
+
+Rationale: the order proves model/configuration, plant/control ownership,
+kinematics, body behavior, gait, supervision, and reproducibility separately so
+a visually plausible later behavior cannot conceal a broken earlier contract.
+
+Consequences:
+
+- Package maturation, phase deliverables, gate exit boundaries, evidence,
+  regression invalidation, failure classification, and handoff rules are frozen
+  in `docs/agent/PHASED_DELIVERY_PLAN.md`.
+- An affected change invalidates its earliest gate and all later evidence.
+- Acceptance completes the planned simulator architecture sequence but does not
+  authorize Phase 0, `src/`, package scaffolding, implementation, commits,
+  external CI mutation, publishing, or physical commands.
+
+## 2026-08-15 — Architecture closeout and repository/package license
+
+Status: **superseded on 2026-08-16 by the GPL-3.0-only decision below**. Retained
+as decision history; Apache-2.0 was never applied through a root `LICENSE` or
+package manifest.
+
+Decision:
+
+- The final cross-contract review passes after the reconciliations recorded in
+  `docs/agent/FINAL_ARCHITECTURE_REVIEW.md`.
+- License project-authored code, configuration, documentation, tests, and
+  original assets under the Apache License 2.0 using SPDX identifier
+  `Apache-2.0`.
+- During authorized Phase 0, add the unmodified full license text at the root
+  and in every package, use
+  `<license file="LICENSE">Apache-2.0</license>` in each initial
+  `package.xml`, and add SPDX source headers where supported.
+- Do not treat the repository license as permission to redistribute vendor CAD
+  or other third-party assets. Bundled resources require explicit creator,
+  source, license/attribution, modification, and redistribution metadata;
+  unknown-rights assets are excluded or replaced with project-authored
+  simplified proxies.
+- Add `NOTICE` only when included content or attribution actually requires it.
+
+Rationale: Apache-2.0 is permissive and public-portfolio friendly while adding
+an explicit contributor patent grant absent from simpler permissive choices.
+The SPDX identity is unambiguous for source and ROS package metadata. Separate
+asset provenance prevents detailed imported component models from being
+silently relicensed.
+
+Consequences:
+
+- License selection is no longer a pre-scaffolding open decision.
+- The architecture is ready for a separate explicit Phase 0 authorization.
+- This decision does not itself create `LICENSE`, `src/`, package files, code,
+  commits, external CI, or a public release.
+- A public maintainer name/email must be confirmed before package manifests are
+  written.
+
+## 2026-08-16 — License changed to GNU GPL version 3 only
+
+Status: selected explicitly by the user on 2026-08-16.
+
+Decision:
+
+- Supersede the planned Apache-2.0 repository/package license with the GNU
+  General Public License version 3 only, SPDX identifier `GPL-3.0-only`.
+- Interpret “GPL-3.0” as version 3 specifically, not the distinct
+  `GPL-3.0-or-later` grant. The deprecated SPDX identifier `GPL-3.0` is not used.
+- During authorized Phase 0, add the unmodified official GPLv3 text at the root
+  and in every package, use
+  `<license file="LICENSE">GPL-3.0-only</license>` in each initial
+  `package.xml`, and add `SPDX-License-Identifier: GPL-3.0-only` to
+  project-authored source where supported.
+- Audit direct linked and bundled dependencies for GPLv3 compatibility before
+  Phase 0 completes. Preserve third-party licenses and attributions and plan
+  for the applicable GPLv3 Corresponding Source obligations of distributed
+  object-code/combined works.
+- Include the preferred editable source and generation tooling when distributing
+  covered generated mesh/model forms. Review the existing Fusion add-in's
+  Autodesk API boundary and the future Isaac adapter's proprietary SDK boundary
+  rather than presuming they form GPL-compatible distributable combinations.
+- Continue excluding vendor CAD and other third-party assets with unknown
+  redistribution rights; the GPL selection cannot relicense them.
+
+Rationale: the user explicitly prefers GPLv3's strong-copyleft terms over the
+previously selected permissive license. The `-only` SPDX form precisely encodes
+version 3 without granting automatic use under a future GPL version.
+
+Consequences:
+
+- The current local repository still has no root `LICENSE`, `src/`, or package
+  manifests, so this is a pre-application change rather than a relicense of a
+  published GPL/Apache release.
+- Distributed covered modifications and combined works must comply with GPLv3,
+  including applicable Corresponding Source requirements. Private use and
+  modification without distribution do not require public source release.
+- GitHub has no repository license setting that must be changed. After an
+  authorized Phase 0 adds, commits, and pushes the root `LICENSE` to the default
+  branch, GitHub should detect it from the repository contents.
+- This decision updates documentation only and does not authorize Phase 0,
+  commits, pushes, publication, or any GitHub mutation.
+
+## 2026-08-16 — Licensed architecture checkpoint before Phase 0
+
+Status: authorized explicitly by the user on 2026-08-16.
+
+Decision:
+
+- Add the unmodified official GNU GPL version 3 text at root `LICENSE` before
+  Phase 0.
+- Commit the accumulated architecture, continuity, Fusion exporter
+  documentation, and rough-dynamics evidence as one coherent checkpoint.
+- Push that checkpoint to `origin/main`.
+- Do not treat this checkpoint authorization as Phase 0 authorization; do not
+  create `src/`, ROS package skeletons, package manifests, package-local
+  license copies, or source SPDX headers yet.
+
+Rationale: establish a recoverable, remotely backed-up architecture baseline
+under the already selected license before repository scaffolding begins.
+
+Consequences:
+
+- Root `LICENSE` now carries the GPLv3 full text. Package-local license copies,
+  manifest declarations, source headers, and compatibility/source-obligation
+  audit remain Phase 0 deliverables.
+- The checkpoint may be committed and pushed despite the earlier general
+  no-commit/no-push boundary because the user granted specific authorization
+  for this checkpoint.

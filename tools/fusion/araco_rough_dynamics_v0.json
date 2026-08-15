@@ -1,0 +1,1733 @@
+{
+  "schema": "araco.rough_dynamics_snapshot.v1",
+  "estimate_id": "rough_estimate_v0",
+  "effective_date": "2026-08-15",
+  "status": "simulation_only_rough_estimate",
+  "source_export": {
+    "path_used": "/media/stevw-s14/DATA-ST/New folder/araco_-_assembly_ros-description_v1_v2_robot_description_export.json",
+    "sha256": "843974cc090e76d17c691d4e097c602ccd4e966e07e158ba392ae1bef54b7352",
+    "fusion_root_mass_kg": 9.804327757482811
+  },
+  "override_manifest": "tools/fusion/rough_mass_estimates_v0.json",
+  "limitations": [
+    "The source Fusion export is immutable evidence and is never edited.",
+    "For mixed PETG/Steel occurrences, the source mass and volume are decomposed using the two exported material densities; the Steel-derived mass is then replaced by component masses.",
+    "Occurrence center of mass is retained from Fusion and inertia terms are scaled uniformly by estimated_mass/raw_mass. This is deliberately coarse because the current export lacks per-body physical properties.",
+    "Missing base electronics are included only in the total mass budget. Their poses and inertias remain unresolved.",
+    "This file is suitable for an initial Gazebo model, not hardware validation, actuator sizing, tip-over certification, or structural analysis."
+  ],
+  "direct_root_occurrences": [
+    {
+      "full_path": "araco - bottom_cover_v2 v14:1",
+      "component_name": "araco - bottom_cover_v2 v14",
+      "rule_id": "keep_printed_base_parts",
+      "raw_mass_kg": 0.052052905638297356,
+      "raw_volume_m3": 4.098653987267508e-05,
+      "estimated_mass_kg": 0.052052905638297356,
+      "estimated_average_density_kg_m3": 1270.0000000000002,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.001119106002502118,
+        "y": -0.0006060978622502676,
+        "z": -0.024856242542162947
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00011240820097960534,
+        "yy": 0.0001187784304470666,
+        "zz": 0.00015778666220817177,
+        "xy": -1.3567462082043382e-06,
+        "yz": -9.390777646656277e-07,
+        "xz": 1.7297127036795628e-06
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 7.99354694102111e-05,
+        "i2": 8.684548053193384e-05,
+        "i3": 0.00015770373382545554
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9785944205518873,
+          "y": 0.20577445522861387,
+          "z": -0.0031358635306856977
+        },
+        "y_axis": {
+          "x": -0.20576549175783765,
+          "y": 0.9785968611022651,
+          "z": 0.0029573370537705687
+        },
+        "z_axis": {
+          "x": 0.003677290629141123,
+          "y": -0.002248781039034224,
+          "z": 0.9999907102155837
+        }
+      }
+    },
+    {
+      "full_path": "RASPBERRY_PI_5 v4:1",
+      "component_name": "RASPBERRY_PI_5 v4",
+      "rule_id": "raspberry_pi_5",
+      "raw_mass_kg": 0.14576721039395785,
+      "raw_volume_m3": 1.85690713877653e-05,
+      "estimated_mass_kg": 0.05,
+      "estimated_average_density_kg_m3": 2692.649457578356,
+      "mass_scale_factor": 0.343012669755204,
+      "method_details": {
+        "method": "fixed_mass",
+        "replacement_component_mass_kg": 0.05
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.0004283128618098904,
+        "y": -0.02011588686544666,
+        "z": -0.020695282039939356
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 7.535151887743744e-05,
+        "yy": 3.5955478933091527e-05,
+        "zz": 6.578796897497091e-05,
+        "xy": -7.49037159282409e-07,
+        "yz": -1.713037959610442e-05,
+        "xz": -5.070940862135233e-07
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 3.370837377138695e-05,
+        "i2": 1.4094936892893379e-05,
+        "i3": 4.5978950620851757e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9998426176746666,
+          "y": -0.014677784200616812,
+          "z": 0.009965065600910941
+        },
+        "y_axis": {
+          "x": 0.01573790838477964,
+          "y": 0.9930874200531035,
+          "z": -0.11631721442651072
+        },
+        "z_axis": {
+          "x": -0.008188902316099379,
+          "y": 0.11645573744230343,
+          "z": 0.993162123268717
+        }
+      }
+    },
+    {
+      "full_path": "araco - battery_holder v2 v5:1",
+      "component_name": "araco - battery_holder v2 v5",
+      "rule_id": "keep_printed_base_parts",
+      "raw_mass_kg": 0.0060595961023494575,
+      "raw_volume_m3": 4.77133551366099e-06,
+      "estimated_mass_kg": 0.0060595961023494575,
+      "estimated_average_density_kg_m3": 1270.0,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.02468665951094991,
+        "y": -0.001318279322627527,
+        "z": -0.056966633227469865
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 2.4874843766590844e-05,
+        "yy": 2.39092666209777e-05,
+        "zz": 8.51747222957125e-06,
+        "xy": -1.644544007596213e-07,
+        "yz": -5.41774074714127e-07,
+        "xz": -8.396747856751895e-06
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 5.23668355999553e-06,
+        "i2": 5.497438087394412e-07,
+        "i3": 4.779110611200949e-06
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9590458240375843,
+          "y": 0.0014614480650241395,
+          "z": 0.2832471916288386
+        },
+        "y_axis": {
+          "x": -0.00759332180481961,
+          "y": 0.9997599531940453,
+          "z": 0.020551823603002436
+        },
+        "z_axis": {
+          "x": -0.28314916362235515,
+          "y": -0.021860927679165726,
+          "z": 0.9588267053962185
+        }
+      }
+    },
+    {
+      "full_path": "araco - battery_holder v2 v5:2",
+      "component_name": "araco - battery_holder v2 v5",
+      "rule_id": "keep_printed_base_parts",
+      "raw_mass_kg": 0.0060595961023494575,
+      "raw_volume_m3": 4.77133551366099e-06,
+      "estimated_mass_kg": 0.0060595961023494575,
+      "estimated_average_density_kg_m3": 1270.0,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.02405945542111059,
+        "y": 0.0013182793226274648,
+        "z": -0.056966633227469865
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 2.487484376659084e-05,
+        "yy": 2.3724001967994657e-05,
+        "zz": 8.332207576588213e-06,
+        "xy": -1.5944414380720286e-07,
+        "yz": 5.417740747141027e-07,
+        "xz": 8.18024027350738e-06
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 5.236683559995532e-06,
+        "i2": 5.497438087394359e-07,
+        "i3": 4.77911061120095e-06
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.959045824037579,
+          "y": 0.0014614480650239202,
+          "z": -0.2832471916288562
+        },
+        "y_axis": {
+          "x": -0.007593321804819596,
+          "y": 0.9997599531940453,
+          "z": -0.020551823603001746
+        },
+        "z_axis": {
+          "x": 0.28314916362237275,
+          "y": 0.021860927679165084,
+          "z": 0.9588267053962132
+        }
+      }
+    },
+    {
+      "full_path": "araco - top_cover v2 v11:1",
+      "component_name": "araco - top_cover v2 v11",
+      "rule_id": "keep_printed_base_parts",
+      "raw_mass_kg": 0.05586352668620988,
+      "raw_volume_m3": 4.398702888677943e-05,
+      "estimated_mass_kg": 0.05586352668620988,
+      "estimated_average_density_kg_m3": 1270.0000000000002,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.0005267467851857547,
+        "y": -0.0008525393713283564,
+        "z": 0.04123749928682214
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00017936423384444262,
+        "yy": 0.00018598943696540278,
+        "zz": 0.00016613417125484122,
+        "xy": -6.102158407123446e-07,
+        "yz": 1.9685150003139503e-06,
+        "xz": 1.2145908974531219e-06
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 8.427486233729096e-05,
+        "i2": 9.102734863396648e-05,
+        "i3": 0.00016607806861172555
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9962097472907753,
+          "y": 0.08698355622224167,
+          "z": -1.8702462934496823e-05
+        },
+        "y_axis": {
+          "x": -0.08698355718523457,
+          "y": 0.9962097456355118,
+          "z": -5.8993492504730326e-05
+        },
+        "z_axis": {
+          "x": 1.3500112070701063e-05,
+          "y": 6.039669901410517e-05,
+          "z": 0.999999998084993
+        }
+      }
+    },
+    {
+      "full_path": "araco - gimbal_mount v1 v26:1",
+      "component_name": "araco - gimbal_mount v1 v26",
+      "rule_id": "gimbal_servo_mount",
+      "raw_mass_kg": 0.2382344111729266,
+      "raw_volume_m3": 5.074664917600941e-05,
+      "estimated_mass_kg": 0.0909059296003965,
+      "estimated_average_density_kg_m3": 1791.3681213728785,
+      "mass_scale_factor": 0.3815818594502322,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.030905929600396505,
+        "rejected_steel_derived_mass_kg": 0.2073284815725301,
+        "replacement_component_mass_kg": 0.06
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.00031293322712245593,
+        "y": 0.004319764267987313,
+        "z": 0.06872719958631325
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00045808790243167765,
+        "yy": 0.00044498975903901926,
+        "zz": 2.2666139729618243e-05,
+        "xy": 1.2443182635246255e-07,
+        "yz": -2.694500656343614e-05,
+        "xz": 1.9559912439975796e-06
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 2.7003955219240653e-05,
+        "i2": 1.559289221522232e-05,
+        "i3": 2.096125433829193e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9999999801230103,
+          "y": 0.0001359910775322174,
+          "z": 0.00014580948581496638
+        },
+        "y_axis": {
+          "x": -0.00013480158459420406,
+          "y": 0.9999669657709617,
+          "z": -0.008127065605076587
+        },
+        "z_axis": {
+          "x": -0.0001469098775198254,
+          "y": 0.00812704578818525,
+          "z": 0.9999669642264412
+        }
+      }
+    },
+    {
+      "full_path": "araco - frame v3 v6:1",
+      "component_name": "araco - frame v3 v6",
+      "rule_id": "base_frame_and_coxa_servos",
+      "raw_mass_kg": 1.4229085659498475,
+      "raw_volume_m3": 0.0002993609818051903,
+      "estimated_mass_kg": 0.5389339558283492,
+      "estimated_average_density_kg_m3": 1800.2812276285943,
+      "mass_scale_factor": 0.3787551559706787,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.1789339558283493,
+        "rejected_steel_derived_mass_kg": 1.2439746101214981,
+        "replacement_component_mass_kg": 0.36
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.0003113304679599158,
+        "y": -0.0002139192911536071,
+        "z": 0.00376879514575406
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0020731590173600116,
+        "yy": 0.0024610895119016353,
+        "zz": 0.004416689002738576,
+        "xy": -1.882188691977234e-08,
+        "yz": 9.190532336474927e-07,
+        "xz": 6.234522668637463e-07
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.0020654794349653587,
+        "i2": 0.002453382236785913,
+        "i3": 0.004416612222892982
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9999999990242316,
+          "y": -4.401290400313572e-05,
+          "z": 3.7948667408132142e-06
+        },
+        "y_axis": {
+          "x": 4.401383929365729e-05,
+          "y": 0.9999999685725194,
+          "z": -0.0002468151987741475
+        },
+        "z_axis": {
+          "x": -3.7840035678999514e-06,
+          "y": 0.0002468153655599679,
+          "z": 0.9999999695339279
+        }
+      }
+    },
+    {
+      "full_path": "araco - gimbal v5 v41:1",
+      "component_name": "araco - gimbal v5 v41",
+      "rule_id": "moving_gimbal_and_cameras",
+      "raw_mass_kg": 0.5357398813590726,
+      "raw_volume_m3": 0.00018469485195677724,
+      "estimated_mass_kg": 0.27743247374727487,
+      "estimated_average_density_kg_m3": 1502.1126512622036,
+      "mass_scale_factor": 0.5178492089173579,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.17643247374727486,
+        "rejected_steel_derived_mass_kg": 0.3593074076117977,
+        "replacement_component_mass_kg": 0.101
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.00035728607497992375,
+        "y": 0.030161114007154766,
+        "z": 0.10600698828771699
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0037804450680793853,
+        "yy": 0.0033317375556002533,
+        "zz": 0.0008043095630266834,
+        "xy": 3.5055572476708217e-06,
+        "yz": -0.0008737880985228033,
+        "xz": 1.0575277346635224e-05
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.00041042571704800394,
+        "i2": 0.00021354011977530466,
+        "i3": 0.0005524142538400231
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9999964164880479,
+          "y": 0.002578755223507908,
+          "z": -0.0007190497616541733
+        },
+        "y_axis": {
+          "x": -0.0026049052520332933,
+          "y": 0.9992314912032862,
+          "z": -0.039110630988073075
+        },
+        "z_axis": {
+          "x": 0.0006176404216318833,
+          "y": 0.03911236389116009,
+          "z": 0.9992346278583201
+        }
+      }
+    },
+    {
+      "full_path": "araco - coxa v3 v36:1",
+      "component_name": "araco - coxa v3 v36",
+      "rule_id": "coxa_link_and_femur_servo",
+      "raw_mass_kg": 0.4556763640082084,
+      "raw_volume_m3": 7.496753748950439e-05,
+      "estimated_mass_kg": 0.1836352405336154,
+      "estimated_average_density_kg_m3": 2449.5301124079833,
+      "mass_scale_factor": 0.4029948775888395,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.0256352405336154,
+        "rejected_steel_derived_mass_kg": 0.430041123474593,
+        "replacement_component_mass_kg": 0.158
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.13184156745948966,
+        "y": -0.007967495484316047,
+        "z": 0.005385699293938161
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00012958201653568154,
+        "yy": 0.003293395848746981,
+        "zz": 0.0032591588518553066,
+        "xy": 0.00019411435718512493,
+        "yz": 1.52284052920215e-06,
+        "xz": -0.00012987935908378008
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.00011268718718995127,
+        "i2": 9.69771405465336e-05,
+        "i3": 5.453618373062195e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9973552320150776,
+          "y": 0.07267600880540719,
+          "z": 0.0008596023887478411
+        },
+        "y_axis": {
+          "x": -0.07170084565286752,
+          "y": 0.9857710127065469,
+          "z": -0.15203453305145054
+        },
+        "z_axis": {
+          "x": -0.011896634180054117,
+          "y": 0.15157080276763504,
+          "z": 0.9883748083816993
+        }
+      }
+    },
+    {
+      "full_path": "araco - coxa v3 v36:2",
+      "component_name": "araco - coxa v3 v36",
+      "rule_id": "coxa_link_and_femur_servo",
+      "raw_mass_kg": 0.4556763640082084,
+      "raw_volume_m3": 7.496753748950439e-05,
+      "estimated_mass_kg": 0.1836352405336154,
+      "estimated_average_density_kg_m3": 2449.5301124079833,
+      "mass_scale_factor": 0.4029948775888395,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.0256352405336154,
+        "rejected_steel_derived_mass_kg": 0.430041123474593,
+        "replacement_component_mass_kg": 0.158
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.0974395929376591,
+        "y": 0.11154630333117879,
+        "z": 0.005385699293938169
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.002390710465458698,
+        "yy": 0.0018570416075302171,
+        "zz": 0.004083933059561559,
+        "xy": -0.0019885336672932448,
+        "yz": -0.00011358805307591456,
+        "xz": -9.089158261509412e-05
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 9.697714054653505e-05,
+        "i2": 0.00011268718718995092,
+        "i3": 5.453618373062254e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.8447337325671268,
+          "y": -0.5131378195210885,
+          "z": 0.15203453305204134
+        },
+        "y_axis": {
+          "x": 0.5190599077645082,
+          "y": 0.8547374294221401,
+          "z": 0.0008595907933025588
+        },
+        "z_axis": {
+          "x": -0.13039069450965285,
+          "y": 0.07818890536370586,
+          "z": 0.9883748083916929
+        }
+      }
+    },
+    {
+      "full_path": "araco - coxa v3 v36:3",
+      "component_name": "araco - coxa v3 v36",
+      "rule_id": "coxa_link_and_femur_servo",
+      "raw_mass_kg": 0.4556763640082084,
+      "raw_volume_m3": 7.496753748950439e-05,
+      "estimated_mass_kg": 0.1836352405336154,
+      "estimated_average_density_kg_m3": 2449.5301124079833,
+      "mass_scale_factor": 0.4029948775888395,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.0256352405336154,
+        "rejected_steel_derived_mass_kg": 0.430041123474593,
+        "replacement_component_mass_kg": 0.158
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.08445649135623962,
+        "y": -0.1207855138221746,
+        "z": 0.005385699293938248
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.002787191337962028,
+        "yy": 0.001421076811965256,
+        "zz": 0.00404444913649993,
+        "xy": 0.0018650862934792504,
+        "yz": 0.00011535395858803271,
+        "xz": -8.841010103511162e-05
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 9.697714054653423e-05,
+        "i2": 0.00011268718718995077,
+        "i3": 5.453618373062357e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.7615885074868619,
+          "y": 0.6299749566638168,
+          "z": -0.1520345330520546
+        },
+        "y_axis": {
+          "x": -0.6374860786514438,
+          "y": 0.7704613946391301,
+          "z": -0.0008595907933021312
+        },
+        "z_axis": {
+          "x": 0.11659521769583578,
+          "y": 0.09757455276427802,
+          "z": 0.9883748083916909
+        }
+      }
+    },
+    {
+      "full_path": "araco - femur v5 v28:1",
+      "component_name": "araco - femur v5 v28",
+      "rule_id": "keep_printed_femur_link",
+      "raw_mass_kg": 0.052077028846416164,
+      "raw_volume_m3": 4.100553452473713e-05,
+      "estimated_mass_kg": 0.052077028846416164,
+      "estimated_average_density_kg_m3": 1270.0000000000002,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.17796831241697725,
+        "y": -0.0014980443438217118,
+        "z": 0.04036373739317011
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0001514689167285396,
+        "yy": 0.001800727937626611,
+        "zz": 0.0017089058145758327,
+        "xy": 1.3481379071921619e-05,
+        "yz": 2.079936607168098e-06,
+        "xz": -0.0004013995748457996
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 9.048220604149531e-05,
+        "i2": 6.649123957546154e-05,
+        "i3": 3.536210736359937e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.7512161628670195,
+          "y": 0.016774279946630968,
+          "z": -0.659843087544019
+        },
+        "y_axis": {
+          "x": -0.03527127979618175,
+          "y": 0.9992688829196354,
+          "z": -0.01475250656952003
+        },
+        "z_axis": {
+          "x": 0.6591132023172431,
+          "y": 0.034355831540166866,
+          "z": 0.7512585862206783
+        }
+      }
+    },
+    {
+      "full_path": "araco - femur v5 v28:2",
+      "component_name": "araco - femur v5 v28",
+      "rule_id": "keep_printed_femur_link",
+      "raw_mass_kg": 0.052077028846416164,
+      "raw_volume_m3": 4.100553452473713e-05,
+      "estimated_mass_kg": 0.052077028846416164,
+      "estimated_average_density_kg_m3": 1270.0000000000002,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.11715897391577182,
+        "y": 0.15041427502717386,
+        "z": 0.04279325582835033
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0013413906417136957,
+        "yy": 0.000878348368708072,
+        "zz": 0.0019494007371732448,
+        "xy": -0.000916169294265467,
+        "yz": -0.00035762556177449203,
+        "xz": -0.0002757118655230652
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 6.64912395754615e-05,
+        "i2": 9.048220604149614e-05,
+        "i3": 3.536210736359915e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.8341031772235993,
+          "y": -0.5513560223448202,
+          "z": 0.016686113076312358
+        },
+        "y_axis": {
+          "x": 0.4424423711024136,
+          "y": 0.6506586482746934,
+          "z": -0.6171613011835911
+        },
+        "z_axis": {
+          "x": 0.3294186363865462,
+          "y": 0.5221588456106505,
+          "z": 0.7866597116617715
+        }
+      }
+    },
+    {
+      "full_path": "araco - femur v5 v28:3",
+      "component_name": "araco - femur v5 v28",
+      "rule_id": "keep_printed_femur_link",
+      "raw_mass_kg": 0.052077028846416164,
+      "raw_volume_m3": 4.100553452473713e-05,
+      "estimated_mass_kg": 0.052077028846416164,
+      "estimated_average_density_kg_m3": 1270.0000000000002,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.11471789793053161,
+        "y": -0.15215142656301542,
+        "z": 0.04279325582835052
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.001368114936100323,
+        "yy": 0.0008495187776181572,
+        "zz": 0.0019472954404699536,
+        "xy": 0.0009076506212217346,
+        "yz": 0.0003602332858694351,
+        "xz": -0.0002720474456190156
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 6.649123957546354e-05,
+        "i2": 9.048220604149825e-05,
+        "i3": 3.536210736359873e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.7942139571981304,
+          "y": 0.60740905806304,
+          "z": -0.01668611322798557
+        },
+        "y_axis": {
+          "x": -0.4697761986832739,
+          "y": 0.6312069799020987,
+          "z": 0.617161301179493
+        },
+        "z_axis": {
+          "x": 0.38540175575933716,
+          "y": -0.4823193803962705,
+          "z": 0.7866597116617695
+        }
+      }
+    },
+    {
+      "full_path": "araco - tibia v2 v17:1",
+      "component_name": "araco - tibia v2 v17",
+      "rule_id": "two_leg_servos_in_tibia_assembly",
+      "raw_mass_kg": 0.6930498250151386,
+      "raw_volume_m3": 8.828660191275651e-05,
+      "estimated_mass_kg": 0.12,
+      "estimated_average_density_kg_m3": 1359.2096354391597,
+      "mass_scale_factor": 0.17314772425976557,
+      "method_details": {
+        "method": "fixed_mass",
+        "replacement_component_mass_kg": 0.12
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.2525708393992424,
+        "y": -0.0030575702691298585,
+        "z": 0.010593453684787842
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00024963035963259777,
+        "yy": 0.007958853445269707,
+        "zz": 0.007729316467287506,
+        "xy": 9.256815131210968e-05,
+        "yz": 3.835944514901132e-06,
+        "xz": -0.00020836892032885204
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.0002928607864670761,
+        "i2": 0.0002903382457527782,
+        "i3": 1.533750114748434e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.8888481897090343,
+          "y": -0.04530851452811376,
+          "z": 0.4559561757035739
+        },
+        "y_axis": {
+          "x": 0.04031149599789522,
+          "y": 0.9989730419215573,
+          "z": 0.020684409694312633
+        },
+        "z_axis": {
+          "x": -0.4564251077026595,
+          "y": -5.024559899556843e-06,
+          "z": 0.8897618338821741
+        }
+      }
+    },
+    {
+      "full_path": "araco - tibia v2 v17:2",
+      "component_name": "araco - tibia v2 v17",
+      "rule_id": "two_leg_servos_in_tibia_assembly",
+      "raw_mass_kg": 0.6930498250151386,
+      "raw_volume_m3": 8.828660191275651e-05,
+      "estimated_mass_kg": 0.12,
+      "estimated_average_density_kg_m3": 1359.2096354391597,
+      "mass_scale_factor": 0.17314772425976557,
+      "method_details": {
+        "method": "fixed_mass",
+        "replacement_component_mass_kg": 0.12
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.15767882783397494,
+        "y": 0.20466375320906394,
+        "z": 0.013064056165333172
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.005325879463003532,
+        "yy": 0.0032714974595635334,
+        "zz": 0.008062087815970186,
+        "xy": -0.0038886836358046663,
+        "yz": -0.00024421749786551696,
+        "xz": -0.0001926082813810084
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.00029033824575278304,
+        "i2": 0.00029286078646707884,
+        "i3": 1.5337501147485803e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.7894504042570419,
+          "y": -0.6135926456486537,
+          "z": -0.016496194236212694
+        },
+        "y_axis": {
+          "x": 0.5763957756630558,
+          "y": 0.7318173063953483,
+          "z": 0.3636087730762846
+        },
+        "z_axis": {
+          "x": -0.21103546862121877,
+          "y": -0.2965594295687501,
+          "z": 0.9314056773059095
+        }
+      }
+    },
+    {
+      "full_path": "araco - tibia v2 v17:3",
+      "component_name": "araco - tibia v2 v17",
+      "rule_id": "two_leg_servos_in_tibia_assembly",
+      "raw_mass_kg": 0.6930498250151386,
+      "raw_volume_m3": 8.828660191275651e-05,
+      "estimated_mass_kg": 0.12,
+      "estimated_average_density_kg_m3": 1359.2096354391597,
+      "mass_scale_factor": 0.17314772425976557,
+      "method_details": {
+        "method": "fixed_mass",
+        "replacement_component_mass_kg": 0.12
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.15269649110412636,
+        "y": -0.20820935111534344,
+        "z": 0.013064056165333356
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.005501343407905235,
+        "yy": 0.0030861320341819803,
+        "zz": 0.008052186335490338,
+        "xy": 0.003831357246926101,
+        "yz": 0.00024972918614300034,
+        "xz": -0.00018486315977550723
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.00029033824575278147,
+        "i2": 0.00029286078646707634,
+        "i3": 1.533750114748394e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.8383846545548874,
+          "y": 0.5448293738250529,
+          "z": 0.01649619423633609
+        },
+        "y_axis": {
+          "x": -0.5025651660893826,
+          "y": 0.7843576441389986,
+          "z": -0.3636087731536075
+        },
+        "z_axis": {
+          "x": -0.21104365624304758,
+          "y": 0.2965536030772866,
+          "z": 0.9314056772757215
+        }
+      }
+    },
+    {
+      "full_path": "araco - end v2 v13:1",
+      "component_name": "araco - end v2 v13",
+      "rule_id": "keep_printed_foot_link",
+      "raw_mass_kg": 0.02280187354392422,
+      "raw_volume_m3": 1.7954231136948202e-05,
+      "estimated_mass_kg": 0.02280187354392422,
+      "estimated_average_density_kg_m3": 1270.0,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.27968639859840994,
+        "y": -6.731457186127117e-05,
+        "z": -0.06952065847616902
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00012198740980837664,
+        "yy": 0.0019004267438057806,
+        "zz": 0.0017903870622620877,
+        "xy": 4.2929019027694314e-07,
+        "yz": -6.78811785327926e-07,
+        "xz": 0.00044335923237220643
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 1.178307084798631e-05,
+        "i2": 6.062013627812327e-06,
+        "i3": 7.21798029610044e-06
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 1.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 0.7557322798209236,
+          "z": 0.6548806923682122
+        },
+        "z_axis": {
+          "x": 0.0,
+          "y": -0.6548806923682122,
+          "z": 0.7557322798209236
+        }
+      }
+    },
+    {
+      "full_path": "araco - end v2 v13:2",
+      "component_name": "araco - end v2 v13",
+      "rule_id": "keep_printed_foot_link",
+      "raw_mass_kg": 0.02280187354392422,
+      "raw_volume_m3": 1.7954231136948202e-05,
+      "estimated_mass_kg": 0.02280187354392422,
+      "estimated_average_density_kg_m3": 1270.0,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.16774124314497496,
+        "y": 0.22396097106559115,
+        "z": -0.06952065846625892
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.001262226776629131,
+        "yy": 0.0007618098469764497,
+        "zz": 0.0017920095323163494,
+        "xy": -0.0008541407650112307,
+        "yz": 0.00035469150424306264,
+        "xz": 0.00026636975518178134
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 6.062013627813003e-06,
+        "i2": 1.1783070847985978e-05,
+        "i3": 7.217980296100966e-06
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.6157360849982652,
+          "y": -0.43817844811690365,
+          "z": -0.6548806923683667
+        },
+        "y_axis": {
+          "x": 0.5798064470936861,
+          "y": 0.8147542475548051,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": 0.5335668257487584,
+          "y": -0.3797040475123559,
+          "z": 0.7557322798207899
+        }
+      }
+    },
+    {
+      "full_path": "araco - end v2 v13:3",
+      "component_name": "araco - end v2 v13",
+      "rule_id": "keep_printed_foot_link",
+      "raw_mass_kg": 0.02280187354392422,
+      "raw_volume_m3": 1.7954231136948202e-05,
+      "estimated_mass_kg": 0.02280187354392422,
+      "estimated_average_density_kg_m3": 1270.0,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": 0.16763155347824782,
+        "y": -0.22403902991102415,
+        "z": -0.0695206584662585
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0012630241664148487,
+        "yy": 0.000760971036049206,
+        "zz": 0.0017919681111748255,
+        "xy": 0.0008538789749071926,
+        "yz": -0.00035547866314143163,
+        "xz": 0.00026526362561062
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 6.0620136278129375e-06,
+        "i2": 1.178307084798623e-05,
+        "i3": 7.217980296100957e-06
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.6157360854705489,
+          "y": 0.4381784474532766,
+          "z": 0.6548806923683437
+        },
+        "y_axis": {
+          "x": -0.5798064462155462,
+          "y": 0.8147542481797188,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -0.5335668261579836,
+          "y": -0.3797040469372657,
+          "z": 0.75573227982081
+        }
+      }
+    },
+    {
+      "full_path": "araco - coxa v3 v35(Mirror):1",
+      "component_name": "araco - coxa v3 v35(Mirror)",
+      "rule_id": "coxa_link_and_femur_servo",
+      "raw_mass_kg": 0.4556770103310004,
+      "raw_volume_m3": 7.496760520367404e-05,
+      "estimated_mass_kg": 0.18363521838262278,
+      "estimated_average_density_kg_m3": 2449.5276044061643,
+      "mass_scale_factor": 0.4029942573781186,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.025635218382622775,
+        "rejected_steel_derived_mass_kg": 0.4300417919483776,
+        "replacement_component_mass_kg": 0.158
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.1324687756374617,
+        "y": -0.007967496666388409,
+        "z": 0.0053856958208047725
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0001295820904316047,
+        "yy": 0.0033238381774652235,
+        "zz": 0.0032896010036148195,
+        "xy": -0.00019503203415146395,
+        "yz": 1.5228476292847373e-06,
+        "xz": 0.00013049959664668208
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.00011268726598573386,
+        "i2": 9.697724646307897e-05,
+        "i3": 5.4536119619061436e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.9973552296871527,
+          "y": -0.07267604608230725,
+          "z": -0.00085915163370226
+        },
+        "y_axis": {
+          "x": 0.07170096239597916,
+          "y": 0.9857711525631516,
+          "z": -0.15203357118020377
+        },
+        "z_axis": {
+          "x": 0.011896125721331424,
+          "y": 0.15156987530560964,
+          "z": 0.988374956730827
+        }
+      }
+    },
+    {
+      "full_path": "araco - coxa v3 v35(Mirror):2",
+      "component_name": "araco - coxa v3 v35(Mirror)",
+      "rule_id": "coxa_link_and_femur_servo",
+      "raw_mass_kg": 0.4556770103310004,
+      "raw_volume_m3": 7.496760520367404e-05,
+      "estimated_mass_kg": 0.18363521838262278,
+      "estimated_average_density_kg_m3": 2449.5276044061643,
+      "mass_scale_factor": 0.4029942573781186,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.025635218382622775,
+        "rejected_steel_derived_mass_kg": 0.4300417919483776,
+        "replacement_component_mass_kg": 0.158
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.09806680034756596,
+        "y": 0.1115463060705453,
+        "z": 0.005385695820804773
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.002390710401384062,
+        "yy": 0.0018795593882541925,
+        "zz": 0.004106450525356246,
+        "xy": 0.002001381100415038,
+        "yz": -0.00011358798585942618,
+        "xz": 9.151184414263483e-05
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 9.69772464630792e-05,
+        "i2": 0.00011268726598573317,
+        "i3": 5.453611961906085e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.8447339142042891,
+          "y": 0.5131378054939177,
+          "z": -0.15203357118079855
+        },
+        "y_axis": {
+          "x": -0.5190598760430662,
+          "y": 0.8547374491389441,
+          "z": 0.0008591400396635688
+        },
+        "z_axis": {
+          "x": 0.13038964404912473,
+          "y": 0.07818878188293533,
+          "z": 0.9883749567408137
+        }
+      }
+    },
+    {
+      "full_path": "araco - coxa v3 v35(Mirror):3",
+      "component_name": "araco - coxa v3 v35(Mirror)",
+      "rule_id": "coxa_link_and_femur_servo",
+      "raw_mass_kg": 0.4556770103310004,
+      "raw_volume_m3": 7.496760520367404e-05,
+      "estimated_mass_kg": 0.18363521838262278,
+      "estimated_average_density_kg_m3": 2449.5276044061643,
+      "mass_scale_factor": 0.4029942573781186,
+      "method_details": {
+        "method": "petg_plus_components",
+        "decomposed_petg_mass_kg": 0.025635218382622775,
+        "rejected_steel_derived_mass_kg": 0.4300417919483776,
+        "replacement_component_mass_kg": 0.158
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.08508369694641489,
+        "y": -0.12078551785652339,
+        "z": 0.005385695820804774
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0027871912839790144,
+        "yy": 0.001440603878257047,
+        "zz": 0.004063975897954053,
+        "xy": -0.0018789978658543646,
+        "yz": 0.00011535389952995907,
+        "xz": 8.903035109830072e-05
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 9.697724646307779e-05,
+        "i2": 0.00011268726598573343,
+        "i3": 5.453611961906032e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.7615885537472507,
+          "y": -0.6299751328704847,
+          "z": 0.15203357118079663
+        },
+        "y_axis": {
+          "x": 0.6374861076733417,
+          "y": 0.7704613711289393,
+          "z": -0.0008591400396684027
+        },
+        "z_axis": {
+          "x": -0.1165947568489413,
+          "y": 0.09757360074800141,
+          "z": 0.9883749567408139
+        }
+      }
+    },
+    {
+      "full_path": "araco - femur v5 v27(Mirror):1",
+      "component_name": "araco - femur v5 v27(Mirror)",
+      "rule_id": "keep_printed_femur_link",
+      "raw_mass_kg": 0.052077028846416185,
+      "raw_volume_m3": 4.100553452473715e-05,
+      "estimated_mass_kg": 0.052077028846416185,
+      "estimated_average_density_kg_m3": 1270.0000000000002,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.17859551643804164,
+        "y": -0.001498044409156658,
+        "z": 0.040363737393170854
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00015146891673873663,
+        "yy": 0.0018123743541199997,
+        "zz": 0.0017205522310794127,
+        "xy": -1.3530310184985162e-05,
+        "yz": 2.0799367445031304e-06,
+        "xz": 0.000402717972447773
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 9.048220604149487e-05,
+        "i2": 6.649123957546084e-05,
+        "i3": 3.536210736359929e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.7512161628670205,
+          "y": -0.016774279946645033,
+          "z": 0.6598430875440172
+        },
+        "y_axis": {
+          "x": 0.035271279796203855,
+          "y": 0.9992688829196346,
+          "z": -0.014752506569524008
+        },
+        "z_axis": {
+          "x": -0.6591132023172406,
+          "y": 0.034355831540184394,
+          "z": 0.7512585862206796
+        }
+      }
+    },
+    {
+      "full_path": "araco - femur v5 v27(Mirror):2",
+      "component_name": "araco - femur v5 v27(Mirror)",
+      "rule_id": "keep_printed_femur_link",
+      "raw_mass_kg": 0.052077028846416185,
+      "raw_volume_m3": 4.100553452473715e-05,
+      "estimated_mass_kg": 0.052077028846416185,
+      "estimated_average_density_kg_m3": 1270.0000000000002,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.1177861780056112,
+        "y": 0.15041427502717392,
+        "z": 0.04279325582835105
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0013413906417137,
+        "yy": 0.0008860223646969724,
+        "zz": 0.001957074733162143,
+        "xy": 0.0009210822645216812,
+        "yz": -0.00035762556177449767,
+        "xz": 0.00027710961844920135
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 6.649123957546117e-05,
+        "i2": 9.048220604149569e-05,
+        "i3": 3.536210736359919e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.8341031772236011,
+          "y": 0.5513560223448173,
+          "z": -0.01668611307631553
+        },
+        "y_axis": {
+          "x": -0.4424423711024142,
+          "y": 0.6506586482746962,
+          "z": -0.6171613011835878
+        },
+        "z_axis": {
+          "x": -0.3294186363865404,
+          "y": 0.5221588456106502,
+          "z": 0.786659711661774
+        }
+      }
+    },
+    {
+      "full_path": "araco - femur v5 v27(Mirror):3",
+      "component_name": "araco - femur v5 v27(Mirror)",
+      "rule_id": "keep_printed_femur_link",
+      "raw_mass_kg": 0.052077028846416185,
+      "raw_volume_m3": 4.100553452473715e-05,
+      "estimated_mass_kg": 0.052077028846416185,
+      "estimated_average_density_kg_m3": 1270.0000000000002,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.11534510202037095,
+        "y": -0.15215142656301558,
+        "z": 0.04279325582835124
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0013681149361003285,
+        "yy": 0.0008570333082410666,
+        "zz": 0.0019548099710928633,
+        "xy": -0.0009126203319291102,
+        "yz": 0.00036023328586944075,
+        "xz": 0.0002734451985451511
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 6.649123957546238e-05,
+        "i2": 9.048220604149706e-05,
+        "i3": 3.536210736359903e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.794213957198133,
+          "y": -0.6074090580630368,
+          "z": 0.016686113227977212
+        },
+        "y_axis": {
+          "x": 0.4697761986832761,
+          "y": 0.6312069799020984,
+          "z": 0.6171613011794916
+        },
+        "z_axis": {
+          "x": -0.3854017557593291,
+          "y": -0.4823193803962748,
+          "z": 0.7866597116617704
+        }
+      }
+    },
+    {
+      "full_path": "araco - tibia v2 v17(Mirror):1",
+      "component_name": "araco - tibia v2 v17(Mirror)",
+      "rule_id": "two_leg_servos_in_tibia_assembly",
+      "raw_mass_kg": 0.6930530172242432,
+      "raw_volume_m3": 8.828700856359786e-05,
+      "estimated_mass_kg": 0.12,
+      "estimated_average_density_kg_m3": 1359.2033749060324,
+      "mass_scale_factor": 0.17314692673962198,
+      "method_details": {
+        "method": "fixed_mass",
+        "replacement_component_mass_kg": 0.12
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.2531980417038939,
+        "y": -0.0030575138685517236,
+        "z": 0.010593453984605762
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00024963128894199907,
+        "yy": 0.007996920972519526,
+        "zz": 0.007767383174457609,
+        "xy": -9.279656638552294e-05,
+        "yz": 3.83587286687008e-06,
+        "xz": 0.00020916567928042475
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.00029286209515176436,
+        "i2": 0.00029033944376033444,
+        "i3": 1.5337581550926673e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.8888481428797254,
+          "y": 0.04530549998288367,
+          "z": -0.4559565665395818
+        },
+        "y_axis": {
+          "x": -0.040308808372286155,
+          "y": 0.9989731786420012,
+          "z": 0.02068304429967343
+        },
+        "z_axis": {
+          "x": 0.4564254362619041,
+          "y": -5.01964813428082e-06,
+          "z": 0.8897616653396199
+        }
+      }
+    },
+    {
+      "full_path": "araco - tibia v2 v17(Mirror):2",
+      "component_name": "araco - tibia v2 v17(Mirror)",
+      "rule_id": "two_leg_servos_in_tibia_assembly",
+      "raw_mass_kg": 0.6930530172242432,
+      "raw_volume_m3": 8.828700856359786e-05,
+      "estimated_mass_kg": 0.12,
+      "estimated_average_density_kg_m3": 1359.2033749060324,
+      "mass_scale_factor": 0.17314692673962198,
+      "method_details": {
+        "method": "fixed_mass",
+        "replacement_component_mass_kg": 0.12
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.15830598494550394,
+        "y": 0.2046637845818318,
+        "z": 0.013064056637412535
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.005325882159731383,
+        "yy": 0.0032952792359208787,
+        "zz": 0.008085870324350783,
+        "xy": 0.003904087049135221,
+        "yz": -0.00024421715808046855,
+        "xz": 0.00019359119074600106
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.00029033944376033276,
+        "i2": 0.00029286209515176615,
+        "i3": 1.533758155092451e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.7894521461070156,
+          "y": 0.6135904337739551,
+          "z": 0.016495108005602256
+        },
+        "y_axis": {
+          "x": -0.5763933154831663,
+          "y": 0.7318190485344275,
+          "z": 0.3636091666452982
+        },
+        "z_axis": {
+          "x": 0.21103567203994245,
+          "y": -0.2965597069449161,
+          "z": 0.9314055428992221
+        }
+      }
+    },
+    {
+      "full_path": "araco - tibia v2 v17(Mirror):3",
+      "component_name": "araco - tibia v2 v17(Mirror)",
+      "rule_id": "two_leg_servos_in_tibia_assembly",
+      "raw_mass_kg": 0.6930530172242432,
+      "raw_volume_m3": 8.828700856359786e-05,
+      "estimated_mass_kg": 0.12,
+      "estimated_average_density_kg_m3": 1359.2033749060324,
+      "mass_scale_factor": 0.17314692673962198,
+      "method_details": {
+        "method": "fixed_mass",
+        "replacement_component_mass_kg": 0.12
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.1533237402273372,
+        "y": -0.20820931700951273,
+        "z": 0.013064056637412773
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.005501342864827506,
+        "yy": 0.003109167260977938,
+        "zz": 0.008075219054503967,
+        "xy": -0.003847028571424849,
+        "yz": 0.00024972874349573693,
+        "xz": 0.00018584621368430098
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 0.00029033944376033363,
+        "i2": 0.00029286209515176463,
+        "i3": 1.533758155092571e-05
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.8383831354917699,
+          "y": -0.5448317442430038,
+          "z": -0.01649510800552553
+        },
+        "y_axis": {
+          "x": 0.502567618137446,
+          "y": 0.7843558905719527,
+          "z": -0.3636091667226401
+        },
+        "z_axis": {
+          "x": 0.21104385165799583,
+          "y": 0.29655388614921996,
+          "z": 0.9314055428690301
+        }
+      }
+    },
+    {
+      "full_path": "araco - end v2 v12(Mirror):1",
+      "component_name": "araco - end v2 v12(Mirror)",
+      "rule_id": "keep_printed_foot_link",
+      "raw_mass_kg": 0.02280187354392422,
+      "raw_volume_m3": 1.7954231136948202e-05,
+      "estimated_mass_kg": 0.02280187354392422,
+      "estimated_average_density_kg_m3": 1270.0,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.28031360261947436,
+        "y": -6.731463719367774e-05,
+        "z": -0.06952065847616848
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.00012198740980857548,
+        "yy": 0.0019084355428169463,
+        "zz": 0.001798395861273456,
+        "xy": -4.3025330228092964e-07,
+        "yz": -6.78811888892934e-07,
+        "xz": -0.00044435347697871887
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 1.1783070847986288e-05,
+        "i2": 6.062013627813045e-06,
+        "i3": 7.217980296101147e-06
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 1.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 0.755732279820924,
+          "z": 0.654880692368212
+        },
+        "z_axis": {
+          "x": 0.0,
+          "y": -0.654880692368212,
+          "z": 0.755732279820924
+        }
+      }
+    },
+    {
+      "full_path": "araco - end v2 v12(Mirror):2",
+      "component_name": "araco - end v2 v12(Mirror)",
+      "rule_id": "keep_printed_foot_link",
+      "raw_mass_kg": 0.02280187354392422,
+      "raw_volume_m3": 1.7954231136948202e-05,
+      "estimated_mass_kg": 0.02280187354392422,
+      "estimated_average_density_kg_m3": 1270.0,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.16836844723481495,
+        "y": 0.223960971065591,
+        "z": -0.06952065846625793
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0012622267766291262,
+        "yy": 0.0007666166956287216,
+        "zz": 0.0017968163809686229,
+        "xy": 0.0008573437267905002,
+        "yz": 0.0003546915042430573,
+        "xz": -0.00026736399989717456
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 6.062013627812663e-06,
+        "i2": 1.1783070847986312e-05,
+        "i3": 7.2179802961008815e-06
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.6157360849983564,
+          "y": 0.438178448116967,
+          "z": 0.6548806923682384
+        },
+        "y_axis": {
+          "x": -0.5798064470936847,
+          "y": 0.8147542475548061,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -0.5335668257486545,
+          "y": -0.3797040475122806,
+          "z": 0.7557322798209011
+        }
+      }
+    },
+    {
+      "full_path": "araco - end v2 v12(Mirror):3",
+      "component_name": "araco - end v2 v12(Mirror)",
+      "rule_id": "keep_printed_foot_link",
+      "raw_mass_kg": 0.02280187354392422,
+      "raw_volume_m3": 1.7954231136948202e-05,
+      "estimated_mass_kg": 0.02280187354392422,
+      "estimated_average_density_kg_m3": 1270.0,
+      "mass_scale_factor": 1.0,
+      "method_details": {
+        "method": "keep_raw"
+      },
+      "center_of_mass_root_fusion_m": {
+        "x": -0.168258757568088,
+        "y": -0.22403902991102423,
+        "z": -0.06952065846625774
+      },
+      "rough_scaled_fusion_world_xyz_moments_kg_m2": {
+        "available": true,
+        "xx": 0.0012630241664148463,
+        "yy": 0.0007657747472636626,
+        "zz": 0.0017967718223892853,
+        "xy": -0.0008570830530394483,
+        "yz": -0.0003554786631414278,
+        "xz": -0.00026625787032601416
+      },
+      "rough_scaled_principal_moments_kg_m2": {
+        "available": true,
+        "i1": 6.062013627812162e-06,
+        "i2": 1.1783070847986151e-05,
+        "i3": 7.217980296100303e-06
+      },
+      "principal_axes_root_fusion": {
+        "available": true,
+        "x_axis": {
+          "x": 0.6157360854707407,
+          "y": -0.438178447453352,
+          "z": -0.6548806923681129
+        },
+        "y_axis": {
+          "x": 0.5798064462154926,
+          "y": 0.8147542481797571,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": 0.5335668261578206,
+          "y": -0.3797040469370968,
+          "z": 0.7557322798210099
+        }
+      }
+    }
+  ],
+  "missing_base_proxies": [
+    {
+      "id": "pisugar_3_plus",
+      "component": "PiSugar_3_Plus_installed",
+      "mass_kg": 0.15,
+      "pose": "unresolved",
+      "include_in_total_mass": true,
+      "include_in_inertia": false
+    },
+    {
+      "id": "main_servo_battery",
+      "component": "main_7_4V_7200mAh_battery",
+      "mass_kg": 0.4,
+      "pose": "unresolved",
+      "include_in_total_mass": true,
+      "include_in_inertia": false
+    },
+    {
+      "id": "servo_controller",
+      "component": "Hiwonder_LSC_32",
+      "mass_kg": 0.026,
+      "pose": "unresolved",
+      "include_in_total_mass": true,
+      "include_in_inertia": false
+    }
+  ],
+  "component_quantities_used": {
+    "Raspberry_Pi_5_installed": 1,
+    "DS3235_servo": 19,
+    "ORBBEC_Gemini_335": 1,
+    "Raspberry_Pi_Camera_Module_3": 1,
+    "DS5160_servo": 6,
+    "PiSugar_3_Plus_installed": 1,
+    "main_7_4V_7200mAh_battery": 1,
+    "Hiwonder_LSC_32": 1
+  },
+  "totals": {
+    "raw_direct_occurrence_mass_kg": 9.804327757482826,
+    "estimated_direct_occurrence_mass_kg": 3.348392774795984,
+    "missing_base_proxy_mass_kg": 0.5760000000000001,
+    "estimated_robot_mass_kg": 3.924392774795984
+  },
+  "aggregate_center_of_mass_and_inertia": {
+    "available": false,
+    "reason": "Missing base proxy poses and per-body properties prevent an honest aggregate correction. Resolve them when producing canonical link inertias."
+  }
+}
