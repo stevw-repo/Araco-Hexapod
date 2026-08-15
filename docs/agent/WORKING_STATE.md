@@ -4,7 +4,7 @@ Updated: 2026-08-15
 
 ## Current goal
 
-Preserve all project material, replace the workstation environment that is incompatible with the selected ROS baseline with Ubuntu 24.04, validate ROS 2 Jazzy/Gazebo Harmonic, and then complete the architecture brief before implementing the greenfield rebuild.
+Complete and review the robot-description contract from the restored Fusion and legacy evidence before beginning the greenfield implementation.
 
 ## Completed
 
@@ -38,23 +38,31 @@ Preserve all project material, replace the workstation environment that is incom
 - Inspected the workstation's existing dual-boot partition layout on 2026-08-15. The current Ubuntu root is `/dev/nvme0n1p6` (149.5 GiB); Windows, EFI, and recovery data occupy `p1` through `p5` and must be preserved.
 - Established that Ubuntu 24.04 installation should occur before ROS package implementation, but only after an off-partition backup and restore verification.
 - Identified two installation blockers: the new repository's continuity files are untracked, and the approximately 2.2 GiB legacy workspace is not version-controlled.
+- Completed the clean transition to Ubuntu 24.04.4 while preserving Windows and restored the new repository, legacy workspace, and Fusion exports.
+- Installed and validated the NVIDIA driver, ROS 2 Jazzy Desktop, `rosdep`, Gazebo Harmonic, `ros_gz`, `ros2_control`, and `gz_ros2_control`; ROS Jazzy is sourced automatically in new Bash terminals.
+- Passed a headless ROS–Gazebo integration test with simulated joint-state feedback and commanded trajectory motion; no physical robot commands were issued.
+- Inventoried the current F3Z/STEP assembly and reconciled it against the legacy URDF, inverse kinematics, and servo mapping.
+- Produced a proposed 26-primary-link/25-joint naming and ownership contract in `ROBOT_DESCRIPTION_MANIFEST.md`; no meshes, URDF/Xacro, controllers, or implementation packages have been generated.
+- User confirmed forward toward the gimbal/cameras, front/middle/rear leg numbering, inclusion of Raspberry Pi Camera Module 3, Gemini ownership under the yaw gimbal, and the proposed descriptive names.
 
 ## In progress
 
-- Prepare a handoff-safe workstation transition to Ubuntu 24.04.4; no installation or data movement has yet been authorized or performed.
+- Review and resolve the proposed robot-description manifest before authorizing implementation.
 
 ## Blockers
 
 - The simulator-side architecture can be designed before hardware details are complete, but the later hardware boundary still requires controller identification, joint limits, and safety behavior.
 - Hardware actuation must not be tested until servo mappings, joint limits, safe poses, power isolation, emergency-stop behavior, and test procedure are explicitly validated.
 - “Freeze on fault” is not yet a defined safe state: an open-loop hexapod holding its last pose may remain loaded, while removing PWM/servo power may cause collapse.
-- Ubuntu reinstallation is blocked until the new repository, untracked continuity files, legacy workspace, and other required Linux-side data are backed up outside `/dev/nvme0n1p6` and the backup is verified.
+- The STEP export contains placements and geometry but no joint, material, mass, or inertia definitions. Exact pivots, axes, zeros, safe limits, and physical properties require Fusion joint data or direct measurements.
+- The proposed base datum and STEP-to-REP-103 conversion require visual/user confirmation; the STEP gimbal component origin cannot be treated as its yaw pivot.
 
 ## Files changed in the new repository
 
 - `docs/agent/CONTEXT.md`
 - `docs/agent/DECISIONS.md`
 - `docs/agent/WORKING_STATE.md`
+- `docs/agent/ROBOT_DESCRIPTION_MANIFEST.md`
 
 ## Validation performed
 
@@ -64,15 +72,17 @@ Preserve all project material, replace the workstation environment that is incom
 - Read-only workstation OS/CPU/RAM/GPU/ROS/disk inventory
 - Current ROS 2 Jazzy, `ros2_control`, Isaac Sim, Isaac Lab, and Hiwonder primary documentation reviewed
 - Current NVIDIA Brev instance lifecycle, GPU catalog, Isaac Sim Brev deployment, livestream security, and URDF importer documentation reviewed
+- NVIDIA driver, ROS 2 Jazzy, `rosdep`, Gazebo Harmonic, and ROS–Gazebo integration validated on Ubuntu 24.04.4
+- Read-only F3Z metadata and STEP product/occurrence/placement inventory of `/home/stevw-s14/Desktop/araco-assembly-files`
+- Legacy 25-joint tree, geometry, servo-ID/model, and calibration mapping reconciled with the CAD occurrences
+- Proposed manifest checked for exactly 25 unique legacy joint names, servo IDs, and STEP occurrences
 - No legacy files changed; no robot commands issued; no build or hardware test performed
 
 ## Exact next steps
 
-1. Copy the complete new repository (including untracked `docs/agent/`) and `/home/stevw-s14/Desktop/Araco` to storage that will survive replacement of `/dev/nvme0n1p6`; preserve any other required Linux-side personal/configuration data and verify restoration from the copy.
-2. Confirm Windows still boots, preserve the Windows/BitLocker recovery information if applicable, download the official Ubuntu 24.04.4 desktop amd64 image, verify its checksum, and live-boot it to test essential laptop hardware.
-3. Clean-install Ubuntu 24.04 only into the existing Linux partition while preserving EFI, Windows, and recovery partitions. Do not select an erase-entire-disk option.
-4. Install and validate the NVIDIA driver, ROS 2 Jazzy, Gazebo Harmonic/Jazzy integration, RViz, development tools, and joystick support. Do not install Isaac Sim/Lab or a standalone CUDA toolkit yet.
-5. Restore the repositories and verify the continuity and legacy files before any project implementation begins.
-6. Resolve the Fusion 360 → repository model → simulator artifacts workflow and define simulator-model validation criteria.
-7. Define the deterministic locomotion, body-control, command, state, and safety architecture, then finish quantified simulator, SLAM, and navigation acceptance criteria.
-8. Produce the simulator-first architecture and phased delivery brief without writing implementation code; scaffold packages only after the user explicitly authorizes code.
+1. Open the hashed F3Z snapshot in Fusion 360 and inspect both `Joints` and `As-Built Joints`; capture their complete contents without modifying the assembly.
+2. Depending on whether usable Fusion joints exist, export or establish the 25 revolute joint pivots, axes, rest angles, and any motion limits.
+3. Confirm CAD materials and obtain mass, center-of-mass, and inertia data for each proposed rigid body; resolve the legacy `L1E1` mass outlier.
+4. Validate servo IDs, models, directions, finite safe limits, neutral pose, and startup behavior without commanding the physical robot.
+5. Accept or revise the robot-description contract.
+6. Only after explicit authorization, scaffold `araco_description` and create reviewed Xacro, visual meshes, simplified collision geometry, and simulator overlays.

@@ -1,0 +1,55 @@
+# Araco Robot Description Exporter
+
+This Autodesk Fusion Python script reads the active assembly and writes one JSON
+inventory. It does not edit the design, drive joints, export meshes, or interact
+with the physical robot.
+
+## What it exports
+
+- All regular and as-built joints flattened into the root assembly context.
+- Joint occurrence pairs, geometry coordinate systems, motion axes, current
+  values, rest values, and configured limits.
+- Full occurrence paths and root-frame transforms.
+- Direct body material and appearance names for every occurrence.
+- High-accuracy physical properties for the complete assembly and each direct
+  root occurrence: mass, center of mass, principal axes/moments, and Fusion XYZ
+  moments of inertia.
+
+The report uses metres, radians, kilograms, and `kg·m²` except where a field is
+explicitly marked as a Fusion internal value. Fusion entity tokens are included
+only as snapshot identifiers; they are not durable names.
+
+## Run it on Windows
+
+1. Copy the complete `AracoRobotDescriptionExporter` folder to Windows.
+2. Open `araco - assembly v25` in Fusion and leave the root assembly active.
+3. Choose **Utilities → Scripts and Add-Ins**.
+4. In **Scripts**, use the `+` command to link an existing script and select the
+   `AracoRobotDescriptionExporter` folder. If Fusion asks for a file instead,
+   select `AracoRobotDescriptionExporter.py`.
+5. Select **AracoRobotDescriptionExporter** and choose **Run**.
+6. In the Save dialog, write the JSON to the shared `DATA-ST` drive. A useful
+   destination is:
+
+   ```text
+   DATA-ST\New folder\araco_v25_robot_description_export.json
+   ```
+
+7. Wait for the completion dialog. Physical-property calculations for the
+   detailed Gemini assembly may take some time.
+8. Return to Ubuntu and provide the JSON path to Codex.
+
+Expected for the current screenshot snapshot: 24 regular revolute joints, zero
+as-built joints, and 32 direct root occurrences. If Fusion reports an error,
+capture the entire error dialog and do not alter the assembly to work around it.
+
+## Alternative installation location
+
+Fusion automatically discovers scripts placed in this Windows directory:
+
+```text
+%APPDATA%\Autodesk\Autodesk Fusion\API\Scripts\AracoRobotDescriptionExporter
+```
+
+The folder, Python file, and manifest share the same base name as required by
+Fusion's script loader.
