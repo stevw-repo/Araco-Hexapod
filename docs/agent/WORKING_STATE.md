@@ -44,18 +44,27 @@ Complete and review the robot-description contract from the restored Fusion and 
 - Inventoried the current F3Z/STEP assembly and reconciled it against the legacy URDF, inverse kinematics, and servo mapping.
 - Produced a proposed 26-primary-link/25-joint naming and ownership contract in `ROBOT_DESCRIPTION_MANIFEST.md`; no meshes, URDF/Xacro, controllers, or implementation packages have been generated.
 - User confirmed forward toward the gimbal/cameras, front/middle/rear leg numbering, inclusion of Raspberry Pi Camera Module 3, Gemini ownership under the yaw gimbal, and the proposed descriptive names.
+- Created and ran a read-only Fusion API exporter against cloud design version 25. It confirmed 24 healthy revolute leg joints, exact occurrence pairs and pivots, no as-built joints, and no gimbal-yaw definition.
+- Confirmed the Fusion-to-REP-103 axis conversion and all six four-link leg chains from the exported joint data.
+- Rejected the exported physical properties for robot-description use: all 732 B-Rep body occurrences are assigned Steel, producing an invalid total mass of 15.552194 kg.
+- User created a Fusion `ros-description v1` working copy and added a revolute as-built joint from the moving gimbal to the fixed gimbal mount.
+- Validated the second API export: 24 regular leg joints plus one as-built gimbal joint, all revolute; the gimbal pivot is `[-0.005, 0, 0.08435] m` in the ROS base frame with axis `+Z`.
+- Validated the replacement STEP hash and structure. AP214 still contains 236 products, 255 mapped occurrences, and no Fusion joint semantics, as expected.
+- User accepted the legacy-compatible `base_link` datum at Fusion root coordinates `[-0.313602, 0, 8.072807] mm`.
+- User confirmed the current Fusion pose represents the intended safe standing/home pose but is not physically exact.
+- Reconstructed the legacy default standing IK and matched it to the converted Fusion values within `4.5e-10 rad`; recorded the vector as simulation-only `nominal_standing_reference_v0`, not an authorized hardware command.
 
 ## In progress
 
-- Review and resolve the proposed robot-description manifest before authorizing implementation.
+- Resolve physical zero validation, finite limits, and physical properties before authorizing Xacro generation.
 
 ## Blockers
 
 - The simulator-side architecture can be designed before hardware details are complete, but the later hardware boundary still requires controller identification, joint limits, and safety behavior.
 - Hardware actuation must not be tested until servo mappings, joint limits, safe poses, power isolation, emergency-stop behavior, and test procedure are explicitly validated.
 - “Freeze on fault” is not yet a defined safe state: an open-loop hexapod holding its last pose may remain loaded, while removing PWM/servo power may cause collapse.
-- The STEP export contains placements and geometry but no joint, material, mass, or inertia definitions. Exact pivots, axes, zeros, safe limits, and physical properties require Fusion joint data or direct measurements.
-- The proposed base datum and STEP-to-REP-103 conversion require visual/user confirmation; the STEP gimbal component origin cannot be treated as its yaw pivot.
+- All 25 joint parent/child pairs, pivots, and axes are now available from Fusion.
+- All Fusion lower and upper joint limits are disabled, and the current all-Steel material assignment invalidates exported masses and inertias.
 
 ## Files changed in the new repository
 
@@ -63,6 +72,9 @@ Complete and review the robot-description contract from the restored Fusion and 
 - `docs/agent/DECISIONS.md`
 - `docs/agent/WORKING_STATE.md`
 - `docs/agent/ROBOT_DESCRIPTION_MANIFEST.md`
+- `tools/fusion/AracoRobotDescriptionExporter/AracoRobotDescriptionExporter.py`
+- `tools/fusion/AracoRobotDescriptionExporter/AracoRobotDescriptionExporter.manifest`
+- `tools/fusion/AracoRobotDescriptionExporter/README.md`
 
 ## Validation performed
 
@@ -76,13 +88,18 @@ Complete and review the robot-description contract from the restored Fusion and 
 - Read-only F3Z metadata and STEP product/occurrence/placement inventory of `/home/stevw-s14/Desktop/araco-assembly-files`
 - Legacy 25-joint tree, geometry, servo-ID/model, and calibration mapping reconciled with the CAD occurrences
 - Proposed manifest checked for exactly 25 unique legacy joint names, servo IDs, and STEP occurrences
+- Fusion API JSON export validated: 24 healthy revolute joints, zero as-built joints, 32 direct root occurrences, 269 total occurrences, and coincident joint geometry pairs
+- Fusion joint names `Revolute 2` through `Revolute 25` mapped uniquely to all 24 canonical leg joints; gimbal yaw confirmed absent
+- Exporter Python syntax and Fusion manifest validated locally; the only v0.1.0 report warnings were harmless reads of an unsupported occurrence property, removed in v0.1.1
+- Second Fusion API export validated: 25 total revolute definitions, including the gimbal-to-mount as-built joint on Fusion `+Z`
+- Working-copy STEP re-export hashed and checked for product, occurrence, unit, and kinematic-entity counts
 - No legacy files changed; no robot commands issued; no build or hardware test performed
 
 ## Exact next steps
 
-1. Open the hashed F3Z snapshot in Fusion 360 and inspect both `Joints` and `As-Built Joints`; capture their complete contents without modifying the assembly.
-2. Depending on whether usable Fusion joints exist, export or establish the 25 revolute joint pivots, axes, rest angles, and any motion limits.
-3. Confirm CAD materials and obtain mass, center-of-mass, and inertia data for each proposed rigid body; resolve the legacy `L1E1` mass outlier.
+1. Validate the derived canonical zero offsets and positive directions against physical assembly references without commanding the robot.
+2. Establish finite mechanical position limits without commanding the physical robot.
+3. Correct and validate CAD materials, rerun physical properties, and resolve the legacy `L1E1` mass outlier.
 4. Validate servo IDs, models, directions, finite safe limits, neutral pose, and startup behavior without commanding the physical robot.
 5. Accept or revise the robot-description contract.
 6. Only after explicit authorization, scaffold `araco_description` and create reviewed Xacro, visual meshes, simplified collision geometry, and simulator overlays.

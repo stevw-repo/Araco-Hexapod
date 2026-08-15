@@ -39,9 +39,10 @@ only as snapshot identifiers; they are not durable names.
    detailed Gemini assembly may take some time.
 8. Return to Ubuntu and provide the JSON path to Codex.
 
-Expected for the current screenshot snapshot: 24 regular revolute joints, zero
-as-built joints, and 32 direct root occurrences. If Fusion reports an error,
-capture the entire error dialog and do not alter the assembly to work around it.
+Expected for Fusion design version 25: 24 regular revolute joints, zero as-built
+joints, 32 direct root occurrences, and 269 total occurrences. If Fusion reports
+an error, capture the entire error dialog and do not alter the assembly to work
+around it.
 
 ## Alternative installation location
 

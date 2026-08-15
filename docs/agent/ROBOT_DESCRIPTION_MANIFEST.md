@@ -26,6 +26,10 @@ The following facts were confirmed by the user on 2026-08-15:
   operational robot description.
 - Gemini 335 rotates with the yaw gimbal.
 - The descriptive canonical link and joint names proposed here are accepted.
+- The legacy-compatible `base_link` datum at Fusion root coordinates
+  `[-0.313602, 0, 8.072807] mm` is accepted.
+- The current Fusion pose represents the intended safe standing/home pose, but
+  the user explicitly identifies it as approximate rather than physically exact.
 
 ## Source snapshot
 
@@ -33,6 +37,9 @@ The following facts were confirmed by the user on 2026-08-15:
 |---|---|---|
 | `araco - assembly.f3z` | Fusion CAD authority; root design version 25 | `51589fd704eb06b0ef7c4cefef5509b2bfebb29367338e4f5dabbc158debde6d` |
 | `araco - assembly.step` | Read-only AP214 product, geometry, and placement inventory | `cfe5774fb9f66f6c2adae8afc182e68a86a6a1b4fd5318eb7af5d6c6c76150d9` |
+| Initial Fusion API JSON export | Read-only version-25 inventory before gimbal joint | `54c6b29580641dd56b63c2912185a8132895e42ba09bd947c8bb09d41d19d582` |
+| `araco - assembly ros-description v1.step` | AP214 export of the Fusion working copy after adding gimbal yaw | `4e1c14424110d750c2290d1556cfbb3f521503b0eff847f33f3814402732ea04` |
+| Working-copy Fusion API JSON export | Read-only 25-joint inventory after adding gimbal yaw | `17be93c81e8773dff7ddfba7c48ec3938c40286a567877eb77b91117a16f057e` |
 | Legacy `Araco.urdf` | Prior 26-link/25-joint topology, transforms, and inertial estimates | Not a new-model authority |
 | Legacy `algo.py` | Prior link lengths, leg ordering, and commanded joint order | Behavioral reference only |
 | Legacy `servodriver.py` | Prior servo IDs, signs, offsets, and PWM calibration | Unverified hardware reference |
@@ -63,6 +70,98 @@ gimbal mount, Raspberry Pi 5, Gemini 335, and Raspberry Pi camera.
   dynamics by itself.
 - The STEP assembly is a placement graph, not an articulated leg tree: all 24
   leg components are direct children of the assembly root.
+- The working-copy STEP re-export still has 236 products and 255 mapped assembly
+  occurrences, and still contains no kinematic-pair or mechanism entities. This
+  is expected: the new Fusion as-built joint is evidenced by the API JSON, not
+  by AP214 STEP.
+
+## Fusion API inventory findings
+
+The read-only exporter ran against Fusion application `2704.1.53`. The initial
+cloud design version 25 reported 24 regular joints and zero as-built joints. The
+`ros-description v1` working copy now reports 24 regular joints plus one
+revolute as-built joint, with 32 direct root occurrences and 269 total Fusion
+occurrences.
+
+- All 24 joints are healthy revolute joints with coincident geometry origins;
+  the largest reported separation between the two sides of a joint is about
+  `3.1e-15 m`, numerical noise only.
+- Every joint connects one leg stage to its expected predecessor. The export
+  therefore confirms all six `coxa → femur → tibia → foot` chains.
+- The new as-built joint `Revolute 27` connects `araco - gimbal v5 v40:1` to
+  `araco - gimbal_mount v1 v25:1`. It maps canonically to
+  `gimbal_yaw_joint`; its raw Fusion name is not part of the ROS interface.
+- No minimum or maximum motion limit is enabled on any joint. Rest values are
+  enabled on 23 of 25 joints, but they are assembly-pose metadata rather than
+  validated mechanical limits.
+- All 732 exported B-Rep body occurrences report material `Steel`. The resulting
+  total mass is `15.552194 kg` with average density `7850 kg/m³`. These physical
+  properties are invalid for the mixed-material robot and must not enter URDF.
+
+### Gimbal yaw from the Fusion working copy
+
+The as-built joint supplies the previously missing geometry:
+
+```text
+Fusion root origin: [-0.000313602045, -0.004999999925, 0.092422806813] m
+Fusion root axis:   [0, 0, +1]
+```
+
+Using the accepted base datum and Fusion-to-ROS rotation, the
+canonical joint is:
+
+```text
+gimbal_yaw_joint origin in base_link: [-0.005, 0, 0.08435] m
+gimbal_yaw_joint axis:                [0, 0, +1]
+```
+
+Its Fusion position limits and rest value are disabled. The CAD geometry is now
+complete, but safe limits and the canonical zero remain unresolved.
+
+## Nominal standing pose evidence
+
+The Fusion working-copy joint values reproduce the legacy controller's default
+standing solution after applying the evident CAD-to-canonical offsets and signs:
+
+```text
+q_coxa  = fusion_rotation - fusion_rest
+q_femur = fusion_rotation
+q_tibia = -fusion_rotation
+q_foot  = fusion_rotation
+q_gimbal_yaw = fusion_rotation
+```
+
+The legacy solution is generated from a `280 mm` foot radius, `-80 mm` body
+height, terminal vector `[0, 0, 50] mm`, and link lengths
+`43/120/120/50 mm`. The largest numerical difference between that solution and
+the converted Fusion pose is below `4.5e-10 rad`.
+
+| Leg | Coxa (rad / deg) | Femur (rad / deg) | Tibia (rad / deg) | Foot (rad / deg) |
+|---|---:|---:|---:|---:|
+| Left front `L1` | `0.166907 / 9.563°` | `0.749681 / 42.954°` | `-1.947935 / -111.608°` | `-0.372542 / -21.345°` |
+| Left middle `L2` | `0 / 0°` | `0.694188 / 39.774°` | `-1.791009 / -102.617°` | `-0.473975 / -27.157°` |
+| Left rear `L3` | `-0.166907 / -9.563°` | `0.749681 / 42.954°` | `-1.947935 / -111.608°` | `-0.372542 / -21.345°` |
+| Right front `R1` | `-0.166907 / -9.563°` | `0.749681 / 42.954°` | `-1.947935 / -111.608°` | `-0.372542 / -21.345°` |
+| Right middle `R2` | `0 / 0°` | `0.694188 / 39.774°` | `-1.791009 / -102.617°` | `-0.473975 / -27.157°` |
+| Right rear `R3` | `0.166907 / 9.563°` | `0.749681 / 42.954°` | `-1.947935 / -111.608°` | `-0.372542 / -21.345°` |
+
+Gimbal yaw is `0 rad`. This vector is accepted as
+`nominal_standing_reference_v0` for visualization, kinematic regression, and
+simulator initialization. Because the user states that the CAD pose is not
+fully accurate and the physical open-loop robot has not been revalidated, it
+must not yet be treated as an authorized hardware startup command.
+
+### Fusion joint-name reconciliation
+
+| Stage | Right middle `R2` | Right front `R1` | Right rear `R3` | Left middle `L2` | Left front `L1` | Left rear `L3` |
+|---|---|---|---|---|---|---|
+| Coxa | `Revolute 2` | `Revolute 3` | `Revolute 4` | `Revolute 5` | `Revolute 6` | `Revolute 7` |
+| Femur | `Revolute 8` | `Revolute 9` | `Revolute 10` | `Revolute 11` | `Revolute 12` | `Revolute 13` |
+| Tibia | `Revolute 14` | `Revolute 15` | `Revolute 16` | `Revolute 17` | `Revolute 18` | `Revolute 19` |
+| Foot | `Revolute 20` | `Revolute 21` | `Revolute 22` | `Revolute 23` | `Revolute 24` | `Revolute 25` |
+
+The raw Fusion names remain snapshot evidence only. The accepted descriptive ROS
+names remain the canonical interface.
 
 ## Rigid-body classification
 
@@ -82,45 +181,45 @@ URDF link count but do not add actuated degrees of freedom.
 
 ## Proposed base-frame conversion
 
-The CAD and legacy data indicate that Fusion/STEP uses `+X` toward the robot's
-right side, `+Y` toward the front, and `+Z` upward. The proposed conversion to
-REP-103 is:
+The top-view screenshot and Fusion joint coordinates confirm that Fusion uses
+`+X` toward the robot's right side, `+Y` toward the confirmed physical front,
+and `+Z` upward. The accepted axis conversion to REP-103 is:
 
 ```text
-x_ros =  y_step
-y_ros = -x_step
-z_ros =  z_step
+x_ros =  y_fusion
+y_ros = -x_fusion
+z_ros =  z_fusion
 ```
 
-All six STEP coxa occurrences share a CAD X offset of approximately
-`-0.313602 mm`. Removing that common offset makes their XY positions agree with
+The actual Fusion coxa joint centers confirm the common CAD X offset of
+approximately `-0.313602 mm`. Removing it makes their XY positions agree with
 the legacy mount pattern to the available precision.
 
-For continuity with the legacy coxa joint height, a provisional `base_link`
-datum in STEP coordinates is:
+For continuity with the legacy coxa joint height, the accepted `base_link`
+datum in Fusion root coordinates is:
 
 ```text
-[-0.313602, 0.0, 33.322807] mm
+[-0.313602, 0.0, 8.072807] mm
 ```
 
-This maps the STEP coxa occurrence Z coordinate `6.572807 mm` to the legacy
-coxa-joint Z coordinate `-26.75 mm`. This datum is an inference, not a Fusion
-joint definition, and must be visually checked against the intended body frame.
+This maps the actual Fusion coxa joint-center Z coordinate `-18.677193 mm` to
+the legacy coxa-joint Z coordinate `-26.75 mm`. It supersedes the earlier
+placement-only Z inference. The datum is now accepted and may be changed only
+through an explicit robot-description contract revision.
 
 ### Proposed coxa mount origins
 
-These ROS-frame positions match both the normalized STEP placements and the
-legacy URDF. They remain provisional until the REP-103 front direction and body
-datum are confirmed.
+These ROS-frame positions now match both the exported Fusion joint centers and
+the legacy URDF under the accepted `base_link` datum.
 
-| Leg | Legacy code | Proposed coxa origin in `base_link` (m) | STEP occurrence |
-|---|---|---|---|
-| Left front | `L1` | `[0.081819805, 0.066819805, -0.02675]` | mirrored coxa `:2` (`#1043`) |
-| Left middle | `L2` | `[0.0, 0.09, -0.02675]` | mirrored coxa `:1` (`#1042`) |
-| Left rear | `L3` | `[-0.081819805, 0.066819805, -0.02675]` | mirrored coxa `:3` (`#1044`) |
-| Right front | `R1` | `[0.081819805, -0.066819805, -0.02675]` | right coxa `:2` (`#1031`) |
-| Right middle | `R2` | `[0.0, -0.09, -0.02675]` | right coxa `:1` (`#1030`) |
-| Right rear | `R3` | `[-0.081819805, -0.066819805, -0.02675]` | right coxa `:3` (`#1032`) |
+| Leg | Legacy code | Proposed coxa origin in `base_link` (m) | Fusion joint | STEP occurrence |
+|---|---|---|---|---|
+| Left front | `L1` | `[0.081819805, 0.066819805, -0.02675]` | `Revolute 6` | mirrored coxa `:2` (`#1043`) |
+| Left middle | `L2` | `[0.0, 0.09, -0.02675]` | `Revolute 5` | mirrored coxa `:1` (`#1042`) |
+| Left rear | `L3` | `[-0.081819805, 0.066819805, -0.02675]` | `Revolute 7` | mirrored coxa `:3` (`#1044`) |
+| Right front | `R1` | `[0.081819805, -0.066819805, -0.02675]` | `Revolute 3` | right coxa `:2` (`#1031`) |
+| Right middle | `R2` | `[0.0, -0.09, -0.02675]` | `Revolute 2` | right coxa `:1` (`#1030`) |
+| Right rear | `R3` | `[-0.081819805, -0.066819805, -0.02675]` | `Revolute 4` | right coxa `:3` (`#1032`) |
 
 The current CAD gimbal component origin does not agree with the legacy gimbal
 yaw origin after applying the same Z datum: it gives approximately `56.6 mm`
@@ -234,41 +333,38 @@ mapping keys.
   physical explanation.
 - The current STEP contains no mass or material records, so updated inertias must
   come from validated Fusion physical properties or measured masses.
+- The Fusion API export cannot currently supply those updated inertias because
+  every exported body is assigned Steel, producing an impossible `15.552194 kg`
+  assembly mass.
 
 ## Fields intentionally unresolved
 
-The following facts cannot be safely inferred from this STEP placement graph:
+The following facts remain unresolved after reconciling STEP and the Fusion API
+export:
 
-1. Visual confirmation that Fusion `+Y` points toward the gimbal/cameras and
-   therefore maps to ROS `+X`; the physical forward direction itself is
-   confirmed.
-2. Exact joint pivot origins and axes from the current Fusion assembly,
-   especially gimbal yaw.
-3. Definition of zero angle and positive motion for every joint in the canonical
-   local frames.
-4. Safe mechanical lower and upper joint limits.
-5. Maximum credible velocity and effort limits for simulation and control.
-6. Validation of every servo ID, model, direction, and PWM calibration against
+1. Physical validation of the derived canonical zero offsets and positive-motion
+   directions for all 25 joints.
+2. Safe mechanical lower and upper joint limits.
+3. Maximum credible velocity and effort limits for simulation and control.
+4. Validation of every servo ID, model, direction, and PWM calibration against
    the physical robot.
-7. Intended neutral/home/standing poses and startup pose transition.
-8. Current per-rigid-body mass, center of mass, and inertia tensor.
-9. Exact Raspberry Pi Camera Module 3 frame transforms.
-10. Exact Gemini 335 optical-frame transforms and whether the yaw joint remains
-    locked at gimbal yaw zero for the first SLAM milestone.
-11. Foot collision/contact shape and self-collision exclusions.
+5. Refinement of `nominal_standing_reference_v0` and definition of a safe startup
+   transition after physical validation.
+6. Current per-rigid-body mass, center of mass, and inertia tensor after
+   correcting the all-Steel material assignments.
+7. Exact Raspberry Pi Camera Module 3 frame transforms.
+8. Exact Gemini 335 optical-frame transforms and whether the yaw joint remains
+   locked at gimbal yaw zero for the first SLAM milestone.
+9. Foot collision/contact shape and self-collision exclusions.
 
 ## Evidence needed from Fusion before mesh generation
 
-Open the hashed F3Z snapshot in Fusion 360 and obtain, preferably through one
-repeatable export rather than manual transcription:
+The repeatable exporter now supplies the complete occurrence inventory and all
+25 joint origins and axes. Fusion or direct measurement still needs:
 
-- Full occurrence path for each of the 32 root occurrences.
-- The 25 intended revolute joint definitions, including parent/child occurrence,
-  joint origin, axis, and rest angle.
-- Any configured motion limits.
-- Physical properties for each proposed rigid group after confirming materials:
-  mass, center of mass, and inertia tensor with coordinate frame and units.
-- Named reference points or joint origins for camera and gimbal frames.
+- Validated finite joint limits; current lower and upper limits are disabled.
+- Correct material assignments followed by a new physical-property export.
+- Named reference points or joint origins for both camera optical frames.
 
 If Fusion joints are missing or stale, the same data must be established by
 explicit design dimensions and physical measurements before the model is called
@@ -281,13 +377,15 @@ Before creating `araco_description`, confirm or correct:
 - [x] Descriptive joint/link names in this manifest.
 - [x] Mapping `L1/L2/L3` to left front/middle/rear and `R1/R2/R3` to right
   front/middle/rear.
-- [ ] REP-103 base-frame conversion and `base_link` datum. Physical forward is
-  confirmed toward the gimbal/cameras; the CAD-axis mapping and datum still need
-  visual/dimensional verification.
-- [ ] Four-link chain order `coxa → femur → tibia → foot` for all legs.
+- [x] REP-103 axis conversion; Fusion `+Y` is physical forward and maps to ROS
+  `+X`.
+- [x] `base_link` datum `[-0.313602, 0, 8.072807] mm` in Fusion.
+- [x] Four-link chain order `coxa → femur → tibia → foot` for all legs.
 - [x] Inclusion of the Raspberry Pi camera.
 - [x] Gimbal and Gemini frame ownership.
-- [ ] Joint origins, axes, zeros, and finite safe limits.
+- [x] Parent/child pairs, origins, and axes for all 25 actuated joints.
+- [x] Approximate simulation home pose `nominal_standing_reference_v0`.
+- [ ] Canonical joint zeros and finite safe limits.
 - [ ] Servo IDs, models, directions, and calibration evidence.
 - [ ] Mass/inertia evidence and resolution of the `L1E1` mass outlier.
 

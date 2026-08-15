@@ -13,7 +13,7 @@ import adsk.fusion
 
 
 EXPORTER_NAME = "Araco Robot Description Exporter"
-EXPORTER_VERSION = "0.1.0"
+EXPORTER_VERSION = "0.1.1"
 SCHEMA_VERSION = 1
 EXPECTED_ACTUATED_JOINTS = 25
 
@@ -286,7 +286,6 @@ def _occurrence_inventory(occurrence, include_bodies=True):
         "component_part_number": _get(component, "partNumber", errors),
         "component_description": _get(component, "description", errors),
         "is_grounded": bool(_get(occurrence, "isGrounded", errors, False)),
-        "is_suppressed": bool(_get(occurrence, "isSuppressed", errors, False)),
         "is_visible": bool(_get(occurrence, "isVisible", errors, False)),
         "child_occurrence_count": len(_items(child_occurrences)),
         "transform_root_fusion": _coordinate_system(transform, errors, "transform2"),
