@@ -10,9 +10,11 @@ licensing, and structural tests. **No Gazebo gate is claimed.** The repository
 still has no robot model, runtime configuration, Gazebo world/launch path,
 motion-capable node, physical profile, or hardware backend.
 
-The user authorized the completed MIT Phase 0 tree to be committed and pushed
-to `origin/main` on 2026-08-16. This working-state file is part of that
-checkpoint. The earlier GPL-licensed pre-Phase-0 architecture commit
+The completed MIT Phase 0 implementation was committed as
+`2a1b3dcd2545b95570c3b8428b0dabfac37f6f95` and pushed to `origin/main` on
+2026-08-16 using `stevw <steven060520@gmail.com>`. Local `HEAD`, the tracking
+reference, and the remote branch were verified equal after the push. The
+earlier GPL-licensed pre-Phase-0 architecture commit
 `868d7fc8bff4d2f99c1e3bb88665735667d83b72` remains in Git history; the current
 rights holder authorized the MIT relicense and no history rewrite is required.
 
@@ -96,6 +98,5 @@ ordering issue, not a package failure.
 
 ## Exact next step
 
-Verify that the authorized MIT Phase 0 checkpoint is present on `origin/main`.
-After that, stop before Phase 1. Phase 1 / Gate 0 model-and-configuration
-implementation still requires separate authorization.
+Stop before Phase 1. Phase 1 / Gate 0 model-and-configuration implementation
+still requires separate authorization.

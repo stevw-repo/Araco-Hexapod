@@ -342,9 +342,10 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   orderly shutdown, and the simulator-versus-physical robot-description gate.
 - The user explicitly authorized and pushed the licensed pre-Phase-0
   architecture/evidence checkpoint on 2026-08-16. They later authorized Phase
-  0, which now provides all nine package skeletons under `src/`. On 2026-08-16
-  the user separately authorized committing and pushing the completed MIT Phase
-  0 checkpoint to `origin/main`.
+  0, which now provides all nine package skeletons under `src/`. The completed
+  MIT Phase 0 implementation was committed as
+  `2a1b3dcd2545b95570c3b8428b0dabfac37f6f95`, pushed to `origin/main`, and
+  verified against the remote on 2026-08-16.
 
 ## Completed Phase 0 repository foundation
 

@@ -641,7 +641,7 @@ Consequences:
 
 ## 2026-08-16 — Licensed architecture checkpoint before Phase 0
 
-Status: authorized explicitly by the user on 2026-08-16.
+Status: authorized and completed on 2026-08-16.
 
 Decision:
 
@@ -733,7 +733,7 @@ Consequences:
 
 ## 2026-08-16 — MIT Phase 0 checkpoint commit and push
 
-Status: authorized explicitly by the user on 2026-08-16.
+Status: authorized and completed on 2026-08-16.
 
 Decision:
 
@@ -752,3 +752,6 @@ Consequences:
   checkpoint and contain the current MIT license and package foundation.
 - The prior GPL commit remains in history; no history rewrite is authorized or
   required.
+- The Phase 0 implementation checkpoint is
+  `2a1b3dcd2545b95570c3b8428b0dabfac37f6f95`; it was pushed to `origin/main`
+  and verified against the remote branch.
