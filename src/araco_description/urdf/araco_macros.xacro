@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<!-- Copyright 2026 Araco Hexapod contributors -->
+<!-- SPDX-License-Identifier: MIT -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:macro name="araco_dynamic_link" params="name mass com_xyz ixx ixy ixz iyy iyz izz collision_xyz collision_size **visuals">
+    <link name="${name}">
+      <inertial>
+        <origin xyz="${com_xyz}" rpy="0 0 0"/>
+        <mass value="${mass}"/>
+        <inertia ixx="${ixx}" ixy="${ixy}" ixz="${ixz}" iyy="${iyy}" iyz="${iyz}" izz="${izz}"/>
+      </inertial>
+      <xacro:insert_block name="visuals"/>
+      <collision name="${name}_collision">
+        <origin xyz="${collision_xyz}" rpy="0 0 0"/>
+        <geometry>
+          <box size="${collision_size}"/>
+        </geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="araco_frame_link" params="name">
+    <link name="${name}"/>
+  </xacro:macro>
+
+  <xacro:macro name="araco_revolute_joint" params="name parent child xyz rpy axis lower upper velocity effort damping friction">
+    <joint name="${name}" type="revolute">
+      <parent link="${parent}"/>
+      <child link="${child}"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <axis xyz="${axis}"/>
+      <limit lower="${lower}" upper="${upper}" velocity="${velocity}" effort="${effort}"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="araco_fixed_joint" params="name parent child xyz rpy">
+    <joint name="${name}" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${child}"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+  </xacro:macro>
+</robot>

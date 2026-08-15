@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Normalize Gazebo collision sensors into scored whole-robot contacts."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+import rclpy
+from rclpy.executors import ExternalShutdownException
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
+from ros_gz_interfaces.msg import Contacts
+
+
+FEET = (
+    'left_front', 'left_middle', 'left_rear',
+    'right_front', 'right_middle', 'right_rear',
+)
+
+
+class ContactFilter(Node):
+    """Publish only contacts involving each named foot collision."""
+
+    def __init__(self) -> None:
+        super().__init__('contact_filter', namespace='araco/simulation')
+        qos = QoSProfile(depth=5, reliability=ReliabilityPolicy.BEST_EFFORT)
+        self._foot_publishers = {
+            foot: self.create_publisher(Contacts, f'contacts/{foot}', qos)
+            for foot in FEET
+        }
+        self._aggregate = self.create_publisher(Contacts, 'contacts/all', qos)
+        self._latest_foot = {foot: (0, Contacts()) for foot in FEET}
+        self._pending_nonfoot = []
+        self._foot_subscriptions = [
+            self.create_subscription(
+                Contacts, f'/araco/contact_sensor/{foot}',
+                lambda message, name=foot: self._on_foot(name, message), qos)
+            for foot in FEET
+        ]
+        self._nonfoot_subscription = self.create_subscription(
+            Contacts, '/araco/contact_sensor/nonfoot', self._on_nonfoot, qos)
+        self._contact_timer = self.create_timer(0.01, self._publish_contacts)
+
+    def _on_foot(self, foot: str, message: Contacts) -> None:
+        self._latest_foot[foot] = (self.get_clock().now().nanoseconds, message)
+
+    def _on_nonfoot(self, message: Contacts) -> None:
+        self._pending_nonfoot.extend(
+            deepcopy(contact) for contact in message.contacts)
+
+    def _publish_contacts(self) -> None:
+        now = self.get_clock().now().nanoseconds
+        aggregate = Contacts()
+        aggregate.contacts = self._pending_nonfoot
+        self._pending_nonfoot = []
+        for foot, publisher in self._foot_publishers.items():
+            received, message = self._latest_foot[foot]
+            output = Contacts()
+            if received and now - received <= 50_000_000:
+                output.header = message.header
+                output.contacts = [deepcopy(contact) for contact in message.contacts]
+                aggregate.contacts.extend(
+                    deepcopy(contact) for contact in message.contacts)
+            publisher.publish(output)
+        self._aggregate.publish(aggregate)
+
+
+def main() -> None:
+    rclpy.init()
+    node = ContactFilter()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        if rclpy.ok():
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

@@ -298,10 +298,15 @@ base_link
 The accepted simulator-authoring axis convention is:
 
 - Coxa yaw: local `+Z`.
-- Femur, tibia, and foot pitch: one common leg-plane axis, proposed local `+Y`.
+- Femur, tibia, and foot pitch: one common leg-plane axis, local `-Y`.
 - Gimbal yaw: local `+Z`.
 - Physical servo reversal belongs in calibration/hardware configuration rather
   than inconsistent URDF axes where possible.
+
+Gate 1 simulator measurement corrected the earlier proposed `+Y` pitch axis:
+with the accepted legacy/Fusion joint values it placed tibia geometry below the
+feet. Local `-Y` reproduces the intended feet-down home pose. This remains a
+simulator convention; physical servo direction is still unverified.
 
 The expanded model must derive and Gate 0 must verify the precise leg-mount
 rotations against the immutable Fusion joint evidence. The relationship between
@@ -351,6 +356,34 @@ In the `Legacy map` column, the expression is the input passed to
 STEP entity numbers are identifiers for the hashed STEP snapshot only. Future
 exports may renumber them; occurrence paths and product names are the durable
 mapping keys.
+
+## Detailed Fusion visual evidence
+
+The approved Fusion version 2 visual bundle was generated on 2026-08-16 with
+Fusion `2704.1.53`. It contains 25 whitelisted project-owned PETG exports: six
+base fragments, one gimbal asset, and coxa/femur/foot assets for all six legs.
+The six tibia links deliberately retain project-authored proxies because the
+current source evidence cannot safely separate printed tibia structure from
+embedded servo CAD. Vendor sensor, computer, servo, battery, and controller CAD
+is not included.
+
+Repeated leg instances have byte-identical STL content but distinct recorded
+occurrence transforms. This verifies that Fusion emitted component-local body
+coordinates, not root-assembly coordinates. The deterministic normalization
+pipeline is therefore:
+
+1. source-component-local binary STL in millimetres to metres;
+2. recorded Fusion occurrence transform to Fusion root;
+3. accepted Fusion-to-ROS rotation and base datum to `base_link`;
+4. inverse canonical nominal link transform to ROS link-local coordinates.
+
+The imported source cache contains 12 unique immutable raw meshes. Normalized
+output contains 20 link-local detailed meshes with 193,424 triangles and zero
+degenerate triangles. Every source and output file has recorded size and SHA-256
+evidence. Detailed meshes are visual-only: collision, inertia, mass, joints,
+controllers, safety behavior, and nominal targets are unchanged. Fresh Gate 0
+and Gate 1 evidence passes, and the live physics metrics match the earlier
+proxy-visual baseline within numerical precision.
 
 ## Legacy geometry and dynamics evidence
 
@@ -532,12 +565,12 @@ package skeleton:
 - [ ] Canonical joint zeros and finite safe limits.
 - [ ] Servo IDs, models, directions, and calibration evidence.
 - [x] Rough simulator mass estimate (`rough_estimate_v0`).
+- [x] Approved detailed visuals for 20 links, with explicit retained tibia
+  proxies and full source/output provenance.
 - [ ] Physical mass/inertia validation and resolution of the legacy `L1E1`
   outlier.
 
-After explicit Phase 0 authorization creates the package skeleton, Phase 1 may
-author the canonical model using one six-instance leg mechanism, separate
-reviewed visual and simplified collision geometry, simulator-neutral
-joints/frames, and isolated Gazebo/`gz_ros2_control` overlays. Gate 0 must verify
-the expanded model against this evidence and the accepted provisional runtime
-artifacts before any live Gazebo gate is claimed.
+Phase 0, Phase 1 / Gate 0, Phase 2 / Gate 1, and the bounded detailed-visual
+integration are implemented and validated. Phase 3 / Gate 2 and later work
+remain separately authorized phases. Nothing in this manifest authorizes
+physical motion.

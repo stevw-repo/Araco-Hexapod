@@ -461,6 +461,22 @@ Decision:
   joint limits, effort/velocity caps, damping, friction, mass/inertia, and
   controller gains as provisional simulator values only.
 
+Correction recorded 2026-08-16:
+
+- The joint-state broadcaster rate is `125 Hz`, not `100 Hz`. Jazzy requires a
+  controller rate below the `250 Hz` manager rate to be an integer divisor for
+  constant-period updates; the live Harmonic run reduced the impossible
+  `100 Hz` request to `83 Hz` and warned about non-constant periods. The
+  `100 Hz` safety, arbitration, and locomotion rates remain unchanged.
+
+- Jazzy `gz_ros2_control` leaves the hardware-component `type` and
+  `plugin_name` service fields empty. Runtime backend readiness therefore
+  requires exactly one active, synchronous `GazeboSimSystem`, the exact 25
+  available-and-claimed position command interfaces, and the exact 75
+  available position/velocity/effort state interfaces. Plugin class and gain
+  identity remain enforced by the integrity-checked composed URDF and Gazebo
+  startup validation; an empty service field is not treated as plugin evidence.
+
 Rationale: the chosen hierarchy leaves multiple controller updates per
 trajectory and physics steps per controller update, keeps watchdog expiry ahead
 of the JTC fallback, prevents ROS-time pauses from extending authority, and
@@ -755,3 +771,313 @@ Consequences:
 - The Phase 0 implementation checkpoint is
   `2a1b3dcd2545b95570c3b8428b0dabfac37f6f95`; it was pushed to `origin/main`
   and verified against the remote branch.
+
+## 2026-08-16 — Phase 1 / Gate 0 authorized
+
+Status: authorized explicitly by the user on 2026-08-16.
+
+Decision:
+
+- Implement only Phase 1 / Gate 0 model-and-configuration integrity as frozen
+  in `docs/agent/PHASED_DELIVERY_PLAN.md`.
+- Create the package-owned strict artifacts and schemas, canonical description,
+  reproducible generated integration forms, deterministic preflight/runtime
+  bundle, and all blocking static/negative/installed-space validation.
+- Keep the canonical model registry as the sole numeric topology authority;
+  Xacro/URDF, visual meshes, collision forms, controller partitions, and
+  Gazebo mappings are derived or rendering forms.
+- Do not start Gazebo, claim Gate 1, implement motion-capable nodes, introduce
+  physical profiles, command hardware, commit, or push without separate
+  authorization.
+
+Rationale: Phase 0 is remotely checkpointed and Gate 0 is the next accepted
+blocking milestone before any live simulator process is treated as valid.
+
+## 2026-08-16 — Phase 1 / Gate 0 completed
+
+Status: implemented and validated on 2026-08-16; uncommitted and unpushed.
+
+Decision:
+
+- Accept the 20 package-owned artifacts and their exact development/CI profile
+  graphs as the first static simulator configuration baseline.
+- Accept the canonical registry as the only topology/transform/role authority;
+  the normalized URDF, controller joint lists, Gazebo mappings, and primitive
+  visual forms are generated from it.
+- Accept `rough_estimate_v0` at `3.924392774795984 kg` with explicit PiSugar,
+  main-battery, and servo-controller base proxies and positive-valid aggregate
+  inertia, strictly as `simulator_estimate` evidence.
+- Replace the over-broad base collision enclosure with a project-authored
+  `0.19 × 0.15 × 0.05 m` proxy. The earlier enclosure falsely intersected four
+  femur proxies; mass/inertia remain independently owned by the dynamics
+  artifact.
+- Declare Gate 0 passed from static and installed-space evidence. Do not infer
+  Gate 1, live-spawn, stable-hold, motion, or hardware readiness.
+
+Rationale: clean build/test, strict negative fixtures, deterministic repeated
+composition, exact equal behavior fingerprints, resource/inertia/collision
+checks, and independent URDF parsing all pass without starting Gazebo.
+
+Consequences:
+
+- The next technical packet is Phase 2 / Gate 1 launch, spawn, controller
+  ownership, and stable hold, but it remains unauthorized.
+- All limits, standing targets, collision fidelity, camera transforms, gains,
+  and dynamics remain provisional until later simulator and physical evidence.
+
+## 2026-08-16 — Phase 2 / Gate 1 authorized
+
+Status: authorized explicitly by the user on 2026-08-16; implementation is in
+progress and remains uncommitted and unpushed.
+
+Decision:
+
+- Implement only Phase 2 / Gate 1 spawn, controller ownership, readiness
+  sequencing, and stable nominal hold as frozen in
+  `docs/agent/PHASED_DELIVERY_PLAN.md`.
+- Use the Gate 0 canonical model and generated configuration as the source for
+  the Gazebo backend overlay, controller partitions, nominal 24-leg-joint hold,
+  and zero gimbal target.
+- Permit only the startup bootstrap needed to establish controller hold and
+  reach software safety state `HOLDING`; Gate 1 must never request or enter
+  `MOTION_ENABLED`.
+- Do not implement computed IK, gait, body-pose motion, physical profiles,
+  hardware actuation, Phase 3 or later work, or claim physical safety.
+- Do not commit or push without a separate explicit user instruction.
+
+Rationale: Gate 0 passed and the user explicitly advanced the project to
+Phase 2. A live, scored non-moving simulator hold is the next blocking proof
+before computed kinematics or walking may be trusted.
+
+## 2026-08-16 — Correct Jazzy JTC interpolation enum
+
+Status: implementation correction discovered during Phase 2 installed-API
+audit; Gate 0 regression validation is required.
+
+Decision:
+
+- Replace generated JTC `interpolation_method: linear` with the Jazzy-supported
+  enum value `splines` in the controller artifact and owner schema.
+- Retain positions-only one-point trajectories. Jazzy's variable-degree spline
+  interpolation reduces these inputs to linear position interpolation, so the
+  accepted behavioral intent is unchanged.
+- Regenerate Gate 0 fingerprints and evidence; do not preserve the earlier
+  fingerprints as though the effective controller input were valid.
+
+Rationale: installed `joint_trajectory_controller` 4.40.1 exposes only `none`
+and `splines`. The earlier value described the resulting interpolation behavior
+but was not a valid upstream parameter enum.
+
+## 2026-08-16 — Gate 1 simulator geometry and contact corrections
+
+Status: accepted from live Gate 1 measurement; physical direction remains open.
+
+Decision:
+
+- Correct every femur, tibia, and foot joint axis from the proposed local `+Y`
+  to local `-Y`, because the former placed the tibias below the feet in the
+  accepted standing reference.
+- Set the Gate 1 nominal simulator spawn height to `0.10675 m`, derived from
+  live model/contact measurement rather than retaining the legacy algorithm's
+  provisional `0.080 m` body-height value as a spawn coordinate.
+- Use one 50 Hz Gazebo contact-sensor topic per foot and one shared non-foot
+  alarm topic, with a 100 Hz ROS aggregate. Reference the SDF-converted
+  `<link>_collision_collision` names and put each transport topic inside the
+  sensor's `<contact>` element as required by Harmonic.
+
+Rationale: live Gazebo inspection showed the proposed pitch-axis sign and
+contact-topic assumptions were wrong. The corrected model reaches its intended
+stationary pose with all six feet in contact and no non-foot collision. These
+values remain simulator evidence; they do not establish physical servo zero,
+direction, or safe limits.
+
+## 2026-08-16 — Phase 2 / Gate 1 completed
+
+Status: implemented and validated; uncommitted and unpushed.
+
+Decision:
+
+- Declare Gate 1 passed from the consecutive Gate 0 regression and atomic live
+  Gate 1 evidence in `log/gate_0_20260816_phase2_regression/` and
+  `log/gate_1_20260816_phase2_hold_pass/`.
+- Accept the hold-only locomotion, exact 24+1 controller/backend ownership,
+  ordered lifecycle readiness, typed fail-closed safety action, independent
+  contact streams, preflight negative fixtures, scorer, and atomic evidence
+  harness as the Gate 1 implementation baseline.
+- Preserve `log/gate_1_20260816_phase2_hold/` as failed audit evidence: it
+  exposed the unquoted workspace path and timeout-log bytes defect that were
+  corrected before the passing evidence run.
+- Keep Phase 3 / Gate 2 and later phases unauthorized. Gate 1 must remain unable
+  to enter `MOTION_ENABLED`; simulator evidence does not authorize hardware.
+
+Rationale: the passing run reached `HOLDING` in `15.340814665 s`, never entered
+motion or fault states, held exact controller ownership, maintained all six
+foot contacts with no non-foot contact, and passed every accepted error,
+velocity, pose, and penetration threshold. A clean rebuild/test produced 175
+tests with 0 errors and 0 failures; dependency, URDF, SDF, and independent
+installed-composition fingerprint checks also pass.
+
+Consequences:
+
+- The accepted behavior fingerprint is
+  `c1c2b51d4e082bcfab0e5d09618566c3a9245ce79d46833295c1eb9ec7922283`;
+  the accepted CI run fingerprint is
+  `e435b0244f9412f9b88e693f247d6f5f0773cc80c4b02842eebdff9287a4b35b`.
+- Phase 3 may replace only the transitional target producer with computed
+  standing FK/IK after separate authorization, retaining the Gate 1 scorer and
+  nominal standing artifact as regression oracle.
+
+## 2026-08-16 — Fusion visual-mesh rights and exporter-first workflow
+
+Status: explicitly accepted by the user; exporter/import/normalization/runtime
+integration implemented and validated.
+
+Decision:
+
+- Treat Fusion mechanical components named `araco - ...` as user-owned project
+  designs whose derived visual meshes may be published under MIT.
+- Do not infer the same permission for embedded servo, Raspberry Pi, Gemini
+  335, Raspberry Pi Camera, battery, controller, or other vendor CAD; retain
+  project-authored proxies unless separate redistribution rights are verified.
+- Extend the read-only Fusion exporter with an explicit reviewed body/component
+  whitelist and provenance manifest rather than converting the complete
+  mixed-rights STEP assembly.
+- Normalize approved exports into canonical ROS link-local visual meshes while
+  leaving collision geometry, dynamics, joints, controllers, and safety
+  behavior unchanged.
+- Preserve the current proxy visual set for rollback, make Gazebo headed
+  resource discovery self-contained, then rerun Gates 0 and 1 because visual
+  resource hashes and configuration fingerprints will change.
+
+Rationale: an exporter-side whitelist uses the authoritative Fusion design and
+prevents hundreds of detailed vendor solids from being accidentally published.
+It also provides stronger source/version/body provenance than brittle filtering
+of the 98.8 MB AP214 STEP file on Ubuntu.
+
+Implementation boundary:
+
+- The reviewed allowlist contains 25 exact PETG body selections: six base
+  fragments, one gimbal body, and coxa/femur/foot bodies for all six legs.
+- All six tibia links retain proxies because the current Fusion inventory marks
+  all four bodies in each tibia occurrence as Steel and cannot safely establish
+  which geometry is project-owned printed structure versus embedded servo CAD.
+- Fusion `0.2.0` actually emitted source-component-local STL in millimetres,
+  with the occurrence-to-root transform recorded separately. Byte-identical
+  meshes for repeated instances plus distinct occurrence transforms established
+  this interpretation. Exporter `0.2.1` corrects the coordinate declaration.
+- The Fusion version 2 bundle contains all 25 expected exports. Ubuntu-side
+  validation deduplicates them to 12 immutable source blobs and normalization
+  emits 20 deterministic ROS link-local meshes; the six tibias remain proxies.
+- The runtime uses detailed meshes only for visual geometry. Collision,
+  dynamics, joint, controller, safety, and standing contracts are unchanged.
+- Headed resource lookup is self-contained and fresh Gate 0 / Gate 1 evidence
+  passes. Gate 1 physics metrics match the prior proxy-visual baseline within
+  numerical precision.
+
+## 2026-08-16 — Publishable tibia/servo proxy rendering
+
+Status: implemented and awaiting user visual acceptance; uncommitted and
+unpushed.
+
+Decision:
+
+- Do not move or force-align any canonical joint, link frame, collision shape,
+  inertial property, controller, or standing target to compensate for the
+  observed Fusion tibia-frame offset.
+- Replace each rectangular tibia visual slab with a project-authored two-rail
+  visual proxy centered on the existing canonical joint-to-joint line. Keep
+  the original tibia collision box unchanged.
+- Render project-authored box-and-cylinder servo proxies for the known
+  inventory: 19 DS3235 and six DS5160. Derive their link ownership from the
+  canonical joints and explicit segment rules; label all dimensions and poses
+  `simulator_estimate` rather than exact vendor CAD.
+- Use contrasting printed-part, servo-case, and servo-horn materials and add an
+  explicit directional world light, ambient light, and shadows.
+- Continue excluding exact vendor servo CAD unless redistribution rights are
+  established separately.
+
+Rationale: the visual offset is not evidence that the accepted kinematic frame
+is wrong. Changing the frame to make an approximate mesh look aligned would
+corrupt control and physics. Auditable project-authored proxies make the tibias
+and actuators readable in Gazebo without importing third-party geometry or
+changing robot behavior.
+
+## 2026-08-16 — Exact Fusion tibia and servo presentation visuals
+
+Status: implemented and validated; awaiting user visual acceptance; supersedes
+the proxy-rendering decision for visual geometry only.
+
+Decision:
+
+- Accept the user's confirmation that all CAD they possess in the Fusion
+  assembly is open source and may be used for the simulator. Preserve
+  per-asset licensing rather than claiming that upstream vendor CAD becomes
+  MIT merely by inclusion in this repository.
+- Replace the six two-rail tibia visuals and all 25 box/cylinder servo visuals
+  with exact high-refinement Fusion body meshes. Presentation-quality recorded
+  simulator output is a requirement, so visual fidelity takes priority over
+  the smaller proxy asset set.
+- Use exporter `0.3.1` and specification `2.1.0`, with 44 mesh exports covering
+  exactly 62 reviewed bodies: 25 existing project mechanical bodies, 13
+  directly attached servo bodies, and one complete four-body component export
+  for each of the six tibia occurrences. Retain no visual proxy. The
+  occurrence/component packaging supersedes individual tibia-body export
+  because Fusion accepted `right_middle_tibia/Body2` as solid but silently
+  produced no STL for it.
+- Keep collision geometry, inertia, joints, controllers, safety behavior, and
+  the nominal standing target unchanged. Preserve the actual Fusion occurrence
+  transforms; do not force-align the tibia visual to the canonical centerline.
+- Keep unrelated Raspberry Pi, battery, controller, camera, and nested sensor
+  internals out of this bounded export. They can be handled as a separate
+  presentation enhancement if requested.
+- Classify the reproducible connected solids inside each complete tibia STL
+  fail-closed: one printed tibia, two servo cases, and two horns. Also separate
+  DS3235 case/horn shells where topology permits; retain each connected DS5160
+  exactly as exported. Remove only 36 zero-area source triangles, which have no
+  rendered area, during deterministic normalization.
+- Compose 46 link-local mesh visuals (26 primary, 13 servo-case, seven
+  servo-horn) and remove every prior visual box/cylinder/tibia proxy. Keep the
+  three role materials for presentation readability.
+
+Rationale: the previous proxies solved missing geometry but do not meet the
+user's presentation requirement. The current Fusion inventory identifies every
+required direct occurrence/body pair, so exact geometry can be exported without
+weak name matching or changes to simulation behavior.
+
+## 2026-08-16 — Exact Gemini 335 exterior presentation visual
+
+Status: implemented, statically validated, and running in headed Gazebo for
+user visual acceptance; uncommitted and unpushed.
+
+Decision:
+
+- Add the exact vendor Gemini 335 exterior to the presentation model on
+  `camera_link`; it rotates with `gimbal_yaw_link` through the existing fixed
+  frame relationship.
+- Export 15 explicitly reviewed nested bodies: five housing/bracket bodies,
+  six pads/fasteners, and four externally visible optical bodies.
+- Exclude the eight-body internal connector/PCB assembly, the independently
+  installed Raspberry Pi Camera Module 3, and all other unlisted electronics.
+- Keep the existing simulated camera pose and optical frames, collision,
+  estimated mass/inertia, and sensor configuration unchanged. The new CAD is
+  visual-only and must not be treated as sensor-extrinsic calibration.
+- Preserve separate camera-body, camera-hardware, and camera-optics roles so
+  presentation materials can make the exact solid geometry readable.
+
+Rationale: the user requires an attractive recorded simulator presentation and
+confirmed that the available CAD is open source. Body-level allowlisting gives
+the needed exterior fidelity without publishing internal PCB geometry or
+changing simulation behavior.
+
+Implementation evidence:
+
+- Fusion exporter `0.4.0` / specification `3.0.0` produced a valid 59-export,
+  77-reviewed-body bundle with the 15 allowlisted Gemini exterior bodies.
+- The normalized presentation set contains three `camera_link` meshes for body,
+  hardware, and optics, bringing the complete model to 49 exact mesh visuals
+  and 2,066,740 triangles with zero output degenerates.
+- A fresh copied install built all nine packages; 182 tests passed with zero
+  errors or failures and three expected `cppcheck` skips. `check_urdf` and
+  `gz sdf -k` pass.
+- Headed Gazebo reached `HOLDING` without motion enablement using the new camera
+  visuals.

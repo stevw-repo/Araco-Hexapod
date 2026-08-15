@@ -1,0 +1,79 @@
+{
+  "schema_id": "araco://schemas/locomotion/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.locomotion.operational-policy",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_locomotion",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.description.provisional-sim-limits",
+      "artifact_version": "0.1.0"
+    }
+  ],
+  "data": {
+    "kind": "operational_policy",
+    "classes": {
+      "coxa": {
+        "lower_rad": -0.45,
+        "upper_rad": 0.45,
+        "command_rate_cap_rad_s": 1.2
+      },
+      "femur": {
+        "lower_rad": 0.35,
+        "upper_rad": 1.1,
+        "command_rate_cap_rad_s": 1.2
+      },
+      "tibia": {
+        "lower_rad": -2.35,
+        "upper_rad": -1.15,
+        "command_rate_cap_rad_s": 1.2
+      },
+      "foot": {
+        "lower_rad": -0.85,
+        "upper_rad": 0.1,
+        "command_rate_cap_rad_s": 1.2
+      }
+    },
+    "assignments": {
+      "left_front_coxa_joint": "coxa",
+      "left_front_femur_joint": "femur",
+      "left_front_tibia_joint": "tibia",
+      "left_front_foot_joint": "foot",
+      "left_middle_coxa_joint": "coxa",
+      "left_middle_femur_joint": "femur",
+      "left_middle_tibia_joint": "tibia",
+      "left_middle_foot_joint": "foot",
+      "left_rear_coxa_joint": "coxa",
+      "left_rear_femur_joint": "femur",
+      "left_rear_tibia_joint": "tibia",
+      "left_rear_foot_joint": "foot",
+      "right_front_coxa_joint": "coxa",
+      "right_front_femur_joint": "femur",
+      "right_front_tibia_joint": "tibia",
+      "right_front_foot_joint": "foot",
+      "right_middle_coxa_joint": "coxa",
+      "right_middle_femur_joint": "femur",
+      "right_middle_tibia_joint": "tibia",
+      "right_middle_foot_joint": "foot",
+      "right_rear_coxa_joint": "coxa",
+      "right_rear_femur_joint": "femur",
+      "right_rear_tibia_joint": "tibia",
+      "right_rear_foot_joint": "foot"
+    },
+    "command_envelope": {
+      "planar_speed_normal_m_s": 0.05,
+      "planar_speed_hard_m_s": 0.08,
+      "yaw_rate_normal_rad_s": 0.3,
+      "yaw_rate_hard_rad_s": 0.5,
+      "controlled_stop_max_s": 1.5,
+      "stable_hold_dwell_s": 0.25
+    }
+  }
+}

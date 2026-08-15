@@ -4,99 +4,143 @@ Updated: 2026-08-16
 
 ## Current state
 
-Phase 0 repository foundation is complete and validated. It establishes only
-the ROS workspace, package boundaries, accepted interfaces, metadata,
-licensing, and structural tests. **No Gazebo gate is claimed.** The repository
-still has no robot model, runtime configuration, Gazebo world/launch path,
-motion-capable node, physical profile, or hardware backend.
+Phase 1 / Gate 0 and Phase 2 / Gate 1 are implemented and pass. Exact
+Fusion/vendor tibia, servo, and Gemini 335 exterior presentation geometry is
+integrated. A headed Gazebo preview from the validated copied install is running
+for user inspection and reached `HOLDING` without motion enablement. Collision
+geometry, dynamics, joints, controllers, safety behavior, camera simulation
+configuration, optical frames, and the nominal standing target remain
+unchanged.
 
-The completed MIT Phase 0 implementation was committed as
-`2a1b3dcd2545b95570c3b8428b0dabfac37f6f95` and pushed to `origin/main` on
-2026-08-16 using `stevw <steven060520@gmail.com>`. Local `HEAD`, the tracking
-reference, and the remote branch were verified equal after the push. The
-earlier GPL-licensed pre-Phase-0 architecture commit
-`868d7fc8bff4d2f99c1e3bb88665735667d83b72` remains in Git history; the current
-rights holder authorized the MIT relicense and no history rewrite is required.
+Phase 3 / Gate 2 and every later phase remain unauthorized. The Phase 1,
+Phase 2, and detailed-visual worktree is intentionally uncommitted and
+unpushed. `HEAD` and `origin/main` remain at
+`73830cc27ab39efb0f51cfe4ec89962d5df8039c` on `main`. The active headed preview
+uses `/tmp/araco_camera_copy_build.tJM6Dg/install`, with immutable runtime bundle
+`/tmp/araco_camera_copy_build.tJM6Dg/headed_runtime`.
 
-## Completed Phase 0 scope
+## Fusion visual integration
 
-- Created all nine accepted ROS 2 Jazzy `ament_cmake` packages under `src/`:
-  `araco_interfaces`, `araco_description`, `araco_kinematics`,
-  `araco_locomotion`, `araco_supervision`, `araco_teleop`, `araco_gazebo`,
-  `araco_bringup`, and `araco_system_tests`.
-- Used package version `0.1.0` and the verified Git identity
-  `stevw <steven060520@gmail.com>` as public maintainer metadata.
-- Added the accepted seven messages: `MotionIntent`, `CommandCandidate`,
-  `SelectedCommand`, `SafeCommand`, `JointStateProvenance`,
-  `LocomotionStatus`, and `SafetyStatus`.
-- Added the accepted `SafetyTransition` action.
-- Added exact dependency declarations/exports, optional future-resource install
-  rules, package metadata tests, generated-interface introspection tests, and
-  an exact acyclic project-dependency-graph test.
-- Added root workspace hygiene and build/test documentation. Generated
-  `build/`, `install/`, `log/`, Python caches, editor state, and common local
-  artifacts are ignored.
-- Relicensed current project-authored content to MIT. Root and package-local
-  license texts are identical; each package installs its license alongside its
-  manifest; package source/manifests carry exact MIT SPDX/license metadata.
-- Completed `docs/agent/PHASE_0_LICENSE_AUDIT.md`. No third-party code, binary,
-  mesh, CAD, font, logo, or data requiring a bundled notice is present in the
-  Phase 0 ROS packages, so no `THIRD_PARTY_NOTICES.md` is needed yet.
+- Active Fusion bundle:
+  `/media/stevw-s14/DATA-ST/New folder/araco_-_assembly_ros-description_v1_v2_visual_export_20260815T222414Z`.
+  It records Fusion `2704.1.53`, exporter `0.4.0`, specification `3.0.0`, cloud
+  version 2, 59 mesh exports, 77 reviewed bodies, and zero retained proxies.
+- Fail-closed validation covers source identity, structural inventory, exact
+  allowlist, per-asset rights, paths, sizes, hashes, and triangle counts. The
+  import is preserved under `meshes/source/fusion_v2_exact_camera/` as 34
+  deduplicated immutable STL blobs; both earlier source captures remain
+  untouched.
+- Each full tibia source STL reproducibly contains five connected solids:
+  6,448 printed-part triangles, two 48,436-triangle servo cases, and two
+  3,864-triangle horns. Direct DS3235 meshes also split deterministically into
+  separate case/horn shells. Each DS5160 is one connected vendor solid and is
+  kept intact.
+- `normalize_fusion_exact_visuals.py` applies the recorded occurrence transform,
+  Fusion-to-ROS/base datum, and inverse nominal link or fixed-frame transform.
+  It emits 49 meter-scale link-local meshes: 26 primary, 13 servo-case, seven
+  servo-horn, and three camera role assets. The output contains 2,066,740
+  rendering triangles and zero degenerates after removing 36 zero-area source
+  triangles.
+- The generated URDF uses all 49 exact mesh visuals and no visual box, cylinder,
+  or tibia proxy. Printed, servo-case, horn, camera-body, camera-hardware, and
+  camera-optics roles retain distinct presentation materials. Every URI and
+  SHA-256 is registered with preserved MIT, upstream open-source, or
+  mixed-open-source provenance.
+- The user's reported tibia offset is confirmed quantitatively. For both middle
+  legs, the Fusion tibia occurrence frame is approximately `9.7567 mm` from the
+  canonical kinematic tibia origin (`-7.88235 mm` and `-5.74996 mm` in the two
+  transverse Fusion coordinates) and differs by `90 deg` around the link's
+  longitudinal axis. The replacement remains centered on the ideal
+  joint-to-joint line at the user's explicit direction not to force-align the
+  frames. This does not invalidate the joint axis; the visual and collision
+  proxies must not be presented as exact physical fidelity.
+- The earlier tibia-frame offset remains preserved exactly as directed: no
+  visual, joint, collision, or inertial frame is force-aligned. The exact
+  meshes are visual-only and must not be interpreted as upgraded collision or
+  dynamics fidelity.
+- The active bundle's 15 Gemini selections are five housing/bracket bodies, six
+  pads/fasteners, and four optics. They normalize into three `camera_link`
+  visuals while the eight-body connector/PCB assembly and Raspberry Pi Camera
+  Module 3 remain excluded. The local allowlist validates against the active
+  Fusion version-2 inventory.
+- The four exporter files in
+  `/media/stevw-s14/DATA-ST/New folder/AracoRobotDescriptionExporter/` are
+  byte-identical to the validated repository copies. No CAD file or existing
+  export bundle was modified.
 
-## Final validation evidence
+## Current visual-fix validation
 
-Validated from a clean generated-output state on 2026-08-16:
+- Fresh copied build at `/tmp/araco_camera_copy_build.tJM6Dg`: all nine packages
+  passed.
+- Full copied-install test result: 182 tests, 0 errors, 0 failures, and three
+  expected `cppcheck` skips.
+- Focused composed-model contract: 49 mesh visuals, comprising 26 primary,
+  13 servo-case, seven servo-horn, and three Gemini role meshes; zero primitive
+  visual proxies. `camera_link` remains visual-only with no collision or
+  inertial block and is fixed to `gimbal_yaw_link`.
+- `check_urdf` passes and `gz sdf -k` reports `Valid.`
+- The active development composition has behavior fingerprint
+  `5589ed99314a08253aea8ca59dfdc0e830b9b58c10d88162a1c7c050d1027771`.
+- Headed Gazebo reached `HOLDING` without entering motion.
+- The pre-existing workspace `build/araco_interfaces` contains a stale generated
+  symlink-directory conflict. Validation and preview therefore use fresh copied
+  build/install roots under `/tmp`; no generated workspace directory was
+  deleted or reset.
 
-- `rosdep check --from-paths src --ignore-src --rosdistro jazzy`:
-  all system dependencies satisfied.
-- `colcon build --symlink-install`: 9 packages finished successfully.
-- `colcon test` plus `colcon test-result --verbose`: 111 tests, 0 errors,
-  0 failures, 0 skipped.
-- The test suite covers flake8, PEP 257, CMake lint, XML validation, package
-  metadata/license policy, generated IDL fields/types/constants, and exact
-  project dependency edges/acyclicity.
-- A clean Bash shell sourced `/opt/ros/jazzy/setup.bash` and
-  `install/setup.bash`, resolved all nine packages to this repository's install
-  tree, found their installed manifests/licenses, and introspected all seven
-  messages plus the action.
-- Every source and installed package `LICENSE` matched the root MIT file.
-- Both Fusion dynamics JSON files parsed, and regenerating from the external
-  version-2 Fusion export reproduced `araco_rough_dynamics_v0.json` byte for
-  byte at `3.924392774795984 kg`.
+## Verified evidence
 
-The first installed-shell probe enabled Bash nounset before sourcing ROS and
-therefore hit ROS setup's expected unset-variable access. The corrected clean
-probe sources ROS before enabling nounset and passed; this is a shell harness
-ordering issue, not a package failure.
+Passing detailed-visual Gate 0:
+`log/gate_0_20260816_detailed_visuals/`
 
-## License and distribution boundary
+- Result: `PASS`.
+- Behavior fingerprint:
+  `87eef7bca155569674450e9342856ed89fb7e9f74e3e3df2c11311d8c9a937d7`.
+- CI run fingerprint:
+  `3904f27bff4b5b380e8dbee598af01b088f871230be03bd567c7ad4bc460bd40`.
 
-- Current project-authored content uses MIT (`SPDX-License-Identifier: MIT`).
-- The former Apache-2.0 plan and GPL-3.0-only selection are superseded history.
-  The pushed GPL checkpoint remains valid for copies received at that commit.
-- Referenced Jazzy build/interface dependencies are installed Apache-2.0
-  packages and are not bundled in the repository.
-- Autodesk Fusion/API code and future Isaac SDKs remain proprietary external
-  systems. MIT licenses only the project-authored integration source.
-- Unknown-rights vendor CAD remains excluded. Future assets require provenance,
-  redistribution permission, and attribution before bundling.
+Passing detailed-visual Gate 1:
+`log/gate_1_20260816_detailed_visuals_hold_host/`
 
-## Constraints and unresolved physical blockers
+- Result and evidence validation: `PASS`; startup to `HOLDING` was
+  `14.844930884 s` against the `30 s` limit.
+- Maximum leg error `9.29443e-11 rad`; RMS leg error `5.71404e-11 rad`.
+- Maximum base-height error `6.31993e-7 m`; maximum pitch
+  `4.46465e-9 rad`; maximum roll `6.62839e-19 rad`.
+- Maximum base linear speed `0.0 m/s`; maximum penetration
+  `9.11246e-6 m`; all six foot-contact and safety checks passed.
+- These physics metrics match the pre-visual Gate 1 baseline within numerical
+  precision, confirming the change is visual-only.
 
-- Phase 1 is not authorized. Do not create Xacro/URDF/meshes, runtime
-  YAML/schemas, Gazebo world/launch implementation, control nodes, or gate
-  evidence until it is authorized.
-- No physical commands are authorized. Simulator evidence never implicitly
-  clears physical deployment.
-- Installed safe mechanical limits, canonical physical zero/direction,
-  controller identity, local-stop behavior, collapse-safe shutdown, and
-  measured state remain unresolved.
-- `rough_estimate_v0` is accepted only as an initial Gazebo estimate. Aggregate
-  base inertia and missing electronics' poses remain unresolved.
-- Final Pi OS/runtime acceptance remains open; Ubuntu Server 24.04 arm64 with
-  native ROS 2 Jazzy remains the recommendation.
+`log/gate_1_20260816_detailed_visuals_hold/` is intentionally preserved as
+failed environment evidence. The sandbox denied interface discovery
+(`getifaddrs`), so no clock, ROS, or simulator samples existed. The new atomic
+host run passed without changing code or configuration.
 
-## Exact next step
+Earlier accepted pre-visual evidence remains at
+`log/gate_0_20260816_phase2_regression/` and
+`log/gate_1_20260816_phase2_hold_pass/` for comparison.
 
-Stop before Phase 1. Phase 1 / Gate 0 model-and-configuration implementation
-still requires separate authorization.
+## Validation
+
+- All 9 packages build successfully in a fresh copied build/install root.
+- `colcon test-result --all --verbose`: 182 tests, 0 errors, 0 failures, and
+  3 expected `cppcheck` skips.
+- Exact-mesh tests reproduce every output and manifest byte-for-byte, enforce
+  59-export / 77-body source coverage and 49-output role coverage, verify all
+  hashes and bounds, and confirm zero output degenerate triangles.
+- Installed composition contains exactly 49 mesh visual URIs and zero primitive
+  visual proxies. `check_urdf` passes and `gz sdf -k` reports `Valid.`
+- `rosdep check --from-paths src --ignore-src`: all dependencies satisfied.
+
+## Authorization boundary and exact next step
+
+- Simulator evidence does not authorize physical motion. Physical servo zero,
+  direction, safe limits, dynamics, collision/contact fidelity, camera poses,
+  gains, and electrical integration remain provisional or unresolved.
+- Do not begin Phase 3 / Gate 2 without explicit authorization.
+- Do not commit or push without a separate explicit instruction.
+- The immediate next step is user visual acceptance of the running headed
+  preview. If the exact Gemini exterior is correctly placed and readable, stop
+  this visual task; any later commit/push or Phase 3 work requires separate
+  explicit authorization.
+- Do not commit or push without a separate explicit instruction.

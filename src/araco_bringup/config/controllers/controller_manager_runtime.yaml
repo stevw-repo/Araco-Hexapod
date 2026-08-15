@@ -1,0 +1,14 @@
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+# Static plugin bootstrap. Per-controller values are supplied separately to
+# every Jazzy spawner from the composed runtime bundle.
+controller_manager:
+  ros__parameters:
+    update_rate: 250
+    use_sim_time: true
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    leg_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    gimbal_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController

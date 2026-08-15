@@ -1,0 +1,86 @@
+solid femur
+  facet normal 0 0 0
+    outer loop
+      vertex 0 -0.015 -0.015
+      vertex 0.12 0.015 -0.015
+      vertex 0.12 -0.015 -0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 -0.015 -0.015
+      vertex 0 0.015 -0.015
+      vertex 0.12 0.015 -0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 -0.015 0.015
+      vertex 0.12 -0.015 0.015
+      vertex 0.12 0.015 0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 -0.015 0.015
+      vertex 0.12 0.015 0.015
+      vertex 0 0.015 0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 -0.015 -0.015
+      vertex 0.12 -0.015 -0.015
+      vertex 0.12 -0.015 0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 -0.015 -0.015
+      vertex 0.12 -0.015 0.015
+      vertex 0 -0.015 0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0.015 -0.015
+      vertex 0 0.015 0.015
+      vertex 0.12 0.015 0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 0.015 -0.015
+      vertex 0.12 0.015 0.015
+      vertex 0.12 0.015 -0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 -0.015 -0.015
+      vertex 0 -0.015 0.015
+      vertex 0 0.015 0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0 -0.015 -0.015
+      vertex 0 0.015 0.015
+      vertex 0 0.015 -0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0.12 -0.015 -0.015
+      vertex 0.12 0.015 -0.015
+      vertex 0.12 0.015 0.015
+    endloop
+  endfacet
+  facet normal 0 0 0
+    outer loop
+      vertex 0.12 -0.015 -0.015
+      vertex 0.12 0.015 0.015
+      vertex 0.12 -0.015 0.015
+    endloop
+  endfacet
+endsolid femur

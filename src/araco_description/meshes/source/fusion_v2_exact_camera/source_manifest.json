@@ -1,0 +1,2906 @@
+{
+  "schema": {
+    "name": "araco_fusion_visual_source",
+    "version": 1
+  },
+  "source_export": {
+    "manifest_sha256": "f511e3e8563e6168b28016265efd7a65aad5b3b7d2c41f7bf6cfbaf0324a8ae4",
+    "spec_sha256": "e4370e1aa01b2d5396027bd0057f47342a23b1a955ea4ece2816186636c12388",
+    "inventory_sha256": "02e2b226b9cc68e0b1c42b1b2db11adb17e97274269029a0adeb5b1b5c32b035",
+    "exporter": {
+      "name": "Araco Robot Description Exporter",
+      "version": "0.4.0",
+      "fusion_application_version": "2704.1.53",
+      "generated_at_utc": "2026-08-15T22:24:14.804792+00:00",
+      "read_only_design_access": true
+    },
+    "design": {
+      "document_name": "araco - assembly ros-description v1 v2",
+      "is_modified": false,
+      "root_component_name": "araco - assembly ros-description v1 v2",
+      "design_type": {
+        "name": "1",
+        "value": 1
+      },
+      "cloud_data_file": {
+        "available": true,
+        "name": "araco - assembly ros-description v1",
+        "id": "urn:adsk.wipprod:dm.lineage:NCSa0_0WR4a1sA8ZQwLeJQ",
+        "version_number": 2,
+        "file_extension": "f3d"
+      },
+      "counts": {
+        "direct_root_occurrences": 32,
+        "all_occurrences": 269,
+        "joints": 24,
+        "as_built_joints": 1,
+        "all_joint_definitions": 25,
+        "revolute_joint_definitions": 25
+      }
+    }
+  },
+  "rights_boundary": {
+    "owner": "Araco Hexapod contributors and upstream CAD authors",
+    "license": "mixed-open-source",
+    "license_policy": "preserve_per_asset",
+    "authorization": "On 2026-08-16 the user confirmed that all whitelisted mechanical and vendor CAD in the Fusion assembly is open source and may be used for the simulator and presentation visuals.",
+    "redistribution_confirmed": true,
+    "fail_closed": true,
+    "unlisted_geometry_export_allowed": false
+  },
+  "raw_mesh_encoding": {
+    "format": "binary_stl",
+    "length_unit": "millimeter",
+    "coordinate_space": "source_component_local"
+  },
+  "coordinate_space_correction": {
+    "declared_by_export_bundle": "Fusion source-component-local body coordinates; occurrence transform recorded separately",
+    "verified_interpretation": "Fusion source-component-local body coordinates",
+    "evidence": [
+      {
+        "sha256": "09de86c36229b9bf9143edc32d97b87e7e678db9ee77a0ce300349e51d77820b",
+        "asset_ids": [
+          "left_middle_coxa_servo",
+          "left_front_coxa_servo",
+          "left_rear_coxa_servo"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "11a23248d825ba23d1fc1062c92beac1d8b8dbd214c7b5a1de4601d81f414ac1",
+        "asset_ids": [
+          "right_middle_coxa_servo",
+          "right_front_coxa_servo",
+          "right_rear_coxa_servo"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "20e7dfeec82f17c50fdb1bbb4a75c93077574e007e68217a37c1e92d232602e7",
+        "asset_ids": [
+          "right_middle_coxa",
+          "right_front_coxa",
+          "right_rear_coxa"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "2757101c37a27d171f9988763e3a649ee750652617a25ac0b21a8784d7108407",
+        "asset_ids": [
+          "left_middle_foot",
+          "left_front_foot",
+          "left_rear_foot"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "34f11405b9d8fa22db5ffdad23782f3bc9fe8e170d6348fbd6845b1cbd2319a6",
+        "asset_ids": [
+          "right_middle_foot",
+          "right_front_foot",
+          "right_rear_foot"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "3a2fbf6d0c41612845e5558c24f2f1168ca7fbe87b1d1ecee2d5c3ba5944a01c",
+        "asset_ids": [
+          "base_battery_holder_1",
+          "base_battery_holder_2"
+        ],
+        "distinct_occurrence_transform_count": 2
+      },
+      {
+        "sha256": "46dc4b9381588d7dc0f5e99ca11a1dfc5fa17a6e64a5c4a639b0ae1fbf1386ca",
+        "asset_ids": [
+          "left_middle_coxa",
+          "left_front_coxa",
+          "left_rear_coxa"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "66808a21f7df56ba548a3ff43afb89e1d320a024418f71a3d9510afa2dd5a3d2",
+        "asset_ids": [
+          "right_middle_femur",
+          "right_front_femur",
+          "right_rear_femur"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "68383e0de132cf87bd14ea9d1103e3dbb478db5920f5eace7019316bb76df552",
+        "asset_ids": [
+          "right_middle_tibia_full",
+          "right_front_tibia_full",
+          "right_rear_tibia_full"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "6a54853c6485933aa52376aa5e2dcf19da1b20c5feaa133d7f48514a91e4c61c",
+        "asset_ids": [
+          "gemini_left_ir_optic",
+          "gemini_right_ir_optic"
+        ],
+        "distinct_occurrence_transform_count": 2
+      },
+      {
+        "sha256": "89b57e201ead360a516d542155ce8fecec427d78d84c5d1ff32afbe67e66a9a9",
+        "asset_ids": [
+          "left_middle_femur",
+          "left_front_femur",
+          "left_rear_femur"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "c95ccfd62685895e877201310ef28d73ca7362b94adca2eefcce83fe9fa008d1",
+        "asset_ids": [
+          "left_middle_tibia_full",
+          "left_front_tibia_full",
+          "left_rear_tibia_full"
+        ],
+        "distinct_occurrence_transform_count": 3
+      },
+      {
+        "sha256": "f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a",
+        "asset_ids": [
+          "gemini_lower_screw_1",
+          "gemini_lower_screw_2",
+          "gemini_lower_screw_3",
+          "gemini_lower_screw_4"
+        ],
+        "distinct_occurrence_transform_count": 4
+      }
+    ],
+    "normalization_rule": "Apply the recorded occurrence transform before Fusion-to-ROS and link-local transforms."
+  },
+  "unique_raw_mesh_count": 34,
+  "export_count": 59,
+  "reviewed_body_count": 77,
+  "exports": [
+    {
+      "asset_id": "base_bottom_cover",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/fa3f3188eaf3831fd00c099a26d3f63d4151bbe134e94704c87be501fa123f6f.stl",
+      "raw_mesh_sha256": "fa3f3188eaf3831fd00c099a26d3f63d4151bbe134e94704c87be501fa123f6f",
+      "raw_mesh_size_bytes": 1334284,
+      "raw_triangle_count": 26684,
+      "source_occurrence_full_path": "araco - bottom_cover_v2 v14:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.0003136020449196675,
+          "y": -3.552713678800501e-17,
+          "z": -0.031927193186511334
+        },
+        "x_axis": {
+          "x": 0.9999999999999991,
+          "y": 5.8979678616914655e-30,
+          "z": 1.381875884910197e-76
+        },
+        "y_axis": {
+          "x": -6.725347313535773e-30,
+          "y": 0.9999999999999991,
+          "z": -1.972279168344085e-31
+        },
+        "z_axis": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1.0
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPIQ4CQQwMQSIwPGA/0NDt9bpdCZaEP2zvdh/AFzBoNIJPYNCEL2ARGAwOz96RZpLJZDIzRacO63lHFSMjrcw7HhRxj815SY/V5ni5vXfX+aQ6yDXiMlIKiAy9eQPOWsCKMCgxSo4xYDukVmeLnVHPBrFrCZhygYRNAMsl99pIH8T/u87r2Wd/2NrpuXh9p3ofV9UEb2qSWgWNmoBDEIjUGSQxL5g0lGDj9uEXYqUfyMMoP9YAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_battery_holder_1",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/3a2fbf6d0c41612845e5558c24f2f1168ca7fbe87b1d1ecee2d5c3ba5944a01c.stl",
+      "raw_mesh_sha256": "3a2fbf6d0c41612845e5558c24f2f1168ca7fbe87b1d1ecee2d5c3ba5944a01c",
+      "raw_mesh_size_bytes": 56484,
+      "raw_triangle_count": 1128,
+      "source_occurrence_full_path": "araco - battery_holder v2 v5:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.031313602044919654,
+          "y": 0.05249999999999993,
+          "z": -0.06392719318651134
+        },
+        "x_axis": {
+          "x": 1.325328735646281e-15,
+          "y": -1.0000000000000007,
+          "z": 6.938893903907196e-17
+        },
+        "y_axis": {
+          "x": 1.0000000000000007,
+          "y": 1.3045120539345593e-15,
+          "z": -2.775557561562894e-16
+        },
+        "z_axis": {
+          "x": 5.551115123125783e-17,
+          "y": -2.7755575615628914e-17,
+          "z": 1.0
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPvQ0CMQyFoaFlhSxgYTtOLinpkG6K/JYUTEHNAlxPQ0MDLTtcR88AlEjkDlmWnp6ePj+jcgrbkOK2s2LXFCmZHKvGftjwuO1Pt+f7cF8vW4KVtqoghw5RIEeKIMVViNUKOBa0xfsOzURtSco6es4eiIIHMVjBBc1AESNjdqbj9L91fi2Ij7vvY7js9XX1mVs1gonInJIDG0ojuGrAp1QghmC5WEwSZO4+/SKef34N9n7VAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_battery_holder_2",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/3a2fbf6d0c41612845e5558c24f2f1168ca7fbe87b1d1ecee2d5c3ba5944a01c.stl",
+      "raw_mesh_sha256": "3a2fbf6d0c41612845e5558c24f2f1168ca7fbe87b1d1ecee2d5c3ba5944a01c",
+      "raw_mesh_size_bytes": 56484,
+      "raw_triangle_count": 1128,
+      "source_occurrence_full_path": "araco - battery_holder v2 v5:2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.030686397955080318,
+          "y": -0.052499999999999984,
+          "z": -0.06392719318651134
+        },
+        "x_axis": {
+          "x": -1.0685896612017136e-15,
+          "y": 1.0000000000000004,
+          "z": 1.38777878078144e-17
+        },
+        "y_axis": {
+          "x": -1.0000000000000004,
+          "y": -1.099814683769296e-15,
+          "z": -5.551115123125788e-17
+        },
+        "z_axis": {
+          "x": -5.551115123125784e-17,
+          "y": -1.387778780781446e-17,
+          "z": 1.0
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPMQ7CMAxFYWHlCrmAheu4TjyyIfUUSZqMDJyCmQvQnYWFBVbu0I2dAzAikRZZlr6+nr6/0XiDdRpDdWdFvqrG8OSIGbthQ+O2O92e78N9vawEGSsmIwWHyNDHJgJnXyAWYfDEKFnVYTulVlJy9mILQi89VVIVlKKFYp1Tp0lcSv9b59eioePu+xgue3tdfeZWNaGNSJSSBwlZgX1pQVPKEEMQyoKJA8/dp19Y6QclGkHI1QAAAA==",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_top_cover",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/7badd84769b36257a3402812b3d8b282b9db6a841fd10f1d8f900971f29114e6.stl",
+      "raw_mesh_sha256": "7badd84769b36257a3402812b3d8b282b9db6a841fd10f1d8f900971f29114e6",
+      "raw_mesh_size_bytes": 1242184,
+      "raw_triangle_count": 24842,
+      "source_occurrence_full_path": "araco - top_cover v2 v11:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491945987,
+          "y": 0.0,
+          "z": 0.04807280681348906
+        },
+        "x_axis": {
+          "x": -1.0000000000000004,
+          "y": 0.0,
+          "z": 6.9111383282915995e-15
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -6.9111383282915995e-15,
+          "y": 0.0,
+          "z": -1.0000000000000004
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPMY7CQAwUupKC5h6wH7DwOo7XW3It0v3BDskD+AINNTVFPkFDjfgCLcU111xHj5OTZWtsjWbGmDRhVE4UPSPSQDnxdJH02I5remy2p8vtd39dLYJBqZHUI1lBZNh5duBeB/BBGJQYpa+1YDupBtPZzL0KZOEGuMRwjlXajjoTKw3Kv9f4tfw7HL/9/Pz8eX3ofU4VCtnVxVoFrWqhUAQqdQ4mngVNy1B8zj79Qqz0BtahoVvWAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_gimbal_mount",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/5512805e0ce96209ded11ebca5ceb095d002b0466c09013217b7d54d696dec9f.stl",
+      "raw_mesh_sha256": "5512805e0ce96209ded11ebca5ceb095d002b0466c09013217b7d54d696dec9f",
+      "raw_mesh_size_bytes": 120084,
+      "raw_triangle_count": 2400,
+      "source_occurrence_full_path": "araco - gimbal_mount v1 v26:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.0003136020449194473,
+          "y": -2.4980018054066023e-17,
+          "z": 0.04807280681348921
+        },
+        "x_axis": {
+          "x": -1.0000000000000004,
+          "y": -2.7755575615628914e-16,
+          "z": -6.938893903907216e-18
+        },
+        "y_axis": {
+          "x": 3.1918911957973236e-16,
+          "y": -1.0000000000000009,
+          "z": 5.551115123125788e-17
+        },
+        "z_axis": {
+          "x": -1.3858910094104878e-17,
+          "y": 1.1051081000207927e-16,
+          "z": 0.9999999999999999
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPsQ0CMQxFxQRUtCj0WCTBTnwl9YkhfDlnAEYBBmADKgqupqCmuRnoqKhJDlmWvr6+nr+tYWPLOOPLTspzUc5gdYIZ28vGj7v2eHu8D8N8VhLebINR6yVai9B3rgNUztDlgMAebdCmiZYqtSajssueIOVGAaVDEHIILvc5Cm8bEve/9Y2r12nYf87rfnFfXp9Tq0KQxFSIBCKOAIMwsCoBpT4m0aQ5+6l7/aUAf7sMlX/VAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_frame",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/6565f95a5a1f00716a3111188fc489df98eb26691aae11d67a1c3cb968248786.stl",
+      "raw_mesh_sha256": "6565f95a5a1f00716a3111188fc489df98eb26691aae11d67a1c3cb968248786",
+      "raw_mesh_size_bytes": 1563084,
+      "raw_triangle_count": 31260,
+      "source_occurrence_full_path": "araco - frame v3 v6:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491971645,
+          "y": 0.0,
+          "z": 0.016072806813488872
+        },
+        "x_axis": {
+          "x": -1.000000000000001,
+          "y": 0.0,
+          "z": 3.566591466608315e-15
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -3.566591466608315e-15,
+          "y": 0.0,
+          "z": -1.000000000000001
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPy2kDQQzFNx8c3MI0IKzRaGe0x5wXErcwH00BrsA55poKgnvwxedAGgjsKQUEAmkh2jVC4vF4ek9CJw6tvCPrFZEY8o4XJrp5ej/Q/Di9XT9+Trf9xhTkQnSKlBMiQyu+AKt0KD0yCDFGHceEw+Jqylpr8zxm6FoicBEFadl2UtZGLYjmdM/63j09fF6ed+ff49/X68t2vcociJoP0gWK4gAsNUJBS+11qIlbVK73L5YZyId/wJHdjtYAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gimbal_yaw",
+      "canonical_link": "gimbal_yaw_link",
+      "raw_mesh_path": "raw_by_sha256/a02469ee147a90406711da02268c736c61508ffb4ef9c3ddd7af9f533723bad7.stl",
+      "raw_mesh_sha256": "a02469ee147a90406711da02268c736c61508ffb4ef9c3ddd7af9f533723bad7",
+      "raw_mesh_size_bytes": 425984,
+      "raw_triangle_count": 8518,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491949007,
+          "y": -0.004999999925494184,
+          "z": 0.0899228068134892
+        },
+        "x_axis": {
+          "x": 0.9999999999999998,
+          "y": -3.4694469519536134e-18,
+          "z": 0.0
+        },
+        "y_axis": {
+          "x": -3.4694469519536134e-18,
+          "y": 0.9999999999999999,
+          "z": -5.551115123125783e-17
+        },
+        "z_axis": {
+          "x": 7.703719777548943e-34,
+          "y": -5.5511151231257815e-17,
+          "z": 0.9999999999999998
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPsQ0CMQwUHcVLrBDRWziOkzgNEhLdT0HyyQA0zEDLBL8EFNQUiIbyC0po2IL8I8vS6Xy6O6MShXW0oroTIqlIKx4Zp4a2X9GwaU/n23d/XcyqgpRxKiPtPCJDF3UEzlIgFscgxOhyCB7t6FqVGHQnJjLYrhCwzwkksIaUYiqJ68XZf9b9sm5en+2yPzbzw+P9nFpVB/K2RO0LeBO6mpU1RCsMFJIJnpw4jlP38RdCkR/IyuBM1gAAAA==",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_middle_coxa",
+      "canonical_link": "right_middle_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/20e7dfeec82f17c50fdb1bbb4a75c93077574e007e68217a37c1e92d232602e7.stl",
+      "raw_mesh_sha256": "20e7dfeec82f17c50fdb1bbb4a75c93077574e007e68217a37c1e92d232602e7",
+      "raw_mesh_size_bytes": 478084,
+      "raw_triangle_count": 9560,
+      "source_occurrence_full_path": "araco - coxa v3 v36:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.08968639795508031,
+          "y": -6.869504964868156e-18,
+          "z": 0.006572806813488557
+        },
+        "x_axis": {
+          "x": 1.0000000000000002,
+          "y": 2.6020852139652114e-18,
+          "z": -5.4542937878152236e-36
+        },
+        "y_axis": {
+          "x": -2.287041808959842e-34,
+          "y": -2.5977484052752686e-16,
+          "z": 1.0000000000000009
+        },
+        "z_axis": {
+          "x": -8.673617379884041e-19,
+          "y": -1.0000000000000009,
+          "z": -2.6064220226551527e-16
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPLQ4CQQyFQ4KGK8wFGjrd7vzgCJJTdIYpAhQejybBI7kABgt3WE2C4Qg4Zpc0TV6ar6+vaILBWtZQ7UFRqMoa7ifOdKvLjLrF6nR7fvb36agSZBpnCpJ4RIZ1sgm4BIWkjiEQoysxemx710oyFk3iClCsENclSDFHKLFVQSVtVf+3JuPze3Nc7q6P+fe1PTRDqupguRCJWJDIAVi8QpAmQ+LsAmZqsvghe/+L9YF/t8lopNYAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_front_coxa",
+      "canonical_link": "right_front_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/20e7dfeec82f17c50fdb1bbb4a75c93077574e007e68217a37c1e92d232602e7.stl",
+      "raw_mesh_sha256": "20e7dfeec82f17c50fdb1bbb4a75c93077574e007e68217a37c1e92d232602e7",
+      "raw_mesh_size_bytes": 478084,
+      "raw_triangle_count": 9560,
+      "source_occurrence_full_path": "araco - coxa v3 v36:2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.0665062031084749,
+          "y": 0.08181980515339467,
+          "z": 0.006572806813488687
+        },
+        "x_axis": {
+          "x": 0.5798064466546122,
+          "y": 0.8147542478672646,
+          "z": -2.377463933096696e-15
+        },
+        "y_axis": {
+          "x": 3.514672750919014e-15,
+          "y": 4.0988247430239986e-16,
+          "z": 1.0000000000000024
+        },
+        "z_axis": {
+          "x": 0.8147542478672669,
+          "y": -0.5798064466546139,
+          "z": -2.6141107686788024e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPMQ7CMAxFhcQMV8gFLBzHdRw2xNhTpGnKABM7OzMSOyMXYGGFO3RGYuEIbKRFlqWvr6fvbzRqsIw1VHZUpEVZw4Mjpq8vC+pX9en2/Ozv80khyDgxGSl6RIa2sQ1w1g6aThiUGCWH4LEaUgvpiG0loQUbRArJCKqVQqicZIyZk0v/W7Pp+b05rnfXx/L72h7c2KokWM5EMVqIgRU4+g40ugQNJ1FM5FL0Y/fhF+uVf85CHX7WAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_rear_coxa",
+      "canonical_link": "right_rear_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/20e7dfeec82f17c50fdb1bbb4a75c93077574e007e68217a37c1e92d232602e7.stl",
+      "raw_mesh_sha256": "20e7dfeec82f17c50fdb1bbb4a75c93077574e007e68217a37c1e92d232602e7",
+      "raw_mesh_size_bytes": 478084,
+      "raw_triangle_count": 9560,
+      "source_occurrence_full_path": "araco - coxa v3 v36:3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.06650620310847491,
+          "y": -0.08181980515339463,
+          "z": 0.006572806813488638
+        },
+        "x_axis": {
+          "x": 0.5798064466546119,
+          "y": -0.8147542478672636,
+          "z": -8.345719796494832e-16
+        },
+        "y_axis": {
+          "x": 4.415688181629306e-15,
+          "y": 2.095087200109667e-15,
+          "z": 1.0000000000000002
+        },
+        "z_axis": {
+          "x": -0.814754247867264,
+          "y": -0.579806446654613,
+          "z": 4.7984963822942694e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/x2PsQ0CMQxFhUQNK2QBC8cxiY8OUd4UTi5HARU9PTUSPSUL0NDCDlcj0TACHcnJsvRlfb3/jUYMlrGGyo6KpChruF68GdrrgoZ1e76/vofHfFIcZJw3GUkDIkMXbQTO0kPsPYMQo89NE3BZqcWZtBdx0kFMLMCBCdTGCB0uXUyoLpfEMWs2vXy2p83+9lz93rujG1sVguVMpGpBm0rQ0IOoSxA5ecFELmkYu9dfbBD+A2AD7XfWAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_middle_femur",
+      "canonical_link": "right_middle_femur_link",
+      "raw_mesh_path": "raw_by_sha256/66808a21f7df56ba548a3ff43afb89e1d320a024418f71a3d9510afa2dd5a3d2.stl",
+      "raw_mesh_sha256": "66808a21f7df56ba548a3ff43afb89e1d320a024418f71a3d9510afa2dd5a3d2",
+      "raw_mesh_size_bytes": 212384,
+      "raw_triangle_count": 4246,
+      "source_occurrence_full_path": "araco - femur v5 v28:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.13268639905393576,
+          "y": -0.034317647058823564,
+          "z": -0.012927192805184078
+        },
+        "x_axis": {
+          "x": -0.7685737211975842,
+          "y": 3.7624151582718385e-14,
+          "z": -0.6397612328709034
+        },
+        "y_axis": {
+          "x": -0.6397612328709056,
+          "y": -5.923108816544714e-16,
+          "z": 0.7685737211975869
+        },
+        "z_axis": {
+          "x": 2.845839295033044e-14,
+          "y": 1.0000000000000036,
+          "z": 2.4382726158153454e-14
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPuw0CMQwVE9BSpqOycBzbSSpEQ0PDCgnJlUjQwwKIhgmY4SQaanZgBjagJHfoydKT9fQ+aILBBmuo3cgoNGYNDx817819Qe/V5vZ4fY7P6aQpyDg1FSl5RIaSbQauoYPcKUMgRq0xepTBtSkTFnZVAqDfBeBkCyTrBGJWFF+rkKV/1v7Qz6/f9ay/0Hm+PS3HVs2hqBQUcqBYEFhqhsgtkDR7SbGLaMvYfdjC6n6WbxiR1QAAAA==",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_front_femur",
+      "canonical_link": "right_front_femur_link",
+      "raw_mesh_path": "raw_by_sha256/66808a21f7df56ba548a3ff43afb89e1d320a024418f71a3d9510afa2dd5a3d2.stl",
+      "raw_mesh_sha256": "66808a21f7df56ba548a3ff43afb89e1d320a024418f71a3d9510afa2dd5a3d2",
+      "raw_mesh_size_bytes": 212384,
+      "raw_triangle_count": 4246,
+      "source_occurrence_full_path": "araco - femur v5 v28:2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.11939832965706088,
+          "y": 0.09695664569045373,
+          "z": -0.012927192780362386
+        },
+        "x_axis": {
+          "x": -0.42436404024566204,
+          "y": -0.5963238360442531,
+          "z": -0.6814051980369998
+        },
+        "y_axis": {
+          "x": -0.3950831266058152,
+          "y": -0.5551777796194844,
+          "z": 0.7319063847843933
+        },
+        "z_axis": {
+          "x": -0.8147542478672677,
+          "y": 0.5798064466546137,
+          "z": 2.9495812408131447e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPsQ0CMQxFxQS0lOmusnB8jpNUiIbmGlZI5KREgh4WQDRMwAxINNTswAxsQEnukGXpy3r6/xtNMNjGGmo7KQpNWcPjRcx7uC3pvR6uj9fn8JzPGkGmF1OQkkdk0GwzcAkVchWGQIxSYvToRtdGckQtMSWoTgIwWYGoQcBWbZgryXr/z9rt793lu1ncz3TqtsfV1Ko5qDhFRz0IKgK7kiFyCyTJ3qVYI1qduo+/sPQ/du+2O9UAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_rear_femur",
+      "canonical_link": "right_rear_femur_link",
+      "raw_mesh_path": "raw_by_sha256/66808a21f7df56ba548a3ff43afb89e1d320a024418f71a3d9510afa2dd5a3d2.stl",
+      "raw_mesh_sha256": "66808a21f7df56ba548a3ff43afb89e1d320a024418f71a3d9510afa2dd5a3d2",
+      "raw_mesh_size_bytes": 212384,
+      "raw_triangle_count": 4246,
+      "source_occurrence_full_path": "araco - femur v5 v28:3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.06347743222108877,
+          "y": -0.1367518316879011,
+          "z": -0.012927192780362059
+        },
+        "x_axis": {
+          "x": -0.4243640402456631,
+          "y": 0.5963238360442518,
+          "z": -0.6814051980370011
+        },
+        "y_axis": {
+          "x": -0.3950831266058173,
+          "y": 0.5551777796194872,
+          "z": 0.7319063847843948
+        },
+        "z_axis": {
+          "x": 0.8147542478672696,
+          "y": 0.5798064466546173,
+          "z": -4.251457213005242e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPMQ7CMAwUL2BlzNbJwnEcN5kQC0sXvlA36YgEO3wAsfAC3lCJhZk/9A38gJG0yLJ0Op3vzmiCwTLWUNkZUSjIGp4YMWPzWNO4be7P9+f0Wi6KgowTk5HaGpEhqVXgHHrQXhgCMUqOsUY/uRZlT9h1lhTI2wDsIoO22UKOSQVVtEb5Zx2OQ3X77lbDlS7V/ryZWxWHJD6hJweCCYF9VohcAqnc+jb2EW2au0+/sLgfBwLk0NUAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_middle_foot",
+      "canonical_link": "right_middle_foot_link",
+      "raw_mesh_path": "raw_by_sha256/34f11405b9d8fa22db5ffdad23782f3bc9fe8e170d6348fbd6845b1cbd2319a6.stl",
+      "raw_mesh_sha256": "34f11405b9d8fa22db5ffdad23782f3bc9fe8e170d6348fbd6845b1cbd2319a6",
+      "raw_mesh_size_bytes": 121984,
+      "raw_triangle_count": 2438,
+      "source_occurrence_full_path": "araco - end v2 v13:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.27968639868705003,
+          "y": -0.00011764765673715681,
+          "z": -0.04292719334081655
+        },
+        "x_axis": {
+          "x": -3.49065831795059e-10,
+          "y": -1.3302549080931739e-16,
+          "z": -0.9999999999999996
+        },
+        "y_axis": {
+          "x": -1.000000000000001,
+          "y": 3.356549399648666e-14,
+          "z": 3.4906588730621024e-10
+        },
+        "z_axis": {
+          "x": 3.357069816687058e-14,
+          "y": 1.0000000000000013,
+          "z": -1.2608660862378286e-16
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPvQ0CMQyFxQAIMQFZwMKxc/kpabklSC7JADcKE1DRgoRoqKmoKJBuBjpGwHcny5Kf9en5GZVXKKUVSU8TeZm0MuPGqqE9bWnYtcf789s/VgshSLFVBSk6RAM56QSm+AqpWgOeDNoSgsNmdBVSANvkGqGrSUgsBWLATqTOoaacYynzrd/htVmf98vLLXz43V+nVOLgGpvIWQZmz2A8EySKIhvORNwR2jn7+It2JvwBpqYVWdYAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_front_foot",
+      "canonical_link": "right_front_foot_link",
+      "raw_mesh_path": "raw_by_sha256/34f11405b9d8fa22db5ffdad23782f3bc9fe8e170d6348fbd6845b1cbd2319a6.stl",
+      "raw_mesh_sha256": "34f11405b9d8fa22db5ffdad23782f3bc9fe8e170d6348fbd6845b1cbd2319a6",
+      "raw_mesh_size_bytes": 121984,
+      "raw_triangle_count": 2438,
+      "source_occurrence_full_path": "araco - end v2 v13:2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.1677822522883889,
+          "y": 0.22393178768693844,
+          "z": -0.042927193330906416
+        },
+        "x_axis": {
+          "x": -1.0119771687300272e-10,
+          "y": -1.422020834418447e-10,
+          "z": -1.0000000000000004
+        },
+        "y_axis": {
+          "x": -0.5798064466546137,
+          "y": -0.8147542478672638,
+          "z": 1.7453472000994452e-10
+        },
+        "z_axis": {
+          "x": -0.8147542478672637,
+          "y": 0.5798064466546133,
+          "z": 1.4593870915318038e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPsQ0CMQwUAyDEBGQBC8d27KSkhSX45J8BGIUJqGhBQjTUVFQUSD8DHSOQ52WddD6dzmd00WEd76jizyhW5p0Mirp+c1xSv9ocbo/P/j6bVAc5VtchNYYo0GafQbq4g7xTgUiC2qVkGIbU6jTjiBYayDkUEC4CyRKDzxbNm4ZUdLz13T4X89N6er6mN7/2l3+rISFoJlMG5sggkQkyNXUN3BJxIdSx+/CLN0k/wW5L29YAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_rear_foot",
+      "canonical_link": "right_rear_foot_link",
+      "raw_mesh_path": "raw_by_sha256/34f11405b9d8fa22db5ffdad23782f3bc9fe8e170d6348fbd6845b1cbd2319a6.stl",
+      "raw_mesh_sha256": "34f11405b9d8fa22db5ffdad23782f3bc9fe8e170d6348fbd6845b1cbd2319a6",
+      "raw_mesh_size_bytes": 121984,
+      "raw_triangle_count": 2438,
+      "source_occurrence_full_path": "araco - end v2 v13:3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.16759054443224003,
+          "y": -0.2240682134265534,
+          "z": -0.04292719333090607
+        },
+        "x_axis": {
+          "x": -1.0119952098541773e-10,
+          "y": 1.4219841970586344e-10,
+          "z": -0.9999999999999989
+        },
+        "y_axis": {
+          "x": -0.5798064466546147,
+          "y": 0.8147542478672649,
+          "z": 1.7453283263080266e-10
+        },
+        "z_axis": {
+          "x": 0.8147542478672646,
+          "y": 0.5798064466546146,
+          "z": -4.786369507984577e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPsQ3CQAwUAyDEBPwCFo7t939KWrIEMf8ZgFGYgIoWJERDTUVFgZQZ6BiBTyLb0tk63Z3RRYelKkdlRkSxoMrJcFHXN6c19ZvmeH9+D4/FrDDIsbqM1AZEgWSVgeTYgXUqEElQc10H9INqYVr2yYL3gEkRhJNBzG0CsiShdO6UJ6/f7rVanrfzy63+8PtwHVMVheDVKCgDc2SQyARGbVk9JyLeE+qUffilClL/AbCtJabWAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_middle_coxa",
+      "canonical_link": "left_middle_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/46dc4b9381588d7dc0f5e99ca11a1dfc5fa17a6e64a5c4a639b0ae1fbf1386ca.stl",
+      "raw_mesh_sha256": "46dc4b9381588d7dc0f5e99ca11a1dfc5fa17a6e64a5c4a639b0ae1fbf1386ca",
+      "raw_mesh_size_bytes": 478084,
+      "raw_triangle_count": 9560,
+      "source_occurrence_full_path": "araco - coxa v3 v35(Mirror):1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.09031360197614535,
+          "y": -6.533587872716025e-11,
+          "z": 0.006572806813489208
+        },
+        "x_axis": {
+          "x": -1.0000000000000002,
+          "y": -1.4024621855027851e-30,
+          "z": -1.7043456697815553e-33
+        },
+        "y_axis": {
+          "x": -7.942309235999403e-34,
+          "y": 3.931212932639068e-16,
+          "z": 1.0000000000000009
+        },
+        "z_axis": {
+          "x": -3.46944695195502e-18,
+          "y": 1.0000000000000009,
+          "z": -3.922539315259184e-16
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CQQhFYwW2QANEBhBmjp63ipmdmQIsxQpswotne9ga7EJ2CzCE5H/ywwOCDBSVgKMPxTlUAt0nBtvyvPB2Wx6vz/f+Pp8iwSAGg7g6kWJvqaGOPLFNU8ysZKMUp+u+NZLF8yikDUXUUVcirBbWKDVxUmVq/1nWKwVOUKoKqqbAdJ8o7CuL5l5LPW7ff0ki/gNw0IKR1gAAAA==",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_front_coxa",
+      "canonical_link": "left_front_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/46dc4b9381588d7dc0f5e99ca11a1dfc5fa17a6e64a5c4a639b0ae1fbf1386ca.stl",
+      "raw_mesh_sha256": "46dc4b9381588d7dc0f5e99ca11a1dfc5fa17a6e64a5c4a639b0ae1fbf1386ca",
+      "raw_mesh_size_bytes": 478084,
+      "raw_triangle_count": 9560,
+      "source_occurrence_full_path": "araco - coxa v3 v35(Mirror):2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.06713340719831447,
+          "y": 0.08181980515339456,
+          "z": 0.006572806813489167
+        },
+        "x_axis": {
+          "x": -0.5798064466546126,
+          "y": 0.8147542478672648,
+          "z": 7.01649587383622e-16
+        },
+        "y_axis": {
+          "x": 2.1471231481920443e-15,
+          "y": 6.598133485506174e-16,
+          "z": 1.0000000000000024
+        },
+        "z_axis": {
+          "x": 0.8147542478672669,
+          "y": 0.5798064466546139,
+          "z": -2.1437730227865285e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CQQhFYwW2QANEBnBgj563CkZ2CrAUK7AJL57twRrswpktwBCSn58f3ofAgcYU4LG7Yh+qgE6nwmd9nPhzWe/P9/f2Oh5GgkEqbMRhRIrZSkPdvGPrVdFZqW7LYnSeV2fSWrhrYKEw1OFjeFZ00cyMXlToP6tm0MAJSqigahmYtI7CdmVRz1hi7z5/KSL2A3QCBYrWAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_rear_coxa",
+      "canonical_link": "left_rear_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/46dc4b9381588d7dc0f5e99ca11a1dfc5fa17a6e64a5c4a639b0ae1fbf1386ca.stl",
+      "raw_mesh_sha256": "46dc4b9381588d7dc0f5e99ca11a1dfc5fa17a6e64a5c4a639b0ae1fbf1386ca",
+      "raw_mesh_size_bytes": 478084,
+      "raw_triangle_count": 9560,
+      "source_occurrence_full_path": "araco - coxa v3 v35(Mirror):3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.0671334071983145,
+          "y": -0.08181980515339474,
+          "z": 0.006572806813489124
+        },
+        "x_axis": {
+          "x": -0.5798064466546122,
+          "y": -0.8147542478672642,
+          "z": 2.499998712611117e-15
+        },
+        "y_axis": {
+          "x": 3.093950947370134e-15,
+          "y": 8.437080395199876e-16,
+          "z": 1.0000000000000004
+        },
+        "z_axis": {
+          "x": -0.8147542478672648,
+          "y": 0.5798064466546131,
+          "z": 2.0455717025273907e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ3DMAhF1Qm6AgugYiA2PvacKezYHqCjdIIu0UvP3SEzdIvgDFAhpC/0xAMCA/IKwN5nYvMUQOckwr6+brzf1+f7+3t8rhcnGCRCJy6JSLHVUFG7DawjKhorxZ5zomVunSSnsGyZcIlSUIUMa4sJB2tspcoo1v+7HCPXCUpRQdXgmpYGCqeNRa2VXM7b5y9BJB0Rf/Xp1gAAAA==",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_middle_femur",
+      "canonical_link": "left_middle_femur_link",
+      "raw_mesh_path": "raw_by_sha256/89b57e201ead360a516d542155ce8fecec427d78d84c5d1ff32afbe67e66a9a9.stl",
+      "raw_mesh_sha256": "89b57e201ead360a516d542155ce8fecec427d78d84c5d1ff32afbe67e66a9a9",
+      "raw_mesh_size_bytes": 212384,
+      "raw_triangle_count": 4246,
+      "source_occurrence_full_path": "araco - femur v5 v27(Mirror):1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.13331360307500092,
+          "y": -0.034317647124159446,
+          "z": -0.012927192805183445
+        },
+        "x_axis": {
+          "x": 0.7685737211975842,
+          "y": 2.1901849086253722e-14,
+          "z": -0.6397612328709034
+        },
+        "y_axis": {
+          "x": 0.6397612328709056,
+          "y": -1.894853926227052e-14,
+          "z": 0.7685737211975867
+        },
+        "z_axis": {
+          "x": 4.631041115185689e-15,
+          "y": -1.0000000000000036,
+          "z": -2.8432321283088684e-14
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CMQwERQW0kAYsbMdx7CfvqyI54gIohQpogg9verga6ILcFYCslVar0drGZAnnUOKpw7FNR0n2RNO2PC+8XZfH6/O9v8+nSXDKmgZyq4gCt04dZFhADxUwFtThXrHsrZPk2kvJZlDDEERKgHUh8ObUuEar3P7vKmGrrpEhaDhIHQjOPAvr6q6kklc9bt9/oaz0A6xFmn3WAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_front_femur",
+      "canonical_link": "left_front_femur_link",
+      "raw_mesh_path": "raw_by_sha256/89b57e201ead360a516d542155ce8fecec427d78d84c5d1ff32afbe67e66a9a9.stl",
+      "raw_mesh_sha256": "89b57e201ead360a516d542155ce8fecec427d78d84c5d1ff32afbe67e66a9a9",
+      "raw_mesh_size_bytes": 212384,
+      "raw_triangle_count": 4246,
+      "source_occurrence_full_path": "araco - femur v5 v27(Mirror):2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.12002553374690061,
+          "y": 0.0969566456904537,
+          "z": -0.012927192780361594
+        },
+        "x_axis": {
+          "x": 0.42436404024565844,
+          "y": -0.5963238360442533,
+          "z": -0.6814051980370017
+        },
+        "y_axis": {
+          "x": 0.3950831266058191,
+          "y": -0.5551777796194842,
+          "z": 0.7319063847843911
+        },
+        "z_axis": {
+          "x": -0.8147542478672675,
+          "y": -0.5798064466546137,
+          "z": 1.7453264809511948e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CMQwERQW0kAYsbMdx7CfvqyIJSQGUQgU0wYc3PVwNdEFyBSDL0mo18q4xWMA5FHjuodimoiDL0bBvzwvv1+3x+nzv7/NpEhyiho5cMqLArVIF6TagDhUwFtTunjGtq5Nsg92SRGiSyiILVMMBuSbvVpkL0/+sNKxpGxEGdQfJHcGZDXJu7koqsenRff1CUekHlrt/w9YAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_rear_femur",
+      "canonical_link": "left_rear_femur_link",
+      "raw_mesh_path": "raw_by_sha256/89b57e201ead360a516d542155ce8fecec427d78d84c5d1ff32afbe67e66a9a9.stl",
+      "raw_mesh_sha256": "89b57e201ead360a516d542155ce8fecec427d78d84c5d1ff32afbe67e66a9a9",
+      "raw_mesh_size_bytes": 212384,
+      "raw_triangle_count": 4246,
+      "source_occurrence_full_path": "araco - femur v5 v27(Mirror):3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.06410463631092841,
+          "y": -0.1367518316879012,
+          "z": -0.012927192780361665
+        },
+        "x_axis": {
+          "x": 0.42436404024565855,
+          "y": 0.5963238360442523,
+          "z": -0.6814051980370033
+        },
+        "y_axis": {
+          "x": 0.3950831266058219,
+          "y": 0.5551777796194854,
+          "z": 0.7319063847843923
+        },
+        "z_axis": {
+          "x": 0.8147542478672689,
+          "y": -0.5798064466546167,
+          "z": -2.4414024733535954e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CMQwERQW04AYsbMdx4ifvq+KScwqgFCqgCT686YEa6ILcFYBWllarke0lqEBTDDLncFKnY9A9Mfgsj4t8rsv9+f7eXufTJASSQZCshUhxa9xQow5swxSrKFm4F8r71klqiBSKQPJEqJZXrGvqyM2zxrZ1Dvl/K4/arY+Eg8NRSxC6SMVSuruxaep2/L534WT8A+hQ7FrWAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_middle_foot",
+      "canonical_link": "left_middle_foot_link",
+      "raw_mesh_path": "raw_by_sha256/2757101c37a27d171f9988763e3a649ee750652617a25ac0b21a8784d7108407.stl",
+      "raw_mesh_sha256": "2757101c37a27d171f9988763e3a649ee750652617a25ac0b21a8784d7108407",
+      "raw_mesh_size_bytes": 121984,
+      "raw_triangle_count": 2438,
+      "source_occurrence_full_path": "araco - end v2 v12(Mirror):1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.2803136027081145,
+          "y": -0.0001176477220695445,
+          "z": -0.042927193340815996
+        },
+        "x_axis": {
+          "x": 3.49065110150093e-10,
+          "y": -5.452537773994207e-16,
+          "z": -0.9999999999999997
+        },
+        "y_axis": {
+          "x": 1.0000000000000013,
+          "y": 1.0233832278515538e-14,
+          "z": 3.4906522117239547e-10
+        },
+        "z_axis": {
+          "x": 1.0239036448755566e-14,
+          "y": -1.0000000000000016,
+          "z": 5.383148870696035e-16
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CMQwERQW0kAYsbJ/jc568rwrHSQqgFCqgCT686YEa6ILcFYBWllarke3FZAmnKPGcw7FNR0n2RNNne1z4c93uz/f39jqfJsFp0dSRfUUUaJUqSLcBdaiAsaD2UlbM+9ZJkmo0loAxXEEwBngjgjDCEORgy/9v5cVz5yJQXDOItgzW0YC6E0XBcK7H73sXEl5+bCoU4tYAAAA=",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_front_foot",
+      "canonical_link": "left_front_foot_link",
+      "raw_mesh_path": "raw_by_sha256/2757101c37a27d171f9988763e3a649ee750652617a25ac0b21a8784d7108407.stl",
+      "raw_mesh_sha256": "2757101c37a27d171f9988763e3a649ee750652617a25ac0b21a8784d7108407",
+      "raw_mesh_size_bytes": 121984,
+      "raw_triangle_count": 2438,
+      "source_occurrence_full_path": "araco - end v2 v12(Mirror):2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.16840945637822877,
+          "y": 0.22393178768693825,
+          "z": -0.04292719333090545
+        },
+        "x_axis": {
+          "x": 1.0119310944745052e-10,
+          "y": -1.4220141730802993e-10,
+          "z": -0.9999999999999993
+        },
+        "y_axis": {
+          "x": 0.5798064466546118,
+          "y": -0.8147542478672656,
+          "z": 1.7453138934087065e-10
+        },
+        "z_axis": {
+          "x": -0.8147542478672657,
+          "y": -0.5798064466546112,
+          "z": 1.838452529290077e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CMQwERQW04AYsbMdJ7CfvqyK5cwqgFCqgCT686YEa6ILcFYBWllarke0lMKApBplzOLHpGHRPCnyWx0U+1+X+fH9vr/NpEgKpQJC0SqS4de6oYQP7KIomSiXcK+V96yRHb4OEE7KNhDrE0SUqrsnDWvRKuv2/lVPLIa7orWTUsmW0IEOOxrw6rU368fvehVXSD+NLNnzWAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_rear_foot",
+      "canonical_link": "left_rear_foot_link",
+      "raw_mesh_path": "raw_by_sha256/2757101c37a27d171f9988763e3a649ee750652617a25ac0b21a8784d7108407.stl",
+      "raw_mesh_sha256": "2757101c37a27d171f9988763e3a649ee750652617a25ac0b21a8784d7108407",
+      "raw_mesh_size_bytes": 121984,
+      "raw_triangle_count": 2438,
+      "source_occurrence_full_path": "araco - end v2 v12(Mirror):3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.16821774852208002,
+          "y": -0.22406821342655348,
+          "z": -0.04292719333090528
+        },
+        "x_axis": {
+          "x": 1.0119260984708944e-10,
+          "y": 1.421999185069467e-10,
+          "z": -0.9999999999999986
+        },
+        "y_axis": {
+          "x": 0.5798064466546127,
+          "y": 0.8147542478672658,
+          "z": 1.7453027911784602e-10
+        },
+        "z_axis": {
+          "x": 0.8147542478672646,
+          "y": -0.5798064466546123,
+          "z": -1.1154022663704063e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ3DMAhF1Qm6ghdABYxtOPacKewYD9BROkGX6KXn7pAZukWcDFAhpCf09f8HgwacQ4HnnsQ6iYIclxy25XXj7b4839/f43O9TAWHmIMj14Io0Bs1ENcBbWQBZcHsZgXT4TqVDY28eoRRnEAiObQ+KebYW9Fuw/V/Voo1OZuA1ZxAck+gjgrTlmg1XCu3s/vxCwnHHbCe36TWAAAA",
+          "material": "PETG",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "primary",
+      "creator": "Araco Hexapod contributors",
+      "license": "MIT",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_gimbal_yaw_servo",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/e41e8bbbb73118fb8a89f04d39c973872ba4b74e63b159022d66122df7b9133b.stl",
+      "raw_mesh_sha256": "e41e8bbbb73118fb8a89f04d39c973872ba4b74e63b159022d66122df7b9133b",
+      "raw_mesh_size_bytes": 2835084,
+      "raw_triangle_count": 56700,
+      "source_occurrence_full_path": "araco - gimbal_mount v1 v26:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.0003136020449194473,
+          "y": -2.4980018054066023e-17,
+          "z": 0.04807280681348921
+        },
+        "x_axis": {
+          "x": -1.0000000000000004,
+          "y": -2.7755575615628914e-16,
+          "z": -6.938893903907216e-18
+        },
+        "y_axis": {
+          "x": 3.1918911957973236e-16,
+          "y": -1.0000000000000009,
+          "z": 5.551115123125788e-17
+        },
+        "z_axis": {
+          "x": -1.3858910094104878e-17,
+          "y": 1.1051081000207927e-16,
+          "z": 0.9999999999999999
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPsQ0CMQxFxQRUtCj0WCTGTnwlNWIIX84ZgFGAAdiAioKrKahpmIGOiprcIcvS19fX87d34nyd4LDuqFCqCo4GJ7rX9rzC12Z7uN7f+346qQl06+jMoybvCbo2tEAmBdoSCQTJR2ua5HmgDslkEgoy5NIYkLYEyoEglK4klXXDGv63vmnxPPa7z2nZzW7zy2NsVQmahSuRQTUwUFQBMWPg3KWslq0UHLsPv2CS9ANzzNxH1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_frame_servo_1",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/55b70a688342bd360998efd685f1b6f4c392c97dd68f7a80be588a85146513a6.stl",
+      "raw_mesh_sha256": "55b70a688342bd360998efd685f1b6f4c392c97dd68f7a80be588a85146513a6",
+      "raw_mesh_size_bytes": 2835084,
+      "raw_triangle_count": 56700,
+      "source_occurrence_full_path": "araco - frame v3 v6:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491971645,
+          "y": 0.0,
+          "z": 0.016072806813488872
+        },
+        "x_axis": {
+          "x": -1.000000000000001,
+          "y": 0.0,
+          "z": 3.566591466608315e-15
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -3.566591466608315e-15,
+          "y": 0.0,
+          "z": -1.000000000000001
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body19",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPywkCQQzFmwfFFqaBYCabnckePS+oLcwnU4AV6NGrFYg9ePEs2IDgyQIEwRacVULC4/HyXoJGDNayhmr/EElF1vDAOPPoj3N6LPrD+fraXGajqiDTOKNIwSMy5GgjsEqBWByDEKPTrvPYDq5VmVLKlrsARaMDjqIgOdQdHzRTbkSD/2c9J8vp7bSabN/rz32/G/+uqg5E2TZSBKJiCyzJQcSaWlKbPGennP5fDJMIEb9E0L541wAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_frame_servo_2",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/95c1be2624c327faff24771e8cee390098509dc0e34ad2ca8597831034de7716.stl",
+      "raw_mesh_sha256": "95c1be2624c327faff24771e8cee390098509dc0e34ad2ca8597831034de7716",
+      "raw_mesh_size_bytes": 2771384,
+      "raw_triangle_count": 55426,
+      "source_occurrence_full_path": "araco - frame v3 v6:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491971645,
+          "y": 0.0,
+          "z": 0.016072806813488872
+        },
+        "x_axis": {
+          "x": -1.000000000000001,
+          "y": 0.0,
+          "z": 3.566591466608315e-15
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -3.566591466608315e-15,
+          "y": 0.0,
+          "z": -1.000000000000001
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body20",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPywkCQQzFmwfFFqaBYCabnckePS+oLcwnU4AV6NGrFYg9ePEs2IDgyQIEwRacVULC4/HyXoJGDNayhmr/EElF1vDAOPPoj3N6LPrD+fraXGajqiDTOKNIwSMy5GgjsEqBWByDEKPTrvPYDq5VmVLKlrsARaMDjqIgOdQdHzRTbkSD/2c9J8vp7bSabN/rz32/G/+uqg5E2TZSBKJiCyzJQcSaWlKbPGennP5fDJMIffMFORf2rtcAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_frame_servo_3",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/609c95ece71f51e48494ba78edb65feb8363ec1bc5ff68694da770db14e67fa8.stl",
+      "raw_mesh_sha256": "609c95ece71f51e48494ba78edb65feb8363ec1bc5ff68694da770db14e67fa8",
+      "raw_mesh_size_bytes": 2771384,
+      "raw_triangle_count": 55426,
+      "source_occurrence_full_path": "araco - frame v3 v6:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491971645,
+          "y": 0.0,
+          "z": 0.016072806813488872
+        },
+        "x_axis": {
+          "x": -1.000000000000001,
+          "y": 0.0,
+          "z": 3.566591466608315e-15
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -3.566591466608315e-15,
+          "y": 0.0,
+          "z": -1.000000000000001
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body21",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPywkCQQzFmwfFFqaBYCabnckePS+oLcwnU4AV6NGrFYg9ePEs2IDgyQIEwRacVULC4/HyXoJGDNayhmr/EElF1vDAOPPoj3N6LPrD+fraXGajqiDTOKNIwSMy5GgjsEqBWByDEKPTrvPYDq5VmVLKlrsARaMDjqIgOdQdHzRTbkSD/2c9J8vp7bSabN/rz32/G/+uqg5E2TZSBKJiCyzJQcSaWlKbPGennP5fDJPIsvsCQtpz9NcAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_frame_servo_4",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/d701b2707cafad27e716698555909df5b7947bf960c133ef9cc3eed8c503e9c2.stl",
+      "raw_mesh_sha256": "d701b2707cafad27e716698555909df5b7947bf960c133ef9cc3eed8c503e9c2",
+      "raw_mesh_size_bytes": 2835084,
+      "raw_triangle_count": 56700,
+      "source_occurrence_full_path": "araco - frame v3 v6:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491971645,
+          "y": 0.0,
+          "z": 0.016072806813488872
+        },
+        "x_axis": {
+          "x": -1.000000000000001,
+          "y": 0.0,
+          "z": 3.566591466608315e-15
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -3.566591466608315e-15,
+          "y": 0.0,
+          "z": -1.000000000000001
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body22",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPywkCQQzFmwfFFqaBYCabnckePS+oLcwnU4AV6NGrFYg9ePEs2IDgyQIEwRacVULC4/HyXoJGDNayhmr/EElF1vDAOPPoj3N6LPrD+fraXGajqiDTOKNIwSMy5GgjsEqBWByDEKPTrvPYDq5VmVLKlrsARaMDjqIgOdQdHzRTbkSD/2c9J8vp7bSabN/rz32/G/+uqg5E2TZSBKJiCyzJQcSaWlKbPGennP5fDJOIbPcFz439G9cAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_frame_servo_5",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/20162725948e73dd3661194890d420c6a20bf5764ad6f7b8f2243f7b64b0420c.stl",
+      "raw_mesh_sha256": "20162725948e73dd3661194890d420c6a20bf5764ad6f7b8f2243f7b64b0420c",
+      "raw_mesh_size_bytes": 2771384,
+      "raw_triangle_count": 55426,
+      "source_occurrence_full_path": "araco - frame v3 v6:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491971645,
+          "y": 0.0,
+          "z": 0.016072806813488872
+        },
+        "x_axis": {
+          "x": -1.000000000000001,
+          "y": 0.0,
+          "z": 3.566591466608315e-15
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -3.566591466608315e-15,
+          "y": 0.0,
+          "z": -1.000000000000001
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body23",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPywkCQQzFmwfFFqaBYCabnckePS+oLcwnU4AV6NGrFYg9ePEs2IDgyQIEwRacVULC4/HyXoJGDNayhmr/EElF1vDAOPPoj3N6LPrD+fraXGajqiDTOKNIwSMy5GgjsEqBWByDEKPTrvPYDq5VmVLKlrsARaMDjqIgOdQdHzRTbkSD/2c9J8vp7bSabN/rz32/G/+uqg5E2TZSBKJiCyzJQcSaWlKbPGennP5fDJOIOvoCT972RNcAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "base_frame_servo_6",
+      "canonical_link": "base_link",
+      "raw_mesh_path": "raw_by_sha256/f9fd413c8a75cd350a5fa62559d87bfafd61efaca0d20baa723d4293eccb1425.stl",
+      "raw_mesh_sha256": "f9fd413c8a75cd350a5fa62559d87bfafd61efaca0d20baa723d4293eccb1425",
+      "raw_mesh_size_bytes": 2771384,
+      "raw_triangle_count": 55426,
+      "source_occurrence_full_path": "araco - frame v3 v6:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491971645,
+          "y": 0.0,
+          "z": 0.016072806813488872
+        },
+        "x_axis": {
+          "x": -1.000000000000001,
+          "y": 0.0,
+          "z": 3.566591466608315e-15
+        },
+        "y_axis": {
+          "x": 0.0,
+          "y": 1.0,
+          "z": 0.0
+        },
+        "z_axis": {
+          "x": -3.566591466608315e-15,
+          "y": 0.0,
+          "z": -1.000000000000001
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body24",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPywkCQQzFmwfFFqaBYCabnckePS+oLcwnU4AV6NGrFYg9ePEs2IDgyQIEwRacVULC4/HyXoJGDNayhmr/EElF1vDAOPPoj3N6LPrD+fraXGajqiDTOKNIwSMy5GgjsEqBWByDEKPTrvPYDq5VmVLKlrsARaMDjqIgOdQdHzRTbkSD/2c9J8vp7bSabN/rz32/G/+uqg5E2TZSBKJiCyzJQcSaWlKbPGennP5fDJOoce0XFD3IXNcAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_middle_coxa_servo",
+      "canonical_link": "right_middle_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/11a23248d825ba23d1fc1062c92beac1d8b8dbd214c7b5a1de4601d81f414ac1.stl",
+      "raw_mesh_sha256": "11a23248d825ba23d1fc1062c92beac1d8b8dbd214c7b5a1de4601d81f414ac1",
+      "raw_mesh_size_bytes": 1911284,
+      "raw_triangle_count": 38224,
+      "source_occurrence_full_path": "araco - coxa v3 v36:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.08968639795508031,
+          "y": -6.869504964868156e-18,
+          "z": 0.006572806813488557
+        },
+        "x_axis": {
+          "x": 1.0000000000000002,
+          "y": 2.6020852139652114e-18,
+          "z": -5.4542937878152236e-36
+        },
+        "y_axis": {
+          "x": -2.287041808959842e-34,
+          "y": -2.5977484052752686e-16,
+          "z": 1.0000000000000009
+        },
+        "z_axis": {
+          "x": -8.673617379884041e-19,
+          "y": -1.0000000000000009,
+          "z": -2.6064220226551527e-16
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPMa4CMQxEhUTNv0IuYOE4Tjah+6LkFE6IKaCip6dGoqfkAjS0cAdqJBqOQEd2kWVpZD2Px2iiwVbWUOtBUWzKGu4nwTwWpyk9/heHy/29vf6NGkHGBVORpENkWGabgWtUyBoYIjGGmlKHvndtJGPVLKECpQZxW4KcSoKavAoqqVf93ZqMj6/Vfr4532af53rnhlTNwXIlErEgiSOwdApRXIHMJUQs5Ip0Q/b+F/bOfwG2BMEE1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_front_coxa_servo",
+      "canonical_link": "right_front_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/11a23248d825ba23d1fc1062c92beac1d8b8dbd214c7b5a1de4601d81f414ac1.stl",
+      "raw_mesh_sha256": "11a23248d825ba23d1fc1062c92beac1d8b8dbd214c7b5a1de4601d81f414ac1",
+      "raw_mesh_size_bytes": 1911284,
+      "raw_triangle_count": 38224,
+      "source_occurrence_full_path": "araco - coxa v3 v36:2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.0665062031084749,
+          "y": 0.08181980515339467,
+          "z": 0.006572806813488687
+        },
+        "x_axis": {
+          "x": 0.5798064466546122,
+          "y": 0.8147542478672646,
+          "z": -2.377463933096696e-15
+        },
+        "y_axis": {
+          "x": 3.514672750919014e-15,
+          "y": 4.0988247430239986e-16,
+          "z": 1.0000000000000024
+        },
+        "z_axis": {
+          "x": 0.8147542478672669,
+          "y": -0.5798064466546139,
+          "z": -2.6141107686788024e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPMQ7CMAxFhcQMV8gFLBzHcR02xNhTpGnKABM7OzMSOyMXYGGFO3RGYuEIbKRFlqWvr6fvbzRqsIw1VHZUpEVZw4Mjpq8vC+pX9en2/Ozv80khyDgxGSlWiAxtYxvgrB00nTAoMUoOoUI/pBbSEVsvoQUbRArJCKpeIXgnGWPm5NL/1mx6fm+O6931sfy+tgc3tioJljNRjBZiYAWOVQcaXYKGkygmcilWY/fhF/bO/wDPj7Te1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_rear_coxa_servo",
+      "canonical_link": "right_rear_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/11a23248d825ba23d1fc1062c92beac1d8b8dbd214c7b5a1de4601d81f414ac1.stl",
+      "raw_mesh_sha256": "11a23248d825ba23d1fc1062c92beac1d8b8dbd214c7b5a1de4601d81f414ac1",
+      "raw_mesh_size_bytes": 1911284,
+      "raw_triangle_count": 38224,
+      "source_occurrence_full_path": "araco - coxa v3 v36:3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.06650620310847491,
+          "y": -0.08181980515339463,
+          "z": 0.006572806813488638
+        },
+        "x_axis": {
+          "x": 0.5798064466546119,
+          "y": -0.8147542478672636,
+          "z": -8.345719796494832e-16
+        },
+        "y_axis": {
+          "x": 4.415688181629306e-15,
+          "y": 2.095087200109667e-15,
+          "z": 1.0000000000000002
+        },
+        "z_axis": {
+          "x": -0.814754247867264,
+          "y": -0.579806446654613,
+          "z": 4.7984963822942694e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/x2PsQ0CMQxFhUQNK2QBC8fxJT46RMkUTi5HARU9PTUSPSUL0NDCDlcj0TACHcnJsvRlfb3/jUYMlrGGyo6KpChruF68GTbXBQ2rzfn++h4e80lxkHHeZCQNiAxdtBE4Sw+x9wxCjD63bcCmUoszaS/ipIOYWIADE6iNETpsXEyoLpfEMWs2vXy2p/X+9lz+3rujG1sVguVMpGpB20rQ0IOoSxA5ecFELmkYu9dfuHHNH2HORNfWAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_middle_coxa_servo",
+      "canonical_link": "left_middle_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/09de86c36229b9bf9143edc32d97b87e7e678db9ee77a0ce300349e51d77820b.stl",
+      "raw_mesh_sha256": "09de86c36229b9bf9143edc32d97b87e7e678db9ee77a0ce300349e51d77820b",
+      "raw_mesh_size_bytes": 1911284,
+      "raw_triangle_count": 38224,
+      "source_occurrence_full_path": "araco - coxa v3 v35(Mirror):1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.09031360197614535,
+          "y": -6.533587872716025e-11,
+          "z": 0.006572806813489208
+        },
+        "x_axis": {
+          "x": -1.0000000000000002,
+          "y": -1.4024621855027851e-30,
+          "z": -1.7043456697815553e-33
+        },
+        "y_axis": {
+          "x": -7.942309235999403e-34,
+          "y": 3.931212932639068e-16,
+          "z": 1.0000000000000009
+        },
+        "z_axis": {
+          "x": -3.46944695195502e-18,
+          "y": 1.0000000000000009,
+          "z": -3.922539315259184e-16
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CMQwERQW0kAYsHHtxkifvqyK5JAVQChXQBB/e9HA10AW+KwBZlnatlcfmkAN7xSDeh5LsKgbsEwvb8rzIdlser8/3/j6fPCFBLQyWmphBvcVGGHlSmwbKArZRSuLrvtWTJeVRGI1UkQgrM1VzaxybJgaE23+W9cqOU9IKJSA6pqdJKmkVRe611OP2/Zeo0B+ugq7Z1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_front_coxa_servo",
+      "canonical_link": "left_front_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/09de86c36229b9bf9143edc32d97b87e7e678db9ee77a0ce300349e51d77820b.stl",
+      "raw_mesh_sha256": "09de86c36229b9bf9143edc32d97b87e7e678db9ee77a0ce300349e51d77820b",
+      "raw_mesh_size_bytes": 1911284,
+      "raw_triangle_count": 38224,
+      "source_occurrence_full_path": "araco - coxa v3 v35(Mirror):2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.06713340719831447,
+          "y": 0.08181980515339456,
+          "z": 0.006572806813489167
+        },
+        "x_axis": {
+          "x": -0.5798064466546126,
+          "y": 0.8147542478672648,
+          "z": 7.01649587383622e-16
+        },
+        "y_axis": {
+          "x": 2.1471231481920443e-15,
+          "y": 6.598133485506174e-16,
+          "z": 1.0000000000000024
+        },
+        "z_axis": {
+          "x": 0.8147542478672669,
+          "y": 0.5798064466546139,
+          "z": -2.1437730227865285e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw0CMQxERQW0kAYs/CPxHjlvFQ7eFEApVEATXDjTAzXQBc4WgCxLo9HIb4zFCuZQ4dxdsaWiotOp5bM+Tvy5rPfn+3t7HQ+Z4CK1bMjeEBWiUwfdbEAfVcFYsW7L0vA8r85k626mDoTeQNMHt6hgohHhg1TwP6uGY+IExFVAlRITbYBwu7KohS++d5+/kKj8AKpQKcLWAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_rear_coxa_servo",
+      "canonical_link": "left_rear_coxa_link",
+      "raw_mesh_path": "raw_by_sha256/09de86c36229b9bf9143edc32d97b87e7e678db9ee77a0ce300349e51d77820b.stl",
+      "raw_mesh_sha256": "09de86c36229b9bf9143edc32d97b87e7e678db9ee77a0ce300349e51d77820b",
+      "raw_mesh_size_bytes": 1911284,
+      "raw_triangle_count": 38224,
+      "source_occurrence_full_path": "araco - coxa v3 v35(Mirror):3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.0671334071983145,
+          "y": -0.08181980515339474,
+          "z": 0.006572806813489124
+        },
+        "x_axis": {
+          "x": -0.5798064466546122,
+          "y": -0.8147542478672642,
+          "z": 2.499998712611117e-15
+        },
+        "y_axis": {
+          "x": 3.093950947370134e-15,
+          "y": 8.437080395199876e-16,
+          "z": 1.0000000000000004
+        },
+        "z_axis": {
+          "x": -0.8147542478672648,
+          "y": 0.5798064466546131,
+          "z": 2.0455717025273907e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ3DMAhF1Qm6AgugYiA2PvacKezYHqCjdIIu0UvP3SEzdIvgDFAhpC/0xAMCA/IKwN5nYvMUQOckwr6+brzf1+f7+3t8rhcnGCRCJy6JSLHVUFG7DawjKhorxZ5zomVunSSnsGyZcIlSUIUMa4sJB2tspcoo1v+7HCPXCUpRQdXgmpYGCqeNRa2VXM7b5y9BVA7PLdmh1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_middle_tibia_full",
+      "canonical_link": "right_middle_tibia_link",
+      "raw_mesh_path": "raw_by_sha256/68383e0de132cf87bd14ea9d1103e3dbb478db5920f5eace7019316bb76df552.stl",
+      "raw_mesh_sha256": "68383e0de132cf87bd14ea9d1103e3dbb478db5920f5eace7019316bb76df552",
+      "raw_mesh_size_bytes": 5552484,
+      "raw_triangle_count": 111048,
+      "source_occurrence_full_path": "araco - tibia v2 v17:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.22491524520755451,
+          "y": 0.007882352941173709,
+          "z": 0.06384415462541322
+        },
+        "x_axis": {
+          "x": 0.4564262789957993,
+          "y": 8.190210320333695e-15,
+          "z": -0.8897612330519067
+        },
+        "y_axis": {
+          "x": 0.8897612330519051,
+          "y": -4.2741578620207476e-14,
+          "z": 0.4564262789957986
+        },
+        "z_axis": {
+          "x": -3.424186034812252e-14,
+          "y": -0.9999999999999982,
+          "z": -2.6801404595636627e-14
+        }
+      },
+      "export_scope": "occurrence",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWOMQoCMRBFsRdsLQOC2AzOTmaTSWljs4VnSNzJATyEB/AEgq2tzdYWWlts4QlsPYHZlc/AZ/j8/9CIwaLKULnRkRRXGR4+zvTNeU39pjnd7p9DN5uUBBnrjCJFj8jQpioBq2RI2TEIMToNwWM9tJakYPJJnQAHJWCsLATRGhJmxICqSfJ/63tZvLrnbnucXt/z5eoxUpWG6Nqwr6MDt28zsA81SLQE1kblIC0JxZFdRn4rP1T9t7PWAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPMWoDQQwkvSFtygWDSSOs1eq0UpnGjQu/YdenfYAf4Qf4BYa0adO4TpHUKVz4BW7zguydEQPDMMyMMGjAfjFQx8xIO4uBJ0XCdXte0/Vte/r8uh8uz0/dQSFJcKSSERnGGiuwa4PahEGJUdws4zCldqdizdVFgc0JGGMCUx+gYkM0dK/aHl1/78vfy89uc1x83F5Wr9/zqp5QZLT9UARkPzbgbANoSQQpFWfTkZTKvH36JVqWf7b6NjzWAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPOwoCMRDFXrC1DAhiMziZzGYnpY3NFp4hcScH8BAewBMItrY2W1tobbGFJ7D1BGZXHgOP4fE+aMRggTVUbmQkhVnDw8ebvjmvqd80p9v9c+hmk6Ig47xRpFgjMrTJJmCVDCl7BiFGryHUWA2uRSmY6qRegIMSMFoHQbSChBkxoGqS/M/6Xhav7rnbHqfX93y5eoytikP0bdhX0YPftxm4DhVIdATOReUgLQnFsfuwxZYA+QEtsMzc1wAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body4",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yVPMQoCMRDEXrC1DAhis7jZbHKb0sbGwjck3uYBPsIH+ALB1tbmagutLSx8ga0vMHeyDAzDMDOLRgzWs4YqBkZSmTXcK8G8NqclvVab4/X22XeTUXWQccEoUmoQGdpsM7BKgVwCgxBj0Bgb9H1qdQrmJmsQ4KgEjNZBFPWQsSBGVM1S/l3f8+zZPbbrw/jyns4X92FVTUihjTufAoRdW4Cb6EGSI3AuKUdpSSgN2/tfrEXvf0RmWU3XAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_front_tibia_full",
+      "canonical_link": "right_front_tibia_link",
+      "raw_mesh_path": "raw_by_sha256/68383e0de132cf87bd14ea9d1103e3dbb478db5920f5eace7019316bb76df552.stl",
+      "raw_mesh_sha256": "68383e0de132cf87bd14ea9d1103e3dbb478db5920f5eace7019316bb76df552",
+      "raw_mesh_size_bytes": 5552484,
+      "raw_triangle_count": 111048,
+      "source_occurrence_full_path": "araco - tibia v2 v17:2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.13593938500504854,
+          "y": 0.19298333775334256,
+          "z": 0.0688414304391385
+        },
+        "x_axis": {
+          "x": 0.2110402734437775,
+          "y": 0.2965575154458695,
+          "z": -0.9314051980837064
+        },
+        "y_axis": {
+          "x": 0.5400347382965489,
+          "y": 0.7588663416243506,
+          "z": 0.3639840064929387
+        },
+        "z_axis": {
+          "x": 0.8147542478672654,
+          "y": -0.5798064466546115,
+          "z": -2.5275875808213164e-15
+        }
+      },
+      "export_scope": "occurrence",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWOPQoCQQxGsRdsLQcEsQnOZrKZTGljY+EZsvNzAA/hATyBYGtrY22htYWFJ7D1BM6uhMAjPL581oixdRqDdQdCqdQY6i9sXpvjEl+rzeFy++yuk1E10Dg22aJ6awlS13RAWQp0hQkEyXIOwdu2T61mJKdF0ULucgTiSsGn3uRERTNmH/+/vqfZ8/rYrvfj83s6X9yHVjVBOYXYKgPHVIB8aEHUITinmYIkFNShuwz9nfwARdu/cdYAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPPQoCQQyFsRdsLQcEsQnOZLKZmdLGxsIzZOfnAB7CA3gCwdbWZmsLrS228AS2nsDZlRB4PD5eXrTyStcxCuuOCn1VRtHgsOp35zX2m93pdv8cutmkEqgsq6xRnNYEqTUtUPYF2sIEHklzDsHpZkitZCQrRVBDbnME4qqCSwPJiYpkzC7+b30vi1f33G+P0+t7vlw9xlY1QTiF2AgDx1SAXGjAi0WwVjIFn9CjjN2HX0xw/AOn3D7+1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPPWoDQQyFcR9wm3LAENKIaDRazUyZxo2LnEHzd4AcwgfwCQxp3brZOkVSp9giJ3CbE2RmjRA8Hh9PT2iCwT7WUN9VUejKGh6OmOVwfqHl9XC6ft7e5+2mE2ScmIqkHpGhJJuAa2iQmjAEYpQao8dppHYys9OmhFBTzcDSVfRlkFK4aaXq8/3W38fuZ/5+2x8fLr+PT89fa6ueoFJinlRAcmnAPk4Q1BE4p5VjKBRI1+7jF4vWhX/5mL621wAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body4",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPPWoDQQyFSR9Im3IgENIIazQazUyZxo2LnEE7PwfIIXwAn8CQ1q2brVPYdYotfAK3OUFmNgjB4/Hx9IQmGuxjDfVdFcWurOHhiFl2xw0t77vD+fv+OT89dIKME1ORNCAylMlOwDU2mJowRGKUmlJAP1I7mdlpU0KoU83A0lUKZZBSuGmlGvL/rd+vl5/5+rHdP55uz69vl7VVT1ApKXsVkFwacEgeojoC57RyioUi6dp9/GItev8HkE4rJ9cAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "right_rear_tibia_full",
+      "canonical_link": "right_rear_tibia_link",
+      "raw_mesh_path": "raw_by_sha256/68383e0de132cf87bd14ea9d1103e3dbb478db5920f5eace7019316bb76df552.stl",
+      "raw_mesh_sha256": "68383e0de132cf87bd14ea9d1103e3dbb478db5920f5eace7019316bb76df552",
+      "raw_mesh_size_bytes": 5552484,
+      "raw_triangle_count": 111048,
+      "source_occurrence_full_path": "araco - tibia v2 v17:3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.14878374608907383,
+          "y": -0.18384285965314043,
+          "z": 0.0688414304391386
+        },
+        "x_axis": {
+          "x": 0.21104027344377707,
+          "y": -0.2965575154458714,
+          "z": -0.9314051980837061
+        },
+        "y_axis": {
+          "x": 0.5400347382965505,
+          "y": -0.7588663416243477,
+          "z": 0.3639840064929396
+        },
+        "z_axis": {
+          "x": -0.8147542478672635,
+          "y": -0.5798064466546133,
+          "z": 4.5764826401034466e-15
+        }
+      },
+      "export_scope": "occurrence",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWOMQ7CMAxFxY7EyhgJCbFYJI7jOiMLCwNncJv0AByCA3ACJFZWls4MMDN04ASsnIC0yLL0ZT3//60RY8s4g2VHhVKUMzRc2PS78xr7ze50u38O3WxSCDSeTbaolbUEqXY1UJYW6pYJBMlyjrGyYXAtJGvjvcsCFkkLSQ5ik1oIwbHWSSk4/Gd9L4tX99xvj9Pre75cPcZWxUE5xSYoAw9/VMUAoh7Be80UJaGgjt1l7O/lBxs2Q43WAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPsQ0CMQxFRY9ESxkJCdFYJI7jJCUNDQUz+C65ARiCAZgAiZaW5moKqCmuYAJaJiA5ZFn6sp6/v7UKSpcyCkuPCkNRRlGdsBp25zUOm93pdv8c+tmkEKgsq6xRvNYEqTENUA4dNB0TBCTNOUavXXUtJEtrrckBNJIUkgzENnXgnGFpkpAz+L/1vSxe/XO/PU6v7/ly9RhTFQfhFFsnDFz3yEcHQSyCtZIphoQBZcxefzHR8w/5McIC1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPMW4CQQxFlR4pbcqRIqE0VmyPx+spaWgoOIN3Z/YAHIIDcAKktLQ01CmSmoIiJ6DlBMxuZFn6sp6/vzFYwFYUuPWs2JqiINNEw21z/OTbanM4f993l9eXRnCIGiqyd4gCpacepNoI/agCxoJac+4wTa6NVB9ipGqALN5IIchDGSElUu+LSyL+v/X4er9efrfr/eL097b8+JlTNQfXkofkCjrtSZcTmEeGGL1KtsLGPmeffiGkaE/nGJE61wAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body4",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/yWPMaoCQQyGeb3wWsuBB2ITTDKZ7ExpY2PhGbI7swfwEB7AEwi2tjbWFlpbWHgCW0/g7D5C4Cd8+fMHXXRYixzXHhXHqsjJMFH3XB8W/Fyu9+fre3v5/akEO6+uIFuDKJBbakFK7KHtVSCyoJaUGgyDayXVOu+pREAWq6QQpC73EAKptdkkEP/f+hz/Hpf7ZrWbnF7T2fw2pqoOpjl1wRR02JMmBYjmGby3Iilmjmxj9uEXIgzhC47OBKvXAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_middle_tibia_full",
+      "canonical_link": "left_middle_tibia_link",
+      "raw_mesh_path": "raw_by_sha256/c95ccfd62685895e877201310ef28d73ca7362b94adca2eefcce83fe9fa008d1.stl",
+      "raw_mesh_sha256": "c95ccfd62685895e877201310ef28d73ca7362b94adca2eefcce83fe9fa008d1",
+      "raw_mesh_size_bytes": 5552484,
+      "raw_triangle_count": 111048,
+      "source_occurrence_full_path": "araco - tibia v2 v17(Mirror):1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.2255424492286186,
+          "y": 0.007882352875840059,
+          "z": 0.06384415462541385
+        },
+        "x_axis": {
+          "x": -0.4564262789957993,
+          "y": 1.9689770176105535e-14,
+          "z": -0.8897612330519068
+        },
+        "y_axis": {
+          "x": -0.8897612330519055,
+          "y": -2.213797392348797e-14,
+          "z": 0.4564262789957987
+        },
+        "z_axis": {
+          "x": -1.0660870312795936e-14,
+          "y": 0.999999999999998,
+          "z": 2.7629240526838297e-14
+        }
+      },
+      "export_scope": "occurrence",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw0CMQxERQW0kAYsHNuJ4yPnrWKdTwGUQgU0wYUzPWwNdLHZLQCNLI1GT7YHQwk4FQPNOR2V6WKQI8lhW1432u7L8/39PT7XyyQocA4daVVEgebRQXoZ4CMLFBLM3UwxHVsnmap5koZQK3cQzQZltATKpOSpre72/1ambOKEMFgiCBeBtVUDjb2ye2+ofP5+dImsugMDBXHO1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw0CMQxERQW04AYsHNtxkiPnrWKdTwGUQgU0wYUzPWwNdLHZLQCNLI1GT7aHIANNBeA5p+M8XQA9EoNted14uy/P9/f3+Fwvk2AQg068JiLF5sFRex7owxQzK1kvJVE8tk4y1uJRG2Gt0lGTFcyjRUzCiT221b38v2VsRZ0Jh2hAlay4tlowhV7FvTdKcv5+dAmSZQfV3YRO1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw0CMQxERQW0kAYsHNtJ7CPnrWKdTwGUQgU0wYUzPWwNdLHZLQCNLI1GT7YHgwacioHmnI50uhjkSHLYlteNtvvyfH9/j8/1MgkKnENHWguiQPPoIF0H+MgCSoK5mxVMx9ZJpmqepCHUyh2kZAMdLUFhKuSpre72/1ambOKEMFgiCKvA2qpBib2ye29Y+Pz96BJZdQddBFbZ1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body4",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw0CMQxERQW0kAYsHNuJ4yPnrWKdTwGUQgU0wYUzPWwNdLHZLQCNLI1GT7YHQwk4FQPNOR2V6WKQI8lhW1432u7L8/39PT7XyyQocA4daVVEgebRQXoZ4CMLFBLM3UwxHVsnmap5koZQK3cQzQZltATKpOSpre72/1ambOKEMFgiCBeBtVUDjb2ye2+ofP5+dIlsvAOU7J9X1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_front_tibia_full",
+      "canonical_link": "left_front_tibia_link",
+      "raw_mesh_path": "raw_by_sha256/c95ccfd62685895e877201310ef28d73ca7362b94adca2eefcce83fe9fa008d1.stl",
+      "raw_mesh_sha256": "c95ccfd62685895e877201310ef28d73ca7362b94adca2eefcce83fe9fa008d1",
+      "raw_mesh_size_bytes": 5552484,
+      "raw_triangle_count": 111048,
+      "source_occurrence_full_path": "araco - tibia v2 v17(Mirror):2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.13656658909488775,
+          "y": 0.19298333775334262,
+          "z": 0.0688414304391393
+        },
+        "x_axis": {
+          "x": -0.21104027344378246,
+          "y": 0.29655751544586895,
+          "z": -0.9314051980837053
+        },
+        "y_axis": {
+          "x": -0.5400347382965476,
+          "y": 0.7588663416243506,
+          "z": 0.36398400649294055
+        },
+        "z_axis": {
+          "x": 0.8147542478672648,
+          "y": 0.5798064466546113,
+          "z": -1.7696013371977653e-15
+        }
+      },
+      "export_scope": "occurrence",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw3CQAxERQW0sA1Y+Bfbe+ScKuLspgBKoQKa4MKZHqiBLtikADSyNBo92R4sUXCICo85HMdwVHRPrHzmx4U/1/n+fH9vr/NpEFzESkdeHFGhJSVojw1yM4VgReu1Ok771kGKdOc+KWgsDkpThXA3yJQ0rrxKw/+3jK1qMsImSqASCktbKzj1VTJ7Q5fj970LifsPsv4WatYAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CQQhFYwW2MA0QGWCBOXreKpYdtgBLsQKb8OLZHqzBLpzdAswPyc/PC/CxeMGhWmjM4ciHq0X2RMtnflzoc53vz/f39jqfBkGFtSTSYogCPWqApG8Qmwo4CWq2ZjjtWwfJnEY5CYgvBlKnBm6mEMGh1Gjljv9vKWmTIISNpYKwCyx9bWA1V47IjsbH73uXys4/ZCbj6tYAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CQQhFYwW2MA0QGWCBOXreKpYdtgBLsQKb8OLZHqzBLpzdAswPyc/PC/CxeMGhWmjM4ciHq0X2RMtnflzoc53vz/f39jqfBkGFtSTSYogCPWqApG8Qmwo4CWq2ZjjtWwfJnEY5CYgvBlKnBm6mEMGh1Gjljv9vKWmTIISNpYKwCyx9bWA1V47IjsbH73uXyu4/7P8xfdYAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body4",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw3CQAxERQW0sA1Y+Bd798g5VcRZpwBKoQKa4MKZHqiBLtikADSyNBo92R4steAQFR5zOK7DUdE9sfKZHxf+XOf78/29vc6nQXARK4m8OKJCDwrQrBvEZgqVFS1bc5z2rYMUSeecFLQuDkpTg+puECFh3HiVjv9vGVvTYIRNlEClKix9beCUq0RkR5fj970LSZMfJRf489YAAAA=",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "left_rear_tibia_full",
+      "canonical_link": "left_rear_tibia_link",
+      "raw_mesh_path": "raw_by_sha256/c95ccfd62685895e877201310ef28d73ca7362b94adca2eefcce83fe9fa008d1.stl",
+      "raw_mesh_sha256": "c95ccfd62685895e877201310ef28d73ca7362b94adca2eefcce83fe9fa008d1",
+      "raw_mesh_size_bytes": 5552484,
+      "raw_triangle_count": 111048,
+      "source_occurrence_full_path": "araco - tibia v2 v17(Mirror):3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.14941095017891287,
+          "y": -0.18384285965314065,
+          "z": 0.06884143043913961
+        },
+        "x_axis": {
+          "x": -0.21104027344378523,
+          "y": -0.2965575154458694,
+          "z": -0.9314051980837056
+        },
+        "y_axis": {
+          "x": -0.5400347382965482,
+          "y": -0.7588663416243493,
+          "z": 0.36398400649294255
+        },
+        "z_axis": {
+          "x": -0.8147542478672637,
+          "y": 0.5798064466546126,
+          "z": 2.822007284014419e-15
+        }
+      },
+      "export_scope": "occurrence",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32PwQ0CMQwERQW0kAYsbMexnSfvqyK5iwugFCqgCT686YEa6ILcFYBWllarke3F5AmnKPGcw7FPR0n2RNNneVz4c13uz/f39jqfJsEpaxrIzRAFtk4dZHhADxVwFtRRq2HZt06SsgwsGuBeA8S5QEMaUKxYpWgt1vL/lrJW6YwQWQgku0Db1gpGY829jw0tH7/vXSib/QAZOYAm1gAAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body2",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw0CMQxERQW04AYs/EviHDlvFcluXAClUAFNcOFMD9RAF2S3ADSyNBo92R4CB5pikDmHE5+OwfYkw2d5XORzXe7P9/f2Op8mIaAZBkkrRIZb5442PLBHNnQxyqPWQmnfOklWG5RyoHsNNJeEjXhgKqlUjtZiTf9vZcnVuhCGGqOpG7ZtrVh4rNr72Kjo8fvehdX1B8/hdabWAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body3",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw0CMQxERQW0kAYs/IvjHDlvFcmuUwClUAFNcOFMD9RAF2S3ADSyNBo92R5MnnCKEs85HPt0lHRPLH2Wx4U/1+X+fH9vr/NpEpzEUiC3gqiwdeqg4QP6MAVnRYtaC+Z96yRJNDDbAPc6QJ0zNKSAXHKpNFoba/5/y9iqdkYYogQqrtC2tUKhWKX32LDI8fvehcT9B0c4pzHWAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        },
+        {
+          "body_name": "Body4",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/32Pyw0CMQxERQW0kAYs/EtiHzlvFcmuUwClUAFNcOFMD9RAF2S3ADSyNBo92R5MlnCKEs85HNt0lHRPSvosjwt/rsv9+f7eXufTJDhJSYHcKqLC1qmDhg3ooygYK5Zwr5j3rZMk0cBcBpj5ADXO0JACcs3VabQ21vz/VuHi2hlhiBKomELbVodKsUrvsWGV4/e9C4nLD47Qbr/WAAAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White)"
+        }
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_upper_housing_1",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/c7a8e7a011f66fadaab7c1908e22a3db98a6942424b5d67da5940348bf29464e.stl",
+      "raw_mesh_sha256": "c7a8e7a011f66fadaab7c1908e22a3db98a6942424b5d67da5940348bf29464e",
+      "raw_mesh_size_bytes": 5895984,
+      "raw_triangle_count": 117918,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+UPPER_HOUS_ASM_1_ASM:1+00_1-35637:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491953474,
+          "y": 0.07365000007450583,
+          "z": 0.10992280711151242
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SvYpWMRBFbLZY2NruYrkwmEkmmZlGEOy+0ifIZDL2Nj6DVuIT7EuoYG0hggg2W1hqY+kbmHsXsbNZCQMhOZyf5KRNtrQWbnnNscuydmWj/aRt16erB/n60en1mw8/n72/uLMQeSttmyl3TonADQ1oSoBFI5BMqU1VTnVnXcik6FKMoHpkIJ4DRAlhDBsxaN20eqP18e3D828/Ht+/enF+9vzT9y+Hq8WQuYYhB3BRX1oTwaoQZB1FOTdpZMsX/QeWw3HtPHsqHSZRA6qjgTIq5CLTdBpXixutX5/h3uXX05N3F0/vvrw8e/VHa7hlb1rACyJQwQJduK70NnwNmelfx7dioR0ZkrCLV3DhCTRyA3GaYNQZR+UWVnZcC+aJIwPaikd5EPSJBBrdSgQJ0zz+zDS3QQIxkJeyZ+iW1tN1tYG9h7keLQhxxOGgiwtIk4NIIGDF6qJZu49/Z+QIZ1KE5LYn2yvkOYEk6oVqS2nq0cu9p5hYfwNRL2eisgIAAA==",
+          "material": "Steel",
+          "appearance": "Aluminum - Anodized Rough (Grey)"
+        }
+      ],
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_upper_housing_2",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/26f317709fa6d6ab97a5246160547a7034f1b596f5641a2a7a24b9bc78499b17.stl",
+      "raw_mesh_sha256": "26f317709fa6d6ab97a5246160547a7034f1b596f5641a2a7a24b9bc78499b17",
+      "raw_mesh_size_bytes": 109484,
+      "raw_triangle_count": 2188,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+UPPER_HOUS_ASM_1_ASM:1+00_1-36659:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491953474,
+          "y": 0.07365000007450583,
+          "z": 0.10992280711151242
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SP4pXMRBGbLZY2NruYbkwmJlMMplGEOx+pSfITBJ7G8+glXiCvYQK1hYiiGCzhaU2lt7AeW8RO5uVkDAkH9+fzKStbSkWbhT7qKhFlTfeb+p2fbp6QNePTq/ffPj57P3FnUDQlus2E3VJiWEYGvBsC2xVhkac6lSVVHbWQCbF0bIxlLEIWKZDU0ZwN1/O8VLLjdbHtw/Pv/14fP/qxfnZ80/fvxyugoGkLENZIFlHaE0EK42B1LMK1VbZwhf/B5bDcekye8odJnMFLl5BBRUot2k6TYqtG61fn+He5dfTk3cXT+++vDx79UfLh9GommFkROCMGXqTEunNR2w207+Ob8XCO3K1hL2NAqPJBHaq0AZPMO6CXqQuyzuuLpGJToAW8ZicoU9k0NUtr8VNeB49M6Xq3GA5SigPgm4pvq6rOfa+bOiOQxGh1WIAiDKw1gl9+ASnMr1j7ST+74w4MkUbFLTqnnGkYEgexyoWnQn365jLfU6z5t+MbLxNsQIAAA==",
+          "material": "Steel",
+          "appearance": "Glass - Heavy Color"
+        }
+      ],
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_upper_pad_1",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/df0f2c98557177f3a58c24bf9c883080c0941bd3c5dcb7714c7f65c459c59dcd.stl",
+      "raw_mesh_sha256": "df0f2c98557177f3a58c24bf9c883080c0941bd3c5dcb7714c7f65c459c59dcd",
+      "raw_mesh_size_bytes": 367384,
+      "raw_triangle_count": 7346,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+UPPER_HOUS_ASM_1_ASM:1+SILICONE_PAD_1_ASM:1+SILICONE_PAD_1_1:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491953474,
+          "y": 0.07365000007450583,
+          "z": 0.10992280711151242
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SsYqWMRBEbK44uNruw/JgMZvdzSaNINj9pU+QTXbtbXwGrcQnuJdQwdpCBBFsrrDUxtI3MN93iJ3NSVhYkmFmdjNpq1taB7e86uhyXR1tvN+U7fp09SBfPzq9fvPh57P3F3cWIm9UNk+5a0oM09CAvQZYFIaaORVvTZPsrAuZGs5KxiAzMrD6gNoYYQwbMXi9FLnR+vj24fm3H4/vX704P3v+6fuXw9ViyCphqAFKbS4tRzCpDLkNappLLWzLF/8HlsOxdPWeqIMzF2AZBZpig0zVrbmpWNxo/foM9y6/np68u3h69+Xl2as/WmNanqURTEIEJiToVWVNb2OuYrP21/GtWGRHRk3Y6xSYVR145AJ1soNxVxyiJYx2XAlVx5EBbY3HeTB0R4YW3SiCq7Iff2Ytl8EVYqAu5ZmhW1qr680G9h42245TmhLSC/Q269IVXwFQBbIWSjV69YNvogmbOyCWlRbJCJ36BA+34hLERP/eRSZKrSUHxbw2QImgOgf0GD5kymhJjvzueWatvwEdI9QC2QIAAA==",
+          "material": "Steel",
+          "appearance": "Opaque(64,64,64)"
+        }
+      ],
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_upper_pad_2",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/d154b7dbc6b018e2cc70f5a0e2e00c3e7e5754f17abe7b351be4bbf0b0d1adb0.stl",
+      "raw_mesh_sha256": "d154b7dbc6b018e2cc70f5a0e2e00c3e7e5754f17abe7b351be4bbf0b0d1adb0",
+      "raw_mesh_size_bytes": 367384,
+      "raw_triangle_count": 7346,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+UPPER_HOUS_ASM_1_ASM:1+SILICONE_PAD_1_ASM:1+SILICONE_PAD_1_2:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491953474,
+          "y": 0.07365000007450583,
+          "z": 0.10992280711151242
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SPYpWQRBETDZY2NjsYbjQOD89/ZMIgtkXeoLpmWlzE8+gkXiCvYQKxgYiiGCygaEmht7Afm8RM5OVoWGYKaqquyttsqU4eStRx61I3OqG+wtt16erB+X60en1mw8/n72/uBOIslXaViqdU0KYlg1wiYM5IUjBREuVU9tZA5k0T6mG0KYXQF4DRDHDGDZ8YPxQu9H6+Pbh+bcfj+9fvTg/e/7p+5fDVTAUbm6ZHbjqDK2VwZogFB1VuZAQWvjC/8ByOG6dV0+1w0IkwDYIlLNCqbJMl3Ezv9H69RnuXX49PXl38fTuy8uzV3+0xrQySSvMmjNgzRW6cIvubcwoNNO/jm/F0nakS8pdZoMpvABHIZCJCww759GY3OqOI2deeRTIFu1hGQh9ZQT1btUdhXEdOzMtNFDAR+ZQngW6pRhdVxu5d7epO47rbN46QdcpodtWBIAZqqlzFe+yDj6ygoOaQBKJDCwfoKNHJGh2T2ITYwz/nEUeSsVDxHKLncxiIGtGh5pKk0rG1I/87nnGSr8B9yvmndkCAAA=",
+          "material": "Steel",
+          "appearance": "Opaque(64,64,64)"
+        }
+      ],
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_mounting_bracket",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/cf910ad79879073057f473d5702040b23bec35e8a7d4b469db335fa902067785.stl",
+      "raw_mesh_sha256": "cf910ad79879073057f473d5702040b23bec35e8a7d4b469db335fa902067785",
+      "raw_mesh_size_bytes": 516684,
+      "raw_triangle_count": 10332,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+BRACKET_ASM_1_ASM:1+BRACKET_MAX_1:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491953474,
+          "y": 0.07365000007450583,
+          "z": 0.10992280711151242
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61Sv4rXMQxHXG44uNnti+NBsEnTJF0Ewe03+gRN27i7+Aw6iU9wL6GCs4MIIrjc4KiLo29gv99D3FxOSiBtP3z+kKTNtrQObrTq6MhWlzfeX2S7Pl09oOtHp9dvPvx89v7izkLQlmWbiZqmxDAcHXhagIcwGHGSWaumsrMuZKo4LDtDGUHAOjtYZYTevUfn9SPlRuvj24fn3348vn/14vzs+afvXw5Xi4G0hKMGaK5jaU0EL8ZAteeqJCbsyxf/B5bDcWk6W8oNJrMAly5QFStQtul1uhaPG61fn+He5dfTk3cXT+++vDx79UerD6chNcPIiMAZMzTTstJ7H6vYvf51fCsW3pFhCZuNAsN0AncSsMETnJtiLyrhecdJqE7sBOgrHlNnaBMZajTPEWzK81DWkDTCofXRgYUK2NQOUkftjJaY2o7L0i3Q0xp7XVuAlKHSumYd3LjOxjb+nTGkBzYKSMFrKjoyrHADZraC4o3U5NjLfU8l5d9Ucz7WsQIAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_lower_housing_1",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/e63f311c62244eade97d70ec7b5b798996a3e327b2d5da19b216e227894233e3.stl",
+      "raw_mesh_sha256": "e63f311c62244eade97d70ec7b5b798996a3e327b2d5da19b216e227894233e3",
+      "raw_mesh_size_bytes": 10074084,
+      "raw_triangle_count": 201480,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+LOWER_HOU_1:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491953474,
+          "y": 0.07365000007450583,
+          "z": 0.10992280711151242
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SsYqWMRBEbK44uNruw/JgMbvZZDeNINj9pU+QTbL2Nj6DVuIT3EuoYG0hggg2V1hqY+kbuN93iKXFSVhYssPMbDJp0y3FwY2ijo40urzxflO369PVA7p+dHr95sPPZ+8v7gSCtly3lahLSgzT0ICXOphXBiVOdbUmqeysgUwNp2ZjKNMJWNYAbYwwhg0fHJNabrQ+vn14/u3H4/tXL87Pnn/6/uVwFQwkxQ3FQXKbobUQrCgDtZGbUNXKFr74P7AcjkuX1VPusJgrcBkVmmADyrqsLZNifqP16zPcu/x6evLu4undl5dnr/5ojWk0a8swMyJwxgxdpcT2NmYUm7W/jm/FwjvSNWHXWWCqLOBBFXTyAuMuOIpUt7zjqossHARosR7TYOgLGZp3y+6swuv43eyhpAI0NHBrDGhDCfqMeJSWUh6Hbhh0mZjAVCIFvDKopwkmPJOVwdX/sWNxCQ13yNNyOLIO2gmBknDKC2PKRy73nGI8wW/TASAOsgIAAA==",
+          "material": "Steel",
+          "appearance": "Aluminum - Anodized Rough (Grey)"
+        }
+      ],
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_lower_housing_2",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/785de880bf9f2ff8205f7b017c347f55ec3b8fbecc6b79cb3fed6af0a69eda7a.stl",
+      "raw_mesh_sha256": "785de880bf9f2ff8205f7b017c347f55ec3b8fbecc6b79cb3fed6af0a69eda7a",
+      "raw_mesh_size_bytes": 199884,
+      "raw_triangle_count": 3996,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+PRT0002_1:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491953474,
+          "y": 0.07365000007450583,
+          "z": 0.10992280711151242
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SsYqWMRBEbK44uNruw/JgMclusptGEOz+0ifIbrL2Nj6DVuIT3EuoYG0hggg2V1hqY+kbuN93iKXFSVhYksnMbDJpky3FyluJOroi0eFG+07brk9XD8r1o9PrNx9+Pnt/cScQZcO2rVQGp0QwNSvQEgf1RiCFUlu9c6o7ayBTz1NQCer0AsTLQDplMFNzozhp9Ubr49uH599+PL5/9eL87Pmn718OV8FQuLpmdmDsM7RWBq1CULph59KkkYYv+g8sh+M6eI2EAxZRA6rWoHPuUFCW9qVc1W+0fn2Ge5dfT0/eXTy9+/Ly7NUfLZtaZusIE3MGwowwhGtMrzajSLX/dXwrFtqRLikPmRWm8AKy0kAmLVAanK1yc8Ud15x5ZSuQNcajYgRjZYLuQ9GdhGkdv4seSsJQTAK3zKCbFBgz4lF7SmiHrjnFdVMoFTF8FQTRNUOcBzJVIv7HS9VcqetESK4WjlKkA3XBCL3p7okmHbncc1pb+g3lsHHgsQIAAA==",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_lower_screw_1",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a.stl",
+      "raw_mesh_sha256": "f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a",
+      "raw_mesh_size_bytes": 1136584,
+      "raw_triangle_count": 22730,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+2_ASM_1_ASM:1+SCREW_CM2X035-035X1_1:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.03958639795508043,
+          "y": 0.06510000007450578,
+          "z": 0.11452280711151208
+        },
+        "x_axis": {
+          "x": 0.9999999999999981,
+          "y": 1.189952329628319e-16,
+          "z": -6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": 1.2593412664613592e-16,
+          "y": -1.0000000000000007,
+          "z": -8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SsYqWMRBEbK44uNruw/JgMdlsNruNINj9pU+Q3ST2Nj6DVuIT3EuoYG0hggg2V1hqY+kbuN93iJ3NSVgIyTAzuztpky3FyRtGHTeUuJWN9hferk9XD/D60en1mw8/n72/uBMI3ApvM2FvKREMywY0ZYEtJhCkxFO1pbqzBjJpHlKMoI6FQG06iFIGd/PlFD9cb7Q+vn14/u3H4/tXL87Pnn/6/uVwFQzY6rLcFrSiI7RmBqtCgOpFG7IwWfii/8ByOK69zZ5Kh0nEQNUZtGUFLDJNp7Vq60br12e4d/n19OTdxdO7Ly/PXv3R8mE4WAuMkjNQyQW6tBrdm48oMtO/jm/FUnfkkpS7jApD2gRyZJBBE4x6y14bLys7jldrMztCtmiP0An6zAS6upW1SBrNY7tlhZI0QJfATXdQF4Q+Ih5VUypOBx8boXAB7CkBjR6TsmFQZrLlxVOXA6fInJQVllhMFNMCzdUhCQ8J0hQR+fcsUIaNHn4L19jeahG1MhR4eK0sWueyI797nlnqb5w8hMvZAgAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_lower_screw_2",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a.stl",
+      "raw_mesh_sha256": "f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a",
+      "raw_mesh_size_bytes": 1136584,
+      "raw_triangle_count": 22730,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+2_ASM_1_ASM:1+SCREW_CM2X035-035X1_1:2",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.04021360204491943,
+          "y": 0.06510000007450578,
+          "z": 0.11452280711151261
+        },
+        "x_axis": {
+          "x": 0.9999999999999981,
+          "y": 1.189952329628319e-16,
+          "z": -6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": 1.2593412664613592e-16,
+          "y": -1.0000000000000007,
+          "z": -8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SsYqWMRBEbK44uNruw/JgMdlsdjeNINj9pU+Q3ST2Nj6DVuIT3EuoYG0hggg2V1hqY+kbuN93iJ3NSVgIyTAzuztp0y3FyRtGHTfUuJWN9hferk9XD/D60en1mw8/n72/uBMI3ApvM2GXlAiGZQOausAWEyhS4tmapLqzBjK1PLQYQR0LgWQ6aKMM7ubLKX643mh9fPvw/NuPx/evXpyfPf/0/cvhKhhQ6rIsC6S0EVozg1UlwOalCbIyWfii/8ByOK5dZk+lwyRioOoMTXIDLDqtTZNq60br12e4d/n19OTdxdO7Ly/PXv3R8mE4uBUYJWegkgt0lRrdm48oMmt/Hd+Kpe7IpSl3HRWGygRyZNBBE4y6ZK/Cy8qO4yUysyNki/YInaDPTNBWt7IWqdA8tltWKKkAugZuukNzRegj4lFbSsXp4GMjVC6APSWg0WNSNgzKTLa8eOp64KxrSmEDZHF0smL9vYqCsHuWPLE3+fcsUIeNHn4L19jekohaGQ14eK2src5lR373PLPW3z3up0fZAgAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_lower_screw_3",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a.stl",
+      "raw_mesh_sha256": "f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a",
+      "raw_mesh_size_bytes": 1136584,
+      "raw_triangle_count": 22730,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+2_ASM_1_ASM:1+SCREW_CM2X035-035X1_1:3",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.0402136020449195,
+          "y": 0.06510000007450585,
+          "z": 0.10532280711151262
+        },
+        "x_axis": {
+          "x": 0.9999999999999981,
+          "y": 1.189952329628319e-16,
+          "z": -6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": 1.2593412664613592e-16,
+          "y": -1.0000000000000007,
+          "z": -8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SsYqWMRBEbK44uNruw/JgMdndbDaNINj9pU+Q3ST2Nj6DVuIT3EuoYG0hggg2V1hqY+kbuN93iKXFSVgIyTAzuztp0y3FyRtGHTfUuNHG+4ts16erB3j96PT6zYefz95f3AkEbiTbTNhrSgzDsgFPXWBLGBQ5yWytprKzBjK1PJSMoYyFwHU6aOMM7ubLOX6k3Gh9fPvw/NuPx/evXpyfPf/0/cvhKhiwlmW5LqjURmjNDFaUAZtTqygqbOGL/wPL4bj0OnuiDpNZgIsLtJobIOm0Nq0WWzdavz7DvcuvpyfvLp7efXl59uqPlg/DIY1gUM7AlAm61hLdm48oNmt/Hd+KpezIpSl3HQWG1gnsKKCDJxj3mr1UWUY7TlatMztCtmiP0Rn6zAxtdaO1WCvPY7u0QkkroGvgpjs0V4Q+Ih6lpUTOB58YowoB9pSAR49J2TCgmWw5eep64GLEfS0pkHHW4EOPTiwBxZRL8kaZ/zFR1GGjh1+SEttbNaJGo4EML0W0lbnsyO+eZ9HyG6WkNTnZAgAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_lower_screw_4",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a.stl",
+      "raw_mesh_sha256": "f6583ce221a171a289a9df2b5c8c4d01089fb4a59345a129e9ec42a13f701f7a",
+      "raw_mesh_size_bytes": 1136584,
+      "raw_triangle_count": 22730,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+2_ASM_1_ASM:1+SCREW_CM2X035-035X1_1:4",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.039586397955080364,
+          "y": 0.06510000007450585,
+          "z": 0.10532280711151208
+        },
+        "x_axis": {
+          "x": 0.9999999999999981,
+          "y": 1.189952329628319e-16,
+          "z": -6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": 1.2593412664613592e-16,
+          "y": -1.0000000000000007,
+          "z": -8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SsYqWMRBEbK44uNruw/JgMdndbDaNINj9pU+Q3ST2Nj6DVuIT3EuoYG0hggg2V1hqY+kbuN93iJ3NSVgIyWRmdjNp0y3FyhtGHTvU2NHG+4ls16erB3j96PT6zYefz95f3AkEbiTbTNhrSgzDsgFPXWBLGBQ5yWytprKzBjK1PJSMoYyFwHU6aOMM7ubLOW6k3Gh9fPvw/NuPx/evXpyfPf/0/cvhKhiwlmW5LqjURmjNDFaUAZtTqygqbOGL/wPL4bj0OnuiDpNZgIsLtJobIOm0Nq0WWzdavz7DvcuvpyfvLp7efXl59uqPlg/DIY1gUM7AlAm61hLdm48oNmt/Hd+KpezIpSl3HQWG1gnsKKCDJxj3mr1UWUY7TlatMztCtmiP0Rn6zAxtdaO1WCvP43dphZJWQNfATXdorgh9RDxKS4mcDz4xRhUC7CkBjx6TsmFAM9ly8tT1wLnNjjXi4TIjA91S6JpCiseKpTtZ/vcsUIeNHn5JSvzeqhE1Gg1keCmircxlR373PIuW35hdTbfZAgAA",
+          "material": "Steel",
+          "appearance": "Nylon 6-6 (White) (1)"
+        }
+      ],
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_left_ir_optic",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/6a54853c6485933aa52376aa5e2dcf19da1b20c5feaa133d7f48514a91e4c61c.stl",
+      "raw_mesh_sha256": "6a54853c6485933aa52376aa5e2dcf19da1b20c5feaa133d7f48514a91e4c61c",
+      "raw_mesh_size_bytes": 2334884,
+      "raw_triangle_count": 46696,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_STACK_ASM_1_ASM:1+GEMINI_II_HEAD_ASSEMBLY_ASM_1_ASM:1+AT_IRM2001_MODULE_ASM_1_ASM:1+AT_IRM2001_MODULE_1_ASM_1_ASM:1+DS69005A-ASSM-09_LU06900501_FOR:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.025313602044919486,
+          "y": 0.07365000007450583,
+          "z": 0.10992280711151259
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/62SvYpWMRCGEZstFra2O1guDE4mk59pBMHuK72CzExib+M1aCVewd6ECtYWIohgs4WlNpbegXPOInY2KyFhSJ6882YyuPUNY6SNYh4R9YjyxvtO3a5PVw/o+tHp9ZsPP5+9v7gTBG25bhNpNEQG16TAsy/QVRk6MdYp0rDsqkGiJO9ZGYovAm7ToAsnMFNbxnFSy02uj28fnn/78fj+1Yvzs+efvn85XIUCtbI0tQUti0eumUBLZyCxLI1qr6zhi/+DyuG4jDYH5gGTuQIXqyAtCVDuU2VqK7pucv36DPcuv56evLt4evfl5dmrP7nMlbxKBs8pAeeUYfRW4vVqHpNV5a/jW6nUnVwd0+hewHubwEYVuvME5dGSlVaX5p1rPEYthhC1EGA2B/WQNS6eSaolkp2rnDwvFFidcnDeQTH0cIoWTvHzYxwOkWZUssNMuHOkMNYQaNiXouVkxDsnI44keoAnRkVlIgzLBUpa1Wlx3Gk7N6b3ZYTgYiu4laB3cmjsjWeqOdZ/10yS2ZxOQIWi2xY6DCwNZHRVXBW9ydHne9+3Kr8BQekNqAEDAAA=",
+          "material": "Steel",
+          "appearance": "Opaque(128,64,64)"
+        }
+      ],
+      "visual_role": "camera_optics",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_rgb_optic",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/239ecd6d984e14a0f1b74060d921e8fe0808c1a140c857988ddc116bdd905a1c.stl",
+      "raw_mesh_sha256": "239ecd6d984e14a0f1b74060d921e8fe0808c1a140c857988ddc116bdd905a1c",
+      "raw_mesh_size_bytes": 2532984,
+      "raw_triangle_count": 50658,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_STACK_ASM_1_ASM:1+GEMINI_II_HEAD_ASSEMBLY_ASM_1_ASM:1+AT_RGB2017_MODULE_ASM_1_ASM:1+AT_RGB2017_MODULE_1_ASM_1_ASM:1+LENS_SPY8379B_2:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.011308602044919505,
+          "y": 0.08335000007450581,
+          "z": 0.10992780711151257
+        },
+        "x_axis": {
+          "x": 1.2593412664613592e-16,
+          "y": -1.0000000000000007,
+          "z": -8.46545056359399e-15
+        },
+        "y_axis": {
+          "x": 0.9999999999999981,
+          "y": 1.189952329628319e-16,
+          "z": -6.913573768835139e-15
+        },
+        "z_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61SvYqVMRBFbLZY2NruY8uFwcnMZDLTCILdLX2CTH7sbXyGtRKfYF9CBWsLEUSw2cJSG0vfwHz3IpYWK2EgJIdzTk4ObrbhWmmjNccd2drxJvuJbreHm4d0+/jw+s2Hn8/fX9xbCNpYt4FUC6JAjxQgwybEVAEjQR3uBfPOupDoqRuHQO6TQMpoYC4JWos2m6wbzSetj28fnX/78eTy5vr87MWn71+OrhYDlTwjlQmFvS+tkSCyCZA39kJqKrF8yX9gOTrOtYyKXGGIKEhuCl6SA7GN8BElxzxp/foMD66+Hp6+u3h2/+XV2as/Wq0HdXWGzimBcGKoVvJ6fbS+RiL8r+M7seiOnIapWs/QrQyQRgrWZUBILanlojN4xxWpVXNDWFk4iLQO0Rdtk9yZXFsi33EqqfNEh2nEC9cNAhcfDo8saf18rTuu+mi1NgF0MxAVhyqsUCcSe3QxLce25DRoFQGISl187GArcDDLHBrRUXHHWWdPDRmo01x8bUANIwg1rHNqSPpHZiVl7EQNSp8rs1wTVBID1p5HpIlznHq+996RfwPMkcAAAQMAAA==",
+          "material": "Steel",
+          "appearance": "Opaque(128,64,64)"
+        }
+      ],
+      "visual_role": "camera_optics",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_projector_optic",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/dcca5c06f1c2609d7d091fb3bb89519e4bc9dc12e88f40ff9af6fd365f10453b.stl",
+      "raw_mesh_sha256": "dcca5c06f1c2609d7d091fb3bb89519e4bc9dc12e88f40ff9af6fd365f10453b",
+      "raw_mesh_size_bytes": 17084,
+      "raw_triangle_count": 340,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_STACK_ASM_1_ASM:1+GEMINI_II_HEAD_ASSEMBLY_ASM_1_ASM:1+AT_LDM2005_503_MODULE_ASM_1_ASM:1+AT_LDM2005_503_MODULE_1_ASM_1_ASM:1+LENS_DS46042A_ASSY_ASM_1_ASM:1+MDE400A_DOE_2:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": -0.00031360204491953474,
+          "y": 0.07783000007450581,
+          "z": 0.10992280711151246
+        },
+        "x_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "y_axis": {
+          "x": 0.9999999999999981,
+          "y": 1.189952329628319e-16,
+          "z": -6.913573768835139e-15
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/61TsYpVMRBFbLZY2NruYrkwmEwmmZlGEOxe6RdkJom9jd+glfgF+xMqWFuIIILNFpbaWPoHzr2L2NmshIRw7+GcM3MmaZMtxcobxj5uKHErG+1f2nZ9unqA149Or998+Pns/cWdQOBW2jYTdk6JYFg2oCkLbDUCQUptqnKqO2sgk+YhxQjqWAjE00GUMribL6f40+qN1se3D8+//Xh8/+rF+dnzT9+/HK6CAbkuy7yAi47QmhmsCgGqF2Vs0sjCF/0HlsNx7Tx7Kh0mUQOq3kA5K2CRaTqNq60brV+f4d7l19OTdxdP7768PHv1R8uH4WhaYJScgUou0IVrVG8+YpOZ/nV8KxbekUtS7jIqDOEJ5NhABk0w6py9cltWdhxT7616guiFApEPsBG0TnUU1OYZdcc1yqOspLAES+CGgKXgS1OtUo7kez90lyuvjqCtRLazC0iXOLzK7LO4jsNfweLCa0GyFjgUhd6UYVElq33N5nToNhWP5kMMRmRUIq2dCnLKw3vpkl12XMZiPc0JtY2Yvh4xilsUrclzSuya+d+9nei2Uh1Q0aLCJA6dkYPLWhtrpJjL4z3s7wOx/AZhzr2DKQMAAA==",
+          "material": "Steel",
+          "appearance": "Opaque(193,196,192)"
+        }
+      ],
+      "visual_role": "camera_optics",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    },
+    {
+      "asset_id": "gemini_right_ir_optic",
+      "canonical_link": "camera_link",
+      "raw_mesh_path": "raw_by_sha256/6a54853c6485933aa52376aa5e2dcf19da1b20c5feaa133d7f48514a91e4c61c.stl",
+      "raw_mesh_sha256": "6a54853c6485933aa52376aa5e2dcf19da1b20c5feaa133d7f48514a91e4c61c",
+      "raw_mesh_size_bytes": 2334884,
+      "raw_triangle_count": 46696,
+      "source_occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_STACK_ASM_1_ASM:1+GEMINI_II_HEAD_ASSEMBLY_ASM_1_ASM:1+AT_IRM2001_MODULE_ASM_1_ASM:2+AT_IRM2001_MODULE_1_ASM_1_ASM:1+DS69005A-ASSM-09_LU06900501_FOR:1",
+      "source_occurrence_transform_root_fusion": {
+        "origin_m": {
+          "x": 0.024686397955080416,
+          "y": 0.07365000007450584,
+          "z": 0.10992280711151224
+        },
+        "x_axis": {
+          "x": -0.9999999999999981,
+          "y": -1.189952329628319e-16,
+          "z": 6.913573768835139e-15
+        },
+        "y_axis": {
+          "x": 6.913573708459239e-15,
+          "y": -8.29891710907305e-15,
+          "z": 0.9999999999999989
+        },
+        "z_axis": {
+          "x": -1.2593412664613592e-16,
+          "y": 1.0000000000000007,
+          "z": 8.46545056359399e-15
+        }
+      },
+      "export_scope": "body",
+      "source_bodies": [
+        {
+          "body_name": "Body1",
+          "body_entity_token_snapshot": "/v4BAAAARlJLZXkAH4sIAAAAAAAA/62SMYuWMQzHEZcbDm52e7jxIJikadMsguD2jn6CpmndXfwM5yR+gvsSKjg7iCCCyw2Oujj6Dezzvoiby0lJCe2P/z9Ng1vdcC3aeMUx47qytMl+Urbbw81Dvn18eP3mw8/n7y/uLYK3VLaB3BRRIJwcZNQJPotAZcEyzBTzrrpINIqaXCDHZBAdHaoJQe/eZ5d1U/LJ6+PbR+fffjy5vLk+P3vx6fuXY1VLgTVPJ52gyWJ5DQLPVYCtJ1MutYivuuQ/qBwrzk1Hw9RgiBSQ3AuYkgGnOtyGa/Z58vr1GR5cfT08fXfx7P7Lq7NXf7x6OEexBJGIQBIlaFXzer33WCHu9rfiO6mUnZwVqdXIEFUHSOcCNWSAS1PqWcv0tHMqrZXcEVYvDER6gMeS7ZIjsZVObDtXhCJNNJiV0+KiguPSw2GehdbPt3bSE3aqBKhlcdkz1JYGDBIhRh04feesLc7WDMjA1VEbCK2nDJlmCZ4ym+nOtRF1dkYI63Nxk6BWDlAJlUElrf3fPTPqfYxg4Mxr2iYGNMwK1qo7zoKhdpzzfe612G/najH5AQMAAA==",
+          "material": "Steel",
+          "appearance": "Opaque(128,64,64)"
+        }
+      ],
+      "visual_role": "camera_optics",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD",
+      "redistribution": "allowed"
+    }
+  ],
+  "retained_proxy_links": [],
+  "excluded_geometry": [
+    {
+      "category": "deferred_electronics_and_sensors",
+      "examples": [
+        "Raspberry Pi",
+        "Gemini 335 internals",
+        "Raspberry Pi Camera",
+        "battery",
+        "servo controller"
+      ],
+      "reason": "The current visual task includes the exact Gemini 335 exterior housing, mounting hardware, and four externally visible optical elements. Internal connector/PCB geometry, the Raspberry Pi camera, battery, and controller remain outside this bounded export."
+    },
+    {
+      "category": "unlisted_araco_bodies",
+      "reason": "An araco-prefixed component name alone is insufficient; only the exact occurrence/body pairs above are authorized."
+    }
+  ]
+}

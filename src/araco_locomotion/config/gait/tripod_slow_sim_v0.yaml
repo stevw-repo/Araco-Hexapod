@@ -1,0 +1,49 @@
+{
+  "schema_id": "araco://schemas/locomotion/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.locomotion.gait-tripod-slow",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_locomotion",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.kinematics.ik",
+      "artifact_version": "0.1.0"
+    }
+  ],
+  "data": {
+    "kind": "gait",
+    "gait_id": "tripod_slow",
+    "cycle_period_s": 1.2,
+    "duty_factor": 0.5,
+    "maximum_stride_m": 0.06,
+    "swing_clearance_m": 0.03,
+    "trajectory_horizon_s": 0.04,
+    "phase_groups": [
+      [
+        "left_front",
+        "right_middle",
+        "left_rear"
+      ],
+      [
+        "right_front",
+        "left_middle",
+        "right_rear"
+      ]
+    ],
+    "shaping": {
+      "translation_acceleration_m_s2": 0.1,
+      "translation_stop_deceleration_m_s2": 0.15,
+      "yaw_acceleration_rad_s2": 0.6,
+      "yaw_stop_deceleration_rad_s2": 0.9,
+      "body_translation_rate_m_s": 0.03,
+      "body_angular_rate_rad_s": 0.3
+    }
+  }
+}

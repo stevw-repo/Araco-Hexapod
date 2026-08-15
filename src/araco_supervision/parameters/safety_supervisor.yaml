@@ -1,0 +1,37 @@
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+safety_supervisor:
+  config:
+    profile_id: {type: string, description: Exact profile identity., read_only: true}
+    profile_version: {type: string, description: Exact profile version., read_only: true}
+    behavior_fingerprint: {type: string, description: Production behavior fingerprint., read_only: true}
+    input_selection_fingerprint: {type: string, description: Input selection fingerprint., read_only: true}
+    node_config_fingerprint: {type: string, description: Non-circular node fingerprint., read_only: true}
+    selected_artifact_ids: {type: string_array, description: Exact artifact identities., read_only: true}
+  loop_rate_hz:
+    type: double
+    description: Steady-clock safety evaluation rate.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  safety_policy_path:
+    type: string
+    description: Exact installed safety-policy artifact path.
+    read_only: true
+  safety_policy_sha256:
+    type: string
+    description: Expected normalized safety-policy hash.
+    read_only: true
+  state_joint_names:
+    type: string_array
+    description: Canonical ordered 25-joint state partition.
+    read_only: true
+  leg_joint_names:
+    type: string_array
+    description: Canonical ordered 24-joint leg controller partition.
+    read_only: true
+  gimbal_joint_names:
+    type: string_array
+    description: Canonical one-joint gimbal controller partition.
+    read_only: true

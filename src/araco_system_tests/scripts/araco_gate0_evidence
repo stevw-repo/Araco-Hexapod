@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Emit one atomic static Gate 0 evidence directory without starting Gazebo."""
+
+import argparse
+from datetime import datetime
+from datetime import timezone
+import os
+from pathlib import Path
+import platform
+import shutil
+import tempfile
+import xml.etree.ElementTree as ET
+
+from araco_bringup.composer import compose_profile
+from araco_bringup.composer import load_artifact
+from araco_bringup.strict_yaml import canonical_json_bytes
+
+
+def _write_json(path, value):
+    path.write_bytes(canonical_json_bytes(value) + b'\n')
+
+
+def _junit(path, elapsed_seconds):
+    suite = ET.Element('testsuite', {
+        'name': 'araco_gate0_evidence',
+        'tests': '1',
+        'failures': '0',
+        'errors': '0',
+        'skipped': '0',
+        'time': f'{elapsed_seconds:.6f}',
+    })
+    ET.SubElement(suite, 'testcase', {
+        'classname': 'araco_system_tests.gate0',
+        'name': 'static_model_and_configuration_integrity',
+        'time': f'{elapsed_seconds:.6f}',
+    })
+    ET.indent(suite, space='  ')
+    path.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + ET.tostring(suite, encoding='unicode') + '\n',
+        encoding='utf-8',
+    )
+
+
+def main():
+    """Compose both profiles and atomically publish their Gate 0 evidence."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('output_directory')
+    parser.add_argument(
+        '--source-revision', default='unreported-dirty-or-installed-tree'
+    )
+    arguments = parser.parse_args()
+    output = Path(arguments.output_directory).resolve()
+    if output.exists():
+        parser.error(f'output directory already exists: {output}')
+    output.parent.mkdir(parents=True, exist_ok=True)
+    started = datetime.now(timezone.utc)
+    temporary = Path(tempfile.mkdtemp(prefix=f'.{output.name}.', dir=output.parent))
+    try:
+        effective = temporary / 'effective_config'
+        effective.mkdir()
+        dev = compose_profile('gazebo_dev_v0', effective / 'gazebo_dev_v0')
+        ci = compose_profile('gazebo_ci_v0', effective / 'gazebo_ci_v0')
+        if dev['behavior_fingerprint'] != ci['behavior_fingerprint']:
+            raise RuntimeError('profile behavior fingerprints differ')
+        threshold = load_artifact(
+            'araco_system_tests',
+            'config/thresholds/gazebo_baseline_v0.yaml',
+        )
+        finished = datetime.now(timezone.utc)
+        elapsed = (finished - started).total_seconds()
+        (temporary / 'logs').mkdir()
+        _write_json(temporary / 'metrics.json', {
+            'primary_links': 26,
+            'revolute_joints': 25,
+            'leg_command_joints': 24,
+            'gimbal_command_joints': 1,
+            'total_mass_kg': 3.924392774795984,
+            'unexpected_nominal_collision_pairs': 0,
+        })
+        _write_json(temporary / 'environment.json', {
+            **dev['environment'],
+            'os': platform.platform(),
+            'host': platform.node(),
+        })
+        _write_json(temporary / 'process_outcomes.json', {
+            'gazebo': 'not_started_gate0_static_only',
+            'ros_nodes': 'not_started_gate0_static_only',
+            'development_composition': 'PASS',
+            'ci_composition': 'PASS',
+        })
+        _write_json(temporary / 'input_selection.json', {
+            'development': dev['input_selection_fingerprint'],
+            'ci': ci['input_selection_fingerprint'],
+        })
+        _write_json(temporary / 'validation_report.json', {
+            'gate': 0,
+            'status': 'PASS',
+            'profiles': ['gazebo_dev_v0', 'gazebo_ci_v0'],
+            'behavior_fingerprints_equal': True,
+            'behavior_fingerprint': dev['behavior_fingerprint'],
+            'fidelity_limitations': [
+                'Simulator-only limits, dynamics, camera pose, and standing '
+                'pose remain provisional.',
+            ],
+        })
+        _junit(temporary / 'junit.xml', elapsed)
+        gate_result = {
+            'gate': 0,
+            'phase': 1,
+            'result': 'PASS',
+            'started_utc': started.isoformat(),
+            'finished_utc': finished.isoformat(),
+            'seed': 42,
+            'repetition_index': 1,
+            'source_revision': arguments.source_revision,
+            'behavior_fingerprint': dev['behavior_fingerprint'],
+            'development_input_selection_fingerprint': dev[
+                'input_selection_fingerprint'
+            ],
+            'ci_input_selection_fingerprint': ci[
+                'input_selection_fingerprint'
+            ],
+            'development_run_fingerprint': dev['run_fingerprint'],
+            'ci_run_fingerprint': ci['run_fingerprint'],
+            'threshold': {
+                'artifact_id': threshold.artifact_id,
+                'artifact_version': threshold.version,
+                'sha256': threshold.sha256,
+            },
+            'profile_manifests': {
+                'development': 'effective_config/gazebo_dev_v0/manifest.json',
+                'ci': 'effective_config/gazebo_ci_v0/manifest.json',
+            },
+        }
+        _write_json(temporary / 'gate_result.json', gate_result)
+        os.replace(temporary, output)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    print(canonical_json_bytes(gate_result).decode('utf-8'))
+
+
+if __name__ == '__main__':
+    main()

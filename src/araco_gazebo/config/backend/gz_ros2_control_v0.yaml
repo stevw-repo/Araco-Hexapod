@@ -1,0 +1,44 @@
+{
+  "schema_id": "araco://schemas/gazebo/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.gazebo.backend-gz-ros2-control",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_gazebo",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "simulator_estimate",
+    "sources": [
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.description.canonical-model",
+      "artifact_version": "1.0.0"
+    },
+    {
+      "artifact_id": "araco.description.provisional-sim-limits",
+      "artifact_version": "0.1.0"
+    }
+  ],
+  "data": {
+    "kind": "gazebo_backend",
+    "plugin": "gz_ros2_control/GazeboSimSystem",
+    "command_interfaces": [
+      "position"
+    ],
+    "state_interfaces": [
+      "position",
+      "velocity",
+      "effort"
+    ],
+    "position_proportional_gain": 0.04,
+    "synchronous_update": true,
+    "spawn": {
+      "allow_renaming": false,
+      "initial_joint_source": "nominal_pose",
+      "paused_until_ready": true
+    },
+    "mapping_policy": "derive_roles_from_canonical_model"
+  }
+}

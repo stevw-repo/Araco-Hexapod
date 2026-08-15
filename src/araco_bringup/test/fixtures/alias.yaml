@@ -1,0 +1,2 @@
+base: &shared {value: 1}
+copy: *shared

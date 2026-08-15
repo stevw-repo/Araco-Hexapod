@@ -475,10 +475,10 @@ The user's 2026-08-15 approval freezes:
 - canonical generation of controller joint lists;
 - Jazzy spawner and robot-description delivery rules.
 
-Approval does not authorize creating the files. The implementation sequence is
-specified in the accepted `PHASED_DELIVERY_PLAN.md`, and the complete
-architecture review is recorded in `FINAL_ARCHITECTURE_REVIEW.md`;
-implementation still requires a separate explicit Phase 0 authorization.
+Approval of this contract did not itself authorize creating the files. The
+user later authorized Phase 0 and separately authorized Phase 1 / Gate 0; both
+are complete as recorded in `WORKING_STATE.md`. Later phases still require
+their own explicit authorization.
 
 ## Upstream mechanisms this decision depends on
 

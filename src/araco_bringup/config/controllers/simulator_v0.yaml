@@ -1,0 +1,35 @@
+{
+  "schema_id": "araco://schemas/bringup/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.bringup.controllers",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_bringup",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.description.canonical-model",
+      "artifact_version": "1.0.0"
+    }
+  ],
+  "data": {
+    "kind": "controllers",
+    "controller_manager_rate_hz": 250,
+    "joint_state_rate_hz": 125,
+    "joint_state_broadcaster_type": "joint_state_broadcaster/JointStateBroadcaster",
+    "trajectory_controller_type": "joint_trajectory_controller/JointTrajectoryController",
+    "interpolation_method": "splines",
+    "leg_cmd_timeout_s": 0.1,
+    "activation_order": [
+      "joint_state_broadcaster",
+      "leg_trajectory_controller",
+      "gimbal_trajectory_controller"
+    ],
+    "joint_membership_policy": "derive_roles_from_canonical_model"
+  }
+}

@@ -1,0 +1,1090 @@
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Fail-closed Gate 0 artifact validation and runtime-bundle composition."""
+
+from __future__ import annotations
+
+import copy
+from dataclasses import dataclass
+import hashlib
+import importlib.metadata
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import tempfile
+from typing import Any
+import xml.etree.ElementTree as ET
+
+from ament_index_python.packages import get_package_share_directory
+import jsonschema
+import xacro
+import yaml
+
+from .strict_yaml import canonical_json_bytes
+from .strict_yaml import content_sha256
+from .strict_yaml import load_strict
+
+
+class CompositionError(RuntimeError):
+    """Raised when preflight cannot produce a valid immutable bundle."""
+
+
+PROFILE_PATHS = {
+    'gazebo_dev_v0': 'config/profiles/gazebo_dev_v0.yaml',
+    'gazebo_ci_v0': 'config/profiles/gazebo_ci_v0.yaml',
+}
+
+_ENVELOPE_REQUIRED = {
+    'schema_id', 'schema_version', 'artifact_id', 'artifact_version',
+    'owner_package', 'deployment_scope', 'evidence', 'dependencies', 'data',
+}
+_ENVELOPE_ALLOWED = _ENVELOPE_REQUIRED | {'generated_from'}
+
+
+@dataclass(frozen=True)
+class Artifact:
+    """One validated, normalized installed artifact."""
+
+    package: str
+    relative_path: str
+    installed_path: Path
+    document: dict[str, Any]
+    sha256: str
+
+    @property
+    def artifact_id(self) -> str:
+        return str(self.document['artifact_id'])
+
+    @property
+    def version(self) -> str:
+        return str(self.document['artifact_version'])
+
+
+def _package_share(package: str) -> Path:
+    try:
+        return Path(get_package_share_directory(package)).resolve()
+    except Exception as error:
+        raise CompositionError(f'cannot resolve installed package {package!r}: {error}') from error
+
+
+def _installed_resource(package: str, relative_path: str) -> Path:
+    relative = Path(relative_path)
+    if relative.is_absolute() or '..' in relative.parts or not relative.parts:
+        raise CompositionError(f'invalid installed relative path {relative_path!r}')
+    share = _package_share(package)
+    path = (share / relative).resolve()
+    if path != share and share not in path.parents:
+        raise CompositionError(f'resource escapes package share: {relative_path!r}')
+    if not path.is_file():
+        raise CompositionError(f'unresolved installed resource {package}:{relative_path}')
+    return path
+
+
+def _validate_envelope(document: Any, package: str, path: Path) -> None:
+    if not isinstance(document, dict):
+        raise CompositionError(f'{path}: artifact root must be a mapping')
+    keys = set(document)
+    if keys != _ENVELOPE_REQUIRED and keys != _ENVELOPE_ALLOWED:
+        raise CompositionError(
+            f'{path}: envelope fields differ; missing={sorted(_ENVELOPE_REQUIRED - keys)}, '
+            f'unknown={sorted(keys - _ENVELOPE_ALLOWED)}'
+        )
+    if document['schema_version'] != 1:
+        raise CompositionError(f'{path}: unsupported schema_version')
+    if document['owner_package'] != package:
+        raise CompositionError(f'{path}: owner_package does not match containing package')
+    if document['deployment_scope'] not in {
+        'simulator_only', 'test_only', 'deployment_eligible'
+    }:
+        raise CompositionError(f'{path}: invalid deployment_scope')
+    evidence = document['evidence']
+    if not isinstance(evidence, dict) or set(evidence) != {'class', 'sources'}:
+        raise CompositionError(f'{path}: evidence must contain only class and sources')
+    if evidence['class'] not in {
+        'design_fact', 'simulator_estimate', 'operational_policy', 'test_contract'
+    }:
+        raise CompositionError(f'{path}: invalid evidence class')
+    if not isinstance(evidence['sources'], list):
+        raise CompositionError(f'{path}: evidence sources must be a list')
+    if not isinstance(document['dependencies'], list):
+        raise CompositionError(f'{path}: dependencies must be a list')
+    for dependency in document['dependencies']:
+        if not isinstance(dependency, dict) or set(dependency) != {
+            'artifact_id', 'artifact_version'
+        }:
+            raise CompositionError(f'{path}: invalid exact dependency')
+
+
+def _schema_path(document: dict[str, Any], package: str) -> Path:
+    prefix = 'araco://schemas/'
+    schema_id = document['schema_id']
+    if not isinstance(schema_id, str) or not schema_id.startswith(prefix):
+        raise CompositionError(f'invalid local schema identity {schema_id!r}')
+    parts = schema_id[len(prefix):].split('/')
+    expected_owner = package.removeprefix('araco_')
+    if len(parts) != 3 or parts[0] != expected_owner or parts[2] != 'v1':
+        raise CompositionError(f'schema identity does not match owner: {schema_id!r}')
+    return _installed_resource(package, f'schema/{parts[1]}_v1.schema.json')
+
+
+def load_artifact(package: str, relative_path: str) -> Artifact:
+    """Resolve and validate one exact installed artifact."""
+    path = _installed_resource(package, relative_path)
+    try:
+        document = load_strict(path)
+        _validate_envelope(document, package, path)
+        schema_path = _schema_path(document, package)
+        schema = json.loads(schema_path.read_text(encoding='utf-8'))
+        jsonschema.Draft202012Validator.check_schema(schema)
+        jsonschema.Draft202012Validator(schema).validate(document['data'])
+    except (ValueError, json.JSONDecodeError, jsonschema.ValidationError,
+            jsonschema.SchemaError) as error:
+        raise CompositionError(f'{path}: validation failed: {error}') from error
+    artifact = Artifact(
+        package=package,
+        relative_path=relative_path,
+        installed_path=path,
+        document=document,
+        sha256=content_sha256(document),
+    )
+    _semantic_validate(artifact)
+    return artifact
+
+
+def _unique(values: list[str], label: str) -> None:
+    if len(values) != len(set(values)):
+        raise CompositionError(f'duplicate {label}')
+
+
+def _vector(values: Any, size: int, label: str) -> list[float]:
+    if not isinstance(values, list) or len(values) != size:
+        raise CompositionError(f'{label} must contain {size} values')
+    result = [float(value) for value in values]
+    if not all(math.isfinite(value) for value in result):
+        raise CompositionError(f'{label} contains a non-finite value')
+    return result
+
+
+def _semantic_validate(artifact: Artifact) -> None:
+    kind = artifact.document['data']['kind']
+    validator = {
+        'canonical_model': _validate_model,
+        'joint_limits': _validate_limits,
+        'nominal_pose': _validate_pose,
+        'dynamics': _validate_dynamics,
+        'resources': _validate_resources,
+        'source_registry': _validate_sources,
+        'qos': _validate_qos,
+        'profile': _validate_profile,
+    }.get(kind)
+    if validator:
+        validator(artifact)
+
+
+def _validate_model(artifact: Artifact) -> None:
+    data = artifact.document['data']
+    links = data['links']
+    joints = data['joints']
+    link_names = [link['name'] for link in links]
+    joint_names = [joint['name'] for joint in joints]
+    _unique(link_names, 'model link name')
+    _unique(joint_names, 'model joint name')
+    if len(links) != 26 or data['primary_link_order'] != link_names:
+        raise CompositionError('canonical model must contain exactly 26 ordered primary links')
+    if len(joints) != 25 or any(joint['type'] != 'revolute' for joint in joints):
+        raise CompositionError('canonical model must contain exactly 25 revolute joints')
+    if data['root_link'] != 'base_link' or link_names[0] != 'base_link':
+        raise CompositionError('base_link must be the canonical root')
+    children = []
+    for joint in joints:
+        if joint['parent'] not in link_names or joint['child'] not in link_names:
+            raise CompositionError(f"unknown joint endpoint for {joint['name']}")
+        axis = _vector(joint['axis'], 3, f"{joint['name']} axis")
+        if abs(math.sqrt(sum(value * value for value in axis)) - 1.0) > 1e-9:
+            raise CompositionError(f"{joint['name']} axis is not normalized")
+        _vector(joint['origin_xyz_m'], 3, f"{joint['name']} origin")
+        _vector(joint['origin_rpy_rad'], 3, f"{joint['name']} rotation")
+        children.append(joint['child'])
+    _unique(children, 'joint child')
+    if set(children) != set(link_names) - {'base_link'}:
+        raise CompositionError('joint tree does not span all non-root primary links')
+    leg = [joint['name'] for joint in joints if 'leg_command' in joint['roles']]
+    gimbal = [joint['name'] for joint in joints if 'gimbal_command' in joint['roles']]
+    state = [joint['name'] for joint in joints if 'state' in joint['roles']]
+    if len(leg) != 24 or gimbal != ['gimbal_yaw_joint'] or len(state) != 25:
+        raise CompositionError('canonical 24+1 controller/state roles are invalid')
+    visual = data['visual_policy']
+    for material_name in (
+        'primary_material_rgba',
+        'servo_case_material_rgba',
+        'servo_horn_material_rgba',
+        'camera_body_material_rgba',
+        'camera_hardware_material_rgba',
+        'camera_optics_material_rgba',
+    ):
+        rgba = _vector(visual[material_name], 4, material_name)
+        if any(value < 0.0 or value > 1.0 for value in rgba):
+            raise CompositionError(f'{material_name} must be normalized RGBA')
+    if visual.get('fidelity') != 'fusion_exact_presentation':
+        raise CompositionError('canonical visual policy must use exact Fusion presentation meshes')
+    inventory = visual.get('exact_mesh_inventory', {})
+    if (
+        inventory.get('reviewed_source_bodies') != 77
+        or inventory.get('servo_models') != {'DS3235': 19, 'DS5160': 6}
+        or inventory.get('tibia_components') != 6
+        or inventory.get('gemini_335_exterior') != {
+            'housing_and_bracket_bodies': 5,
+            'hardware_bodies': 6,
+            'optical_bodies': 4,
+            'internal_bodies_included': 0,
+        }
+        or inventory.get('retained_visual_proxies') != 0
+        or inventory.get('alignment_policy') != 'preserve_fusion_occurrence_no_force_alignment'
+    ):
+        raise CompositionError('exact Fusion visual inventory contract is invalid')
+    if any('visual_mesh_uri' not in link for link in links):
+        raise CompositionError('exact Fusion primary mesh does not cover every canonical link')
+    auxiliary = [item for link in links for item in link.get('auxiliary_visuals', [])]
+    role_counts = {
+        role: sum(item.get('role') == role for item in auxiliary)
+        for role in ('servo_case', 'servo_horn')
+    }
+    if role_counts != {'servo_case': 13, 'servo_horn': 7}:
+        raise CompositionError('exact Fusion auxiliary visual coverage is invalid')
+    for link in links:
+        roles = [item.get('role') for item in link.get('auxiliary_visuals', [])]
+        _unique(roles, f'{link["name"]} auxiliary visual role')
+        if any(role not in {'servo_case', 'servo_horn'} for role in roles):
+            raise CompositionError(f'{link["name"]} has an unsupported visual role')
+        if any(not item.get('mesh_uri') for item in link.get('auxiliary_visuals', [])):
+            raise CompositionError(f'{link["name"]} has an empty auxiliary mesh URI')
+    fixed_visuals = [
+        item
+        for frame in data['fixed_frames']
+        for item in frame.get('visuals', [])
+    ]
+    if [frame['child'] for frame in data['fixed_frames'] if frame.get('visuals')] != [
+        'camera_link'
+    ]:
+        raise CompositionError('exact Gemini visuals must belong only to camera_link')
+    if {item.get('role') for item in fixed_visuals} != {
+        'camera_body', 'camera_hardware', 'camera_optics'
+    } or len(fixed_visuals) != 3:
+        raise CompositionError('exact Gemini fixed-frame visual coverage is invalid')
+    if any(not item.get('mesh_uri') for item in fixed_visuals):
+        raise CompositionError('camera_link has an empty visual mesh URI')
+
+
+def _validate_limits(artifact: Artifact) -> None:
+    data = artifact.document['data']
+    for name, limits in data['classes'].items():
+        lower = float(limits['lower_rad'])
+        upper = float(limits['upper_rad'])
+        if not lower < upper or limits['velocity_rad_s'] <= 0 or limits['effort_nm'] <= 0:
+            raise CompositionError(f'invalid model limit class {name}')
+
+
+def _validate_pose(artifact: Artifact) -> None:
+    data = artifact.document['data']
+    quaternion = _vector(data['base_pose']['orientation_xyzw'], 4, 'base quaternion')
+    if abs(math.sqrt(sum(value * value for value in quaternion)) - 1.0) > 1e-9:
+        raise CompositionError('nominal base quaternion is not normalized')
+
+
+def _inertia_valid(inertia: dict[str, Any]) -> bool:
+    ixx = float(inertia['ixx'])
+    iyy = float(inertia['iyy'])
+    izz = float(inertia['izz'])
+    ixy = float(inertia['ixy'])
+    ixz = float(inertia['ixz'])
+    iyz = float(inertia['iyz'])
+    a = ixx
+    determinant_2 = ixx * iyy - ixy * ixy
+    determinant_3 = (
+        ixx * iyy * izz + 2 * ixy * ixz * iyz
+        - ixx * iyz * iyz - iyy * ixz * ixz - izz * ixy * ixy
+    )
+    if min(a, determinant_2, determinant_3) <= 0:
+        return False
+    return (
+        ixx + iyy >= izz - 1e-9
+        and ixx + izz >= iyy - 1e-9
+        and iyy + izz >= ixx - 1e-9
+    )
+
+
+def _validate_dynamics(artifact: Artifact) -> None:
+    data = artifact.document['data']
+    total = 0.0
+    for name, dynamics in data['links'].items():
+        if dynamics['mass_kg'] <= 1e-4:
+            raise CompositionError(f'{name} mass is below Gate 0 minimum')
+        _vector(dynamics['center_of_mass_xyz_m'], 3, f'{name} center of mass')
+        if not _inertia_valid(dynamics['inertia_kg_m2']):
+            raise CompositionError(f'{name} inertia is not positive-valid')
+        total += float(dynamics['mass_kg'])
+    if abs(total - float(data['total_mass_kg'])) > 1e-12:
+        raise CompositionError('dynamics link masses do not sum to declared total')
+    if abs(total - 3.924392774795984) > 0.001:
+        raise CompositionError('Gate 0 total mass is outside rough_estimate_v0 tolerance')
+    if data['rejected_fusion_all_steel_import_used']:
+        raise CompositionError('rejected Fusion all-Steel dynamics cannot be used')
+    proxies = data['base_proxies']
+    if {proxy['id'] for proxy in proxies} != {
+        'pisugar_3_plus', 'main_servo_battery', 'servo_controller'
+    } or any(not proxy['include_in_base_inertia'] for proxy in proxies):
+        raise CompositionError('all three documented proxies must contribute to base inertia')
+
+
+def _resolve_package_uri(uri: str) -> Path:
+    prefix = 'package://'
+    if not uri.startswith(prefix):
+        raise CompositionError(f'only package:// resources are permitted: {uri!r}')
+    package, separator, relative = uri[len(prefix):].partition('/')
+    if not separator:
+        raise CompositionError(f'invalid package resource URI {uri!r}')
+    return _installed_resource(package, relative)
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _validate_resources(artifact: Artifact) -> None:
+    for resource in artifact.document['data']['resources']:
+        if resource['redistribution'] != 'allowed' or resource['license'] == 'UNKNOWN':
+            raise CompositionError(f"resource {resource['id']} is not redistributable")
+        path = _resolve_package_uri(resource['uri'])
+        if _file_sha256(path) != resource['sha256']:
+            raise CompositionError(f"resource hash mismatch for {resource['id']}")
+        if resource['generated']:
+            _resolve_package_uri(resource['preferred_editable_source_uri'])
+            _resolve_package_uri(resource['generator_uri'])
+
+
+def _validate_sources(artifact: Artifact) -> None:
+    enabled = [source for source in artifact.document['data']['sources'] if source['enabled']]
+    ids = [source['id'] for source in enabled]
+    priorities = [source['priority'] for source in enabled]
+    if any(identifier == 0 for identifier in ids):
+        raise CompositionError('enabled source IDs must be non-zero')
+    _unique(ids, 'enabled source ID')
+    _unique(priorities, 'enabled source priority')
+
+
+def _validate_qos(artifact: Artifact) -> None:
+    for name, profile in artifact.document['data']['profiles'].items():
+        if profile['history'] != 'keep_last' or profile['depth'] < 1:
+            raise CompositionError(f'invalid QoS history for {name}')
+        if profile['reliability'] not in {'best_effort', 'reliable'}:
+            raise CompositionError(f'invalid QoS reliability for {name}')
+
+
+def _validate_profile(artifact: Artifact) -> None:
+    data = artifact.document['data']
+    if data['profile_id'] not in PROFILE_PATHS:
+        raise CompositionError('profile is not in the installed allow-list')
+    references = data['selected_artifacts']
+    ids = [reference['artifact_id'] for reference in references]
+    _unique(ids, 'profile artifact identity')
+    if data['deployment_class'] != 'simulator_only':
+        raise CompositionError('Gate 0 permits only simulator profiles')
+    if set(data['allowed_overrides']) != {
+        'robot_namespace', 'gui', 'rviz', 'log_level',
+        'record_on_failure', 'report_destination'
+    }:
+        raise CompositionError('profile override surface differs from the closed contract')
+
+
+def _artifact_map(profile: Artifact) -> dict[str, Artifact]:
+    resolved = {}
+    for reference in profile.document['data']['selected_artifacts']:
+        artifact = load_artifact(reference['package'], reference['path'])
+        if artifact.artifact_id != reference['artifact_id']:
+            raise CompositionError(
+                f"artifact ID mismatch at {reference['package']}:"
+                f"{reference['path']}"
+            )
+        if artifact.version != reference['artifact_version']:
+            raise CompositionError(f'version mismatch for {artifact.artifact_id}')
+        if artifact.artifact_id in resolved:
+            raise CompositionError(f'duplicate selected artifact {artifact.artifact_id}')
+        if artifact.document['deployment_scope'] == 'deployment_eligible':
+            raise CompositionError('unapproved deployment-eligible artifact in simulator profile')
+        resolved[artifact.artifact_id] = artifact
+    for artifact in resolved.values():
+        for dependency in artifact.document['dependencies']:
+            selected = resolved.get(dependency['artifact_id'])
+            if selected is None or selected.version != dependency['artifact_version']:
+                raise CompositionError(f'unresolved exact dependency for {artifact.artifact_id}')
+    return resolved
+
+
+def _kind(artifacts: dict[str, Artifact], kind: str) -> Artifact:
+    matches = [
+        artifact for artifact in artifacts.values()
+        if artifact.document['data']['kind'] == kind
+    ]
+    if len(matches) != 1:
+        raise CompositionError(f'expected exactly one selected {kind} artifact')
+    return matches[0]
+
+
+def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
+    model = _kind(artifacts, 'canonical_model').document['data']
+    limits = _kind(artifacts, 'joint_limits').document['data']
+    pose = _kind(artifacts, 'nominal_pose').document['data']
+    dynamics = _kind(artifacts, 'dynamics').document['data']
+    resources = _kind(artifacts, 'resources').document['data']
+    operational = _kind(artifacts, 'operational_policy').document['data']
+    controllers = _kind(artifacts, 'controllers').document['data']
+    gait = _kind(artifacts, 'gait').document['data']
+    sources = _kind(artifacts, 'source_registry').document['data']
+    safety = _kind(artifacts, 'safety_policy').document['data']
+    qos = _kind(artifacts, 'qos').document['data']
+    mapping = _kind(artifacts, 'teleop_mapping').document['data']
+    world = _kind(artifacts, 'world').document['data']
+    backend = _kind(artifacts, 'gazebo_backend').document['data']
+    bridge = _kind(artifacts, 'bridge').document['data']
+    wiring = _kind(artifacts, 'wiring').document['data']
+    joints = model['joints']
+    names = [joint['name'] for joint in joints]
+    leg_names = [joint['name'] for joint in joints if 'leg_command' in joint['roles']]
+    gimbal_names = [joint['name'] for joint in joints if 'gimbal_command' in joint['roles']]
+    if set(limits['assignments']) != set(names):
+        raise CompositionError('model-limit assignments do not cover the canonical joints')
+    if set(pose['joint_positions_rad']) != set(names):
+        raise CompositionError('nominal pose does not cover the canonical joints')
+    if set(dynamics['links']) != set(model['primary_link_order']):
+        raise CompositionError('dynamics do not cover the canonical links')
+    registered_resource_uris = {
+        resource['uri'] for resource in resources['resources']
+    }
+    used_visual_uris = {
+        link.get(
+            'visual_mesh_uri',
+            model['geometry_classes'][link['geometry_class']]['visual_mesh_uri'],
+        )
+        for link in model['links']
+    }
+    used_visual_uris.update(
+        visual['mesh_uri']
+        for link in model['links']
+        for visual in link.get('auxiliary_visuals', [])
+    )
+    used_visual_uris.update(
+        visual['mesh_uri']
+        for frame in model['fixed_frames']
+        for visual in frame.get('visuals', [])
+    )
+    if not used_visual_uris <= registered_resource_uris:
+        raise CompositionError('canonical visual mesh is absent from resource registry')
+    if set(operational['assignments']) != set(leg_names):
+        raise CompositionError('operational limits do not cover the 24 leg joints')
+    for joint in joints:
+        model_limit = limits['classes'][limits['assignments'][joint['name']]]
+        target = pose['joint_positions_rad'][joint['name']]
+        if not model_limit['lower_rad'] < target < model_limit['upper_rad']:
+            raise CompositionError(f"nominal target outside model limits for {joint['name']}")
+        if joint['name'] in operational['assignments']:
+            operation = operational['classes'][operational['assignments'][joint['name']]]
+            if (
+                operation['lower_rad'] < model_limit['lower_rad']
+                or operation['upper_rad'] > model_limit['upper_rad']
+            ):
+                raise CompositionError(
+                    f"operational limit widens model limit for {joint['name']}"
+                )
+            margin = min(target - operation['lower_rad'], operation['upper_rad'] - target)
+            if margin < 0.1 - 1e-12:
+                raise CompositionError(
+                    'nominal operational margin below Gate 0 minimum for '
+                    f"{joint['name']}"
+                )
+    if (
+        controllers['controller_manager_rate_hz'] != 250
+        or controllers['joint_state_rate_hz'] != 125
+    ):
+        raise CompositionError('controller rates differ from the accepted contract')
+    if (
+        gait['cycle_period_s'] != 1.2
+        or gait['trajectory_horizon_s'] != 0.04
+        or gait['maximum_stride_m'] != 0.06
+    ):
+        raise CompositionError('gait timing or envelope differs from the accepted contract')
+    expected_sources = {
+        'teleop': (10, 100, 50, 0.15, True),
+        'navigation': (20, 50, 20, 0.3, False),
+        'system_test': (250, 200, 100, 0.1, False),
+    }
+    actual_sources = {
+        item['name']: (
+            item['id'], item['priority'], item['rate_hz'],
+            item['freshness_timeout_s'], item['enabled'],
+        )
+        for item in sources['sources']
+    }
+    if actual_sources != expected_sources:
+        raise CompositionError('source authority differs from the accepted contract')
+    expected_watchdogs = {
+        'selected_command': 0.05, 'safe_command': 0.05,
+        'joint_state': 0.1, 'locomotion_status': 0.1,
+        'controller_state': 0.1, 'provenance': 1.5,
+        'clock_progress': 0.25,
+    }
+    if safety['watchdogs_s'] != expected_watchdogs:
+        raise CompositionError('safety watchdogs differ from the accepted contract')
+    if set(qos['profiles']) != {
+        'candidate_latest', 'trusted_command_latest', 'controller_command',
+        'operational_status', 'latched_classification', 'state_sample',
+        'debug_latest', 'diagnostics',
+    }:
+        raise CompositionError('QoS profile set differs from the accepted contract')
+    if mapping['source_id'] != 10 or mapping['publication_rate_hz'] != 50:
+        raise CompositionError('teleop mapping does not match registered source authority')
+    if (
+        world['physics_engine'] != 'dart'
+        or world['maximum_step_s'] != 0.001
+        or world['real_time_factor'] != 1.0
+        or world['seed'] != 42
+    ):
+        raise CompositionError('Gazebo world determinism contract differs')
+    if (
+        backend['plugin'] != 'gz_ros2_control/GazeboSimSystem'
+        or not backend['synchronous_update']
+        or backend['mapping_policy'] != 'derive_roles_from_canonical_model'
+    ):
+        raise CompositionError('Gazebo backend contract differs')
+    if not any(endpoint['ros_topic'] == '/clock' for endpoint in bridge['endpoints']):
+        raise CompositionError('Gazebo bridge does not provide /clock')
+    if wiring['node_rates_hz'] != {
+        'teleop_adapter': 50, 'command_arbiter': 100,
+        'safety_supervisor': 100, 'locomotion': 100,
+    } or not wiring['use_sim_time']:
+        raise CompositionError('node timing/wiring differs from the accepted contract')
+    return {'leg_joints': leg_names, 'gimbal_joints': gimbal_names, 'state_joints': names}
+
+
+def _behavior_fingerprint(artifacts: dict[str, Artifact]) -> str:
+    records = [
+        {'artifact_id': item.artifact_id, 'version': item.version, 'sha256': item.sha256}
+        for item in sorted(artifacts.values(), key=lambda value: value.artifact_id)
+        if item.document['deployment_scope'] != 'test_only'
+    ]
+    return content_sha256(records)
+
+
+def _validate_profile_equivalence(
+    profile_id: str, artifacts: dict[str, Artifact]
+) -> None:
+    peer_id = 'gazebo_ci_v0' if profile_id == 'gazebo_dev_v0' else 'gazebo_dev_v0'
+    peer = load_artifact('araco_bringup', PROFILE_PATHS[peer_id])
+    peer_artifacts = _artifact_map(peer)
+    if _behavior_fingerprint(artifacts) != _behavior_fingerprint(peer_artifacts):
+        raise CompositionError('development and CI behavior fingerprints differ')
+
+
+def _xml_values(values: list[float]) -> str:
+    return ' '.join(format(float(value), '.15g') for value in values)
+
+
+def _render_urdf(
+    artifacts: dict[str, Artifact], output_path: Path
+) -> None:
+    model = _kind(artifacts, 'canonical_model').document['data']
+    dynamics = _kind(artifacts, 'dynamics').document['data']
+    limits = _kind(artifacts, 'joint_limits').document['data']
+    resources = _kind(artifacts, 'resources').document['data']
+    pose = _kind(artifacts, 'nominal_pose').document['data']
+    backend = _kind(artifacts, 'gazebo_backend').document['data']
+    world = _kind(artifacts, 'world').document['data']
+    template = next(
+        resource for resource in resources['resources']
+        if resource['id'] == 'robot_xacro_macros'
+    )
+    template_path = _resolve_package_uri(template['uri'])
+    lines = [
+        '<?xml version="1.0"?>',
+        '<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="araco">',
+        f'  <xacro:include filename="{template_path}"/>',
+    ]
+    geometry = model['geometry_classes']
+    visual_policy = model['visual_policy']
+    for link in model['links']:
+        inertial = dynamics['links'][link['name']]
+        inertia = inertial['inertia_kg_m2']
+        shape = geometry[link['geometry_class']]
+        lines.append(
+            '  <xacro:araco_dynamic_link '
+            f'name="{link["name"]}" mass="{inertial["mass_kg"]:.15g}" '
+            f'com_xyz="{_xml_values(inertial["center_of_mass_xyz_m"])}" '
+            f'ixx="{inertia["ixx"]:.15g}" ixy="{inertia["ixy"]:.15g}" '
+            f'ixz="{inertia["ixz"]:.15g}" iyy="{inertia["iyy"]:.15g}" '
+            f'iyz="{inertia["iyz"]:.15g}" izz="{inertia["izz"]:.15g}" '
+            f'collision_xyz="{_xml_values(shape["collision_origin_xyz_m"])}" '
+            f'collision_size="{_xml_values(shape["collision_size_m"])}">'
+        )
+        lines.extend([
+            '    <visuals>',
+            f'      <visual name="{link["name"]}_primary_visual">',
+            '        <geometry>',
+            '          <mesh filename="'
+            f'{link.get("visual_mesh_uri", shape["visual_mesh_uri"])}"/>',
+            '        </geometry>',
+            '        <material name="araco_printed">',
+            f'          <color rgba="{_xml_values(visual_policy["primary_material_rgba"])}"/>',
+            '        </material>',
+            '      </visual>',
+        ])
+        for auxiliary in link.get('auxiliary_visuals', []):
+            role = auxiliary['role']
+            material_key = '{}_material_rgba'.format(role)
+            lines.extend([
+                f'    <visual name="{link["name"]}_{role}_visual">',
+                f'      <geometry><mesh filename="{auxiliary["mesh_uri"]}"/></geometry>',
+                f'      <material name="araco_{role}">',
+                f'        <color rgba="{_xml_values(visual_policy[material_key])}"/>',
+                '      </material>',
+                '    </visual>',
+            ])
+        lines.append('    </visuals>')
+        lines.append('  </xacro:araco_dynamic_link>')
+    for frame in model['fixed_frames']:
+        visuals = frame.get('visuals', [])
+        if not visuals:
+            lines.append(f'  <xacro:araco_frame_link name="{frame["child"]}"/>')
+            continue
+        lines.append(f'  <link name="{frame["child"]}">')
+        for visual in visuals:
+            role = visual['role']
+            material_key = '{}_material_rgba'.format(role)
+            lines.extend([
+                f'    <visual name="{frame["child"]}_{role}_visual">',
+                f'      <geometry><mesh filename="{visual["mesh_uri"]}"/></geometry>',
+                f'      <material name="araco_{role}">',
+                f'        <color rgba="{_xml_values(visual_policy[material_key])}"/>',
+                '      </material>',
+                '    </visual>',
+            ])
+        lines.append('  </link>')
+    for joint in model['joints']:
+        limit = limits['classes'][limits['assignments'][joint['name']]]
+        lines.append(
+            '  <xacro:araco_revolute_joint '
+            f'name="{joint["name"]}" parent="{joint["parent"]}" child="{joint["child"]}" '
+            f'xyz="{_xml_values(joint["origin_xyz_m"])}" '
+            f'rpy="{_xml_values(joint["origin_rpy_rad"])}" '
+            f'axis="{_xml_values(joint["axis"])}" lower="{limit["lower_rad"]:.15g}" '
+            f'upper="{limit["upper_rad"]:.15g}" velocity="{limit["velocity_rad_s"]:.15g}" '
+            f'effort="{limit["effort_nm"]:.15g}" damping="{limit["damping_nms_rad"]:.15g}" '
+            f'friction="{limit["friction_nm"]:.15g}"/>'
+        )
+    for frame in model['fixed_frames']:
+        lines.append(
+            '  <xacro:araco_fixed_joint '
+            f'name="{frame["name"]}" parent="{frame["parent"]}" child="{frame["child"]}" '
+            f'xyz="{_xml_values(frame["origin_xyz_m"])}" '
+            f'rpy="{_xml_values(frame["origin_rpy_rad"])}"/>'
+        )
+    lines.extend([
+        '  <ros2_control name="GazeboSimSystem" type="system">',
+        '    <hardware>',
+        f'      <plugin>{backend["plugin"]}</plugin>',
+        '    </hardware>',
+    ])
+    for joint in model['joints']:
+        limit = limits['classes'][limits['assignments'][joint['name']]]
+        initial = pose['joint_positions_rad'][joint['name']]
+        lines.extend([
+            f'    <joint name="{joint["name"]}">',
+            '      <command_interface name="position">',
+            f'        <param name="min">{limit["lower_rad"]:.15g}</param>',
+            f'        <param name="max">{limit["upper_rad"]:.15g}</param>',
+            '      </command_interface>',
+            '      <state_interface name="position">',
+            f'        <param name="initial_value">{initial:.15g}</param>',
+            '      </state_interface>',
+            '      <state_interface name="velocity"/>',
+            '      <state_interface name="effort"/>',
+            '    </joint>',
+        ])
+    lines.append('  </ros2_control>')
+    foot_names = [link['name'] for link in model['links'] if link['role'] == 'foot']
+    for link in model['links']:
+        friction = (
+            world['foot_friction']
+            if link['name'] in foot_names else world['nonfoot_friction']
+        )
+        lines.extend([
+            f'  <gazebo reference="{link["name"]}">',
+            f'    <mu1>{friction["mu"]:.15g}</mu1>',
+            f'    <mu2>{friction["mu2"]:.15g}</mu2>',
+            '  </gazebo>',
+        ])
+    for link in model['links']:
+        link_name = link['name']
+        contact_topic = (
+            f'/araco/contact_sensor/{link_name.removesuffix("_foot_link")}'
+            if link['role'] == 'foot' else '/araco/contact_sensor/nonfoot'
+        )
+        lines.extend([
+            f'  <gazebo reference="{link_name}">',
+            f'    <sensor name="{link_name}_gate1_contact" type="contact">',
+            '      <always_on>true</always_on>',
+            '      <update_rate>50</update_rate>',
+            '      <contact>',
+            f'        <collision>{link_name}_collision_collision</collision>',
+            f'        <topic>{contact_topic}</topic>',
+            '      </contact>',
+            '    </sensor>',
+            '  </gazebo>',
+        ])
+    manager_parameters = _installed_resource(
+        'araco_bringup', 'config/controllers/controller_manager_runtime.yaml'
+    )
+    lines.extend([
+        '  <gazebo>',
+        '    <plugin filename="gz_ros2_control-system" '
+        'name="gz_ros2_control::GazeboSimROS2ControlPlugin">',
+        f'      <parameters>{manager_parameters}</parameters>',
+        '      <controller_manager_name>controller_manager</controller_manager_name>',
+        '      <hold_joints>true</hold_joints>',
+        '      <position_proportional_gain>'
+        f'{backend["position_proportional_gain"]:.15g}'
+        '</position_proportional_gain>',
+        '    </plugin>',
+        '    <plugin filename="gz-sim-odometry-publisher-system" '
+        'name="gz::sim::systems::OdometryPublisher">',
+        '      <odom_frame>odom</odom_frame>',
+        '      <robot_base_frame>base_link</robot_base_frame>',
+        '      <odom_topic>/araco/simulation/ground_truth/odom</odom_topic>',
+        '      <odom_publish_frequency>100</odom_publish_frequency>',
+        '      <dimensions>3</dimensions>',
+        '    </plugin>',
+        '  </gazebo>',
+    ])
+    lines.append('</robot>')
+    generated_xacro = output_path.with_suffix('.generated.xacro')
+    generated_xacro.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    try:
+        document = xacro.process_file(str(generated_xacro))
+        root = ET.fromstring(document.toxml())
+        ET.indent(root, space='  ')
+        normalized_xml = ET.tostring(root, encoding='unicode')
+        output_path.write_text(
+            '<?xml version="1.0"?>\n' + normalized_xml + '\n',
+            encoding='utf-8',
+        )
+    except Exception as error:
+        raise CompositionError(f'Xacro/URDF expansion failed: {error}') from error
+    finally:
+        generated_xacro.unlink(missing_ok=True)
+    urdf_links = root.findall('link')
+    urdf_joints = root.findall('joint')
+    if len(urdf_links) != 29 or len(urdf_joints) != 28:
+        raise CompositionError(
+            'expanded URDF does not contain 26 primary links plus 3 fixed frames'
+        )
+
+
+def _yaml_write(path: Path, data: dict[str, Any]) -> None:
+    path.write_text(
+        '# Generated by araco_bringup preflight; do not edit.\n'
+        + yaml.safe_dump(data, sort_keys=False),
+        encoding='utf-8',
+    )
+
+
+def _node_parameters(
+    profile: Artifact,
+    artifacts: dict[str, Artifact],
+    behavior_fingerprint: str,
+    input_fingerprint: str,
+) -> dict[str, dict[str, Any]]:
+    selected_ids = sorted(artifacts)
+    common = {
+        'config.profile_id': profile.document['data']['profile_id'],
+        'config.profile_version': profile.document['data']['profile_version'],
+        'config.behavior_fingerprint': behavior_fingerprint,
+        'config.input_selection_fingerprint': input_fingerprint,
+        'config.selected_artifact_ids': selected_ids,
+        'use_sim_time': True,
+    }
+    rates = _kind(artifacts, 'wiring').document['data']['node_rates_hz']
+    source_registry = _kind(artifacts, 'source_registry')
+    safety = _kind(artifacts, 'safety_policy')
+    gait = _kind(artifacts, 'gait')
+    model = _kind(artifacts, 'canonical_model').document['data']
+    pose = _kind(artifacts, 'nominal_pose').document['data']
+    mapping = _kind(artifacts, 'teleop_mapping')
+    definitions = {
+        '/araco/teleop_adapter': {
+            **common,
+            'loop_rate_hz': float(rates['teleop_adapter']),
+            'mapping_path': str(mapping.installed_path),
+            'mapping_sha256': mapping.sha256,
+        },
+        '/araco/command_arbiter': {
+            **common,
+            'loop_rate_hz': float(rates['command_arbiter']),
+            'source_registry_path': str(source_registry.installed_path),
+            'source_registry_sha256': source_registry.sha256,
+        },
+        '/araco/safety_supervisor': {
+            **common,
+            'loop_rate_hz': float(rates['safety_supervisor']),
+            'safety_policy_path': str(safety.installed_path),
+            'safety_policy_sha256': safety.sha256,
+            'state_joint_names': [
+                joint['name'] for joint in model['joints'] if 'state' in joint['roles']
+            ],
+            'leg_joint_names': [
+                joint['name'] for joint in model['joints'] if 'leg_command' in joint['roles']
+            ],
+            'gimbal_joint_names': [
+                joint['name'] for joint in model['joints'] if 'gimbal_command' in joint['roles']
+            ],
+        },
+        '/araco/locomotion': {
+            **common,
+            'loop_rate_hz': float(rates['locomotion']),
+            'gait_path': str(gait.installed_path),
+            'gait_sha256': gait.sha256,
+            'leg_joint_names': [
+                joint['name'] for joint in model['joints'] if 'leg_command' in joint['roles']
+            ],
+            'nominal_positions_rad': [
+                pose['joint_positions_rad'][joint['name']]
+                for joint in model['joints'] if 'leg_command' in joint['roles']
+            ],
+            'trajectory_horizon_s': gait.document['data']['trajectory_horizon_s'],
+        },
+    }
+    for parameters in definitions.values():
+        fingerprint_input = copy.deepcopy(parameters)
+        parameters['config.node_config_fingerprint'] = content_sha256(fingerprint_input)
+    return definitions
+
+
+def _emit_bundle(
+    temporary: Path,
+    profile: Artifact,
+    artifacts: dict[str, Artifact],
+    partitions: dict[str, Any],
+    overrides: dict[str, Any],
+) -> dict[str, Any]:
+    normalized = temporary / 'normalized_artifacts'
+    node_dir = temporary / 'node_params'
+    controller_dir = temporary / 'ros2_control'
+    gazebo_dir = temporary / 'gazebo'
+    description_dir = temporary / 'description'
+    for directory in (normalized, node_dir, controller_dir, gazebo_dir, description_dir):
+        directory.mkdir(parents=True)
+    for artifact in sorted(artifacts.values(), key=lambda item: item.artifact_id):
+        filename = artifact.artifact_id.replace('.', '_') + '.json'
+        (normalized / filename).write_bytes(canonical_json_bytes(artifact.document) + b'\n')
+
+    behavior_fingerprint = _behavior_fingerprint(artifacts)
+    input_fingerprint = content_sha256({
+        'source_adapter_presence': profile.document['data']['input_selection'],
+        'accepted_overrides': overrides,
+    })
+    node_parameters = _node_parameters(
+        profile, artifacts, behavior_fingerprint, input_fingerprint
+    )
+    node_filenames = {
+        '/araco/teleop_adapter': 'teleop_adapter.yaml',
+        '/araco/command_arbiter': 'command_arbiter.yaml',
+        '/araco/safety_supervisor': 'safety_supervisor.yaml',
+        '/araco/locomotion': 'locomotion.yaml',
+    }
+    for node_name, parameters in node_parameters.items():
+        _yaml_write(
+            node_dir / node_filenames[node_name],
+            {node_name: {'ros__parameters': parameters}},
+        )
+
+    controllers = _kind(artifacts, 'controllers').document['data']
+    backend = _kind(artifacts, 'gazebo_backend').document['data']
+    _yaml_write(controller_dir / 'controller_manager.yaml', {
+        'controller_manager': {'ros__parameters': {
+            'update_rate': controllers['controller_manager_rate_hz'],
+            'use_sim_time': True,
+            'joint_state_broadcaster': {'type': controllers['joint_state_broadcaster_type']},
+            'leg_trajectory_controller': {'type': controllers['trajectory_controller_type']},
+            'gimbal_trajectory_controller': {'type': controllers['trajectory_controller_type']},
+        }}
+    })
+    _yaml_write(controller_dir / 'joint_state_broadcaster.yaml', {
+        'joint_state_broadcaster': {'ros__parameters': {
+            'joints': partitions['state_joints'],
+            'interfaces': ['position', 'velocity', 'effort'],
+            'update_rate': controllers['joint_state_rate_hz'],
+            'use_local_topics': False,
+        }}
+    })
+    trajectory_common = {
+        'command_interfaces': ['position'],
+        'state_interfaces': ['position', 'velocity'],
+        'interpolation_method': controllers['interpolation_method'],
+        'allow_partial_joints_goal': False,
+        'open_loop_control': False,
+        'interpolate_from_desired_state': True,
+        'allow_integration_in_goal_trajectories': False,
+        'allow_nonzero_velocity_at_trajectory_end': False,
+        'constraints': {'goal_time': 0.0},
+    }
+    _yaml_write(controller_dir / 'leg_trajectory_controller.yaml', {
+        'leg_trajectory_controller': {'ros__parameters': {
+            **trajectory_common,
+            'joints': partitions['leg_joints'],
+            'cmd_timeout': controllers['leg_cmd_timeout_s'],
+        }}
+    })
+    _yaml_write(controller_dir / 'gimbal_trajectory_controller.yaml', {
+        'gimbal_trajectory_controller': {'ros__parameters': {
+            **trajectory_common,
+            'joints': partitions['gimbal_joints'],
+            'cmd_timeout': 0.0,
+        }}
+    })
+
+    bridge = _kind(artifacts, 'bridge').document['data']
+    _yaml_write(gazebo_dir / 'bridge.yaml', [
+        {
+            'ros_topic_name': endpoint['ros_topic'],
+            'gz_topic_name': endpoint['gz_topic'],
+            'ros_type_name': endpoint['ros_type'],
+            'gz_type_name': endpoint['gz_type'],
+            'direction': endpoint['direction'],
+        }
+        for endpoint in bridge['endpoints']
+    ])
+    world = _kind(artifacts, 'world').document['data']
+    shutil.copyfile(_resolve_package_uri(world['world_uri']), gazebo_dir / 'resolved_world.sdf')
+    backend = _kind(artifacts, 'gazebo_backend').document['data']
+    (gazebo_dir / 'backend_mapping.json').write_bytes(canonical_json_bytes({
+        'plugin': backend,
+        'leg_joints': partitions['leg_joints'],
+        'gimbal_joints': partitions['gimbal_joints'],
+        'state_joints': partitions['state_joints'],
+    }) + b'\n')
+    _render_urdf(artifacts, description_dir / 'robot.urdf')
+
+    generated_hashes = {}
+    for path in sorted(temporary.rglob('*')):
+        if path.is_file() and path.name not in {'manifest.json', 'validation_report.json'}:
+            generated_hashes[str(path.relative_to(temporary))] = _file_sha256(path)
+    manifest = {
+        'profile_id': profile.document['data']['profile_id'],
+        'profile_version': profile.document['data']['profile_version'],
+        'profile_source_sha256': profile.sha256,
+        'artifacts': [
+            {
+                'artifact_id': item.artifact_id,
+                'artifact_version': item.version,
+                'package': item.package,
+                'relative_path': item.relative_path,
+                'installed_path': str(item.installed_path),
+                'sha256': item.sha256,
+                'schema_id': item.document['schema_id'],
+                'deployment_scope': item.document['deployment_scope'],
+                'evidence_class': item.document['evidence']['class'],
+            }
+            for item in sorted(artifacts.values(), key=lambda value: value.artifact_id)
+        ],
+        'compiler': {'identity': 'araco_bringup_config', 'version': '0.1.0'},
+        'environment': {
+            'ros_distribution': os.environ.get('ROS_DISTRO', 'unknown'),
+            'rmw_implementation': os.environ.get('RMW_IMPLEMENTATION', 'system_default'),
+            'gazebo_generation': 'Harmonic',
+            'python_packages': {
+                name: importlib.metadata.version(name)
+                for name in ('jsonschema', 'PyYAML', 'xacro')
+            },
+        },
+        'namespace': overrides['robot_namespace'],
+        'seed': world['seed'],
+        'accepted_overrides': overrides,
+        'controller_partitions': partitions,
+        'generated_file_sha256': generated_hashes,
+        'behavior_fingerprint': behavior_fingerprint,
+        'input_selection_fingerprint': input_fingerprint,
+    }
+    manifest['run_fingerprint'] = content_sha256(manifest)
+    (temporary / 'manifest.json').write_bytes(canonical_json_bytes(manifest) + b'\n')
+    report = {
+        'gate': 0,
+        'status': 'PASS',
+        'checks': [
+            'strict_yaml_and_schema', 'exact_artifact_resolution',
+            'canonical_26_link_25_joint_tree', 'normalized_axes_and_finite_transforms',
+            'positive_proxy_inclusive_dynamics', 'nested_limits_and_nominal_margin',
+            'redistributable_resources', 'derived_24_plus_1_controller_partition',
+            'strict_xacro_urdf_expansion', 'deterministic_fingerprints',
+        ],
+        'warnings': [
+            'Simulator-only joint limits, dynamics, camera pose, and standing '
+            'pose remain provisional.'
+        ],
+        'behavior_fingerprint': behavior_fingerprint,
+        'run_fingerprint': manifest['run_fingerprint'],
+    }
+    (temporary / 'validation_report.json').write_bytes(canonical_json_bytes(report) + b'\n')
+    return manifest
+
+
+def compose_profile(
+    profile_id: str,
+    output_directory: str | Path,
+    *,
+    robot_namespace: str = 'araco',
+    gui: bool | None = None,
+    rviz: bool | None = None,
+    log_level: str = 'info',
+    record_on_failure: bool = True,
+    report_destination: str = 'run_directory',
+) -> dict[str, Any]:
+    """Validate one installed profile and atomically emit its runtime bundle."""
+    if profile_id not in PROFILE_PATHS:
+        raise CompositionError(f'profile {profile_id!r} is not allowed')
+    if not robot_namespace or robot_namespace.startswith('/') or '/' in robot_namespace:
+        raise CompositionError('robot_namespace must be one non-empty relative token')
+    if log_level not in {'debug', 'info', 'warn', 'error', 'fatal'}:
+        raise CompositionError('log_level is outside the closed override policy')
+    if report_destination not in {'run_directory', 'none'}:
+        raise CompositionError('report_destination is outside the closed override policy')
+    output = Path(output_directory).resolve()
+    if output.exists():
+        raise CompositionError(f'output directory already exists: {output}')
+    profile = load_artifact('araco_bringup', PROFILE_PATHS[profile_id])
+    if profile.document['data']['profile_id'] != profile_id:
+        raise CompositionError('requested profile ID does not match installed profile')
+    presentation = profile.document['data']['presentation']
+    overrides = {
+        'robot_namespace': robot_namespace,
+        'gui': presentation['gui'] if gui is None else bool(gui),
+        'rviz': presentation['rviz'] if rviz is None else bool(rviz),
+        'log_level': log_level,
+        'record_on_failure': bool(record_on_failure),
+        'report_destination': report_destination,
+    }
+    artifacts = _artifact_map(profile)
+    partitions = _cross_validate(artifacts)
+    _validate_profile_equivalence(profile_id, artifacts)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=f'.{output.name}.', dir=output.parent))
+    try:
+        manifest = _emit_bundle(temporary, profile, artifacts, partitions, overrides)
+        os.replace(temporary, output)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+    return manifest

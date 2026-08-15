@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["kind", "gate0", "gate1", "timing"],
+  "properties": {
+    "kind": {"const": "test_thresholds"},
+    "gate0": {
+      "type": "object",
+      "required": [
+        "primary_links", "revolute_joints", "leg_command_joints",
+        "gimbal_command_joints", "total_mass_kg", "total_mass_tolerance_kg",
+        "minimum_link_mass_kg", "minimum_inertia_eigenvalue",
+        "minimum_nominal_limit_margin_rad"
+      ],
+      "properties": {
+        "primary_links": {"const": 26},
+        "revolute_joints": {"const": 25},
+        "leg_command_joints": {"const": 24},
+        "gimbal_command_joints": {"const": 1},
+        "total_mass_kg": {"type": "number"},
+        "total_mass_tolerance_kg": {"type": "number", "exclusiveMinimum": 0},
+        "minimum_link_mass_kg": {"type": "number", "exclusiveMinimum": 0},
+        "minimum_inertia_eigenvalue": {"type": "number", "exclusiveMinimum": 0},
+        "minimum_nominal_limit_margin_rad": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "gate1": {
+      "type": "object",
+      "required": [
+        "startup_wall_max_s", "settle_sim_s", "score_window_sim_s",
+        "minimum_window_samples", "maximum_absolute_leg_error_rad",
+        "rms_leg_error_rad", "maximum_gimbal_error_rad",
+        "maximum_base_linear_speed_m_s", "maximum_base_angular_speed_rad_s",
+        "maximum_roll_pitch_error_rad", "maximum_base_height_error_m",
+        "minimum_foot_contact_duty", "maximum_penetration_m"
+      ],
+      "properties": {
+        "startup_wall_max_s": {"const": 30.0},
+        "settle_sim_s": {"const": 3.0},
+        "score_window_sim_s": {"const": 0.5},
+        "minimum_window_samples": {"type": "integer", "minimum": 1},
+        "maximum_absolute_leg_error_rad": {"const": 0.08},
+        "rms_leg_error_rad": {"const": 0.03},
+        "maximum_gimbal_error_rad": {"type": "number", "minimum": 0},
+        "maximum_base_linear_speed_m_s": {"const": 0.01},
+        "maximum_base_angular_speed_rad_s": {"const": 0.05},
+        "maximum_roll_pitch_error_rad": {"const": 0.08},
+        "maximum_base_height_error_m": {"const": 0.02},
+        "minimum_foot_contact_duty": {"const": 0.9},
+        "maximum_penetration_m": {"const": 0.005}
+      },
+      "additionalProperties": false
+    },
+    "timing": {
+      "type": "object",
+      "required": [
+        "control_loop_min_hz", "control_loop_max_hz",
+        "controller_manager_min_hz", "controller_manager_max_hz",
+        "callback_p99_max_s"
+      ],
+      "properties": {
+        "control_loop_min_hz": {"type": "number"},
+        "control_loop_max_hz": {"type": "number"},
+        "controller_manager_min_hz": {"type": "number"},
+        "controller_manager_max_hz": {"type": "number"},
+        "callback_p99_max_s": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

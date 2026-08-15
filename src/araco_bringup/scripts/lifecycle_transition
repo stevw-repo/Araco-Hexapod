@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Apply one lifecycle transition after bounded service discovery."""
+
+from __future__ import annotations
+
+import argparse
+import time
+
+from lifecycle_msgs.msg import State
+from lifecycle_msgs.msg import Transition
+from lifecycle_msgs.srv import ChangeState
+from lifecycle_msgs.srv import GetState
+import rclpy
+from rclpy.node import Node
+from rclpy.utilities import remove_ros_args
+
+
+TRANSITIONS = {
+    'configure': (Transition.TRANSITION_CONFIGURE, State.PRIMARY_STATE_INACTIVE),
+    'activate': (Transition.TRANSITION_ACTIVATE, State.PRIMARY_STATE_ACTIVE),
+}
+
+
+class LifecycleTransition(Node):
+    """Wait for and verify one lifecycle state transition."""
+
+    def __init__(self, target: str) -> None:
+        super().__init__('lifecycle_transition', namespace='araco/bringup')
+        prefix = target.rstrip('/')
+        self.change = self.create_client(ChangeState, f'{prefix}/change_state')
+        self.state = self.create_client(GetState, f'{prefix}/get_state')
+
+
+def _wait_future(node, future, deadline):
+    while rclpy.ok() and not future.done() and time.monotonic() < deadline:
+        rclpy.spin_once(node, timeout_sec=0.05)
+    return future.done()
+
+
+def main() -> None:
+    """Run the requested transition and return nonzero on any ambiguity."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--node', required=True)
+    parser.add_argument('--transition', choices=sorted(TRANSITIONS), required=True)
+    parser.add_argument('--timeout', type=float, default=10.0)
+    arguments = parser.parse_args(remove_ros_args()[1:])
+    rclpy.init()
+    node = LifecycleTransition(arguments.node)
+    transition_id, expected_state = TRANSITIONS[arguments.transition]
+    deadline = time.monotonic() + arguments.timeout
+    try:
+        while (rclpy.ok() and time.monotonic() < deadline and
+               not (node.change.service_is_ready() and node.state.service_is_ready())):
+            rclpy.spin_once(node, timeout_sec=0.05)
+        if not (node.change.service_is_ready() and node.state.service_is_ready()):
+            node.get_logger().error(
+                f'timed out discovering lifecycle services for {arguments.node}')
+            raise SystemExit(2)
+        request = ChangeState.Request()
+        request.transition.id = transition_id
+        future = node.change.call_async(request)
+        if not _wait_future(node, future, deadline):
+            node.get_logger().error(
+                f'timed out requesting {arguments.transition} for {arguments.node}')
+            raise SystemExit(3)
+        if future.result() is None or not future.result().success:
+            node.get_logger().error(
+                f'{arguments.node} rejected lifecycle transition '
+                f'{arguments.transition}')
+            raise SystemExit(4)
+        state_future = node.state.call_async(GetState.Request())
+        if not _wait_future(node, state_future, deadline):
+            node.get_logger().error(
+                f'timed out verifying lifecycle state for {arguments.node}')
+            raise SystemExit(5)
+        actual = state_future.result().current_state.id
+        if actual != expected_state:
+            node.get_logger().error(
+                f'{arguments.node} reached state {actual}, expected {expected_state}')
+            raise SystemExit(6)
+        node.get_logger().info(
+            f'{arguments.node} completed {arguments.transition} and verified state '
+            f'{expected_state}')
+    except KeyboardInterrupt:
+        raise SystemExit(130)
+    finally:
+        if rclpy.ok():
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,592 @@
+{
+  "schema": {
+    "name": "araco_fusion_visual_export_spec",
+    "version": 1
+  },
+  "spec_id": "araco.fusion.visual-export.v1",
+  "spec_version": "3.0.0",
+  "rights_boundary": {
+    "owner": "Araco Hexapod contributors and upstream CAD authors",
+    "license": "mixed-open-source",
+    "license_policy": "preserve_per_asset",
+    "authorization": "On 2026-08-16 the user confirmed that all whitelisted mechanical and vendor CAD in the Fusion assembly is open source and may be used for the simulator and presentation visuals.",
+    "redistribution_confirmed": true,
+    "fail_closed": true,
+    "unlisted_geometry_export_allowed": false
+  },
+  "expected_design": {
+    "document_name": "araco - assembly ros-description v1 v2",
+    "root_component_name": "araco - assembly ros-description v1 v2",
+    "cloud_data_file_id": "urn:adsk.wipprod:dm.lineage:NCSa0_0WR4a1sA8ZQwLeJQ",
+    "cloud_version_number": 2,
+    "direct_root_occurrences": 32,
+    "all_occurrences": 269,
+    "joint_definitions": 25,
+    "revolute_joint_definitions": 25
+  },
+  "mesh_options": {
+    "format": "binary_stl",
+    "length_unit": "millimeter",
+    "refinement": "high",
+    "coordinate_context": "Fusion source-component-local body coordinates; occurrence transform recorded separately"
+  },
+  "exports": [
+    {
+      "asset_id": "base_bottom_cover",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - bottom_cover_v2 v14:1",
+      "body_name": "Body3",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "base_battery_holder_1",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - battery_holder v2 v5:1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "base_battery_holder_2",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - battery_holder v2 v5:2",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "base_top_cover",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - top_cover v2 v11:1",
+      "body_name": "Body3",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "base_gimbal_mount",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - gimbal_mount v1 v26:1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "base_frame",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - frame v3 v6:1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "gimbal_yaw",
+      "canonical_link": "gimbal_yaw_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1",
+      "body_name": "Body3",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_middle_coxa",
+      "canonical_link": "right_middle_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v36:1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_front_coxa",
+      "canonical_link": "right_front_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v36:2",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_rear_coxa",
+      "canonical_link": "right_rear_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v36:3",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_middle_femur",
+      "canonical_link": "right_middle_femur_link",
+      "occurrence_full_path": "araco - femur v5 v28:1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_front_femur",
+      "canonical_link": "right_front_femur_link",
+      "occurrence_full_path": "araco - femur v5 v28:2",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_rear_femur",
+      "canonical_link": "right_rear_femur_link",
+      "occurrence_full_path": "araco - femur v5 v28:3",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_middle_foot",
+      "canonical_link": "right_middle_foot_link",
+      "occurrence_full_path": "araco - end v2 v13:1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_front_foot",
+      "canonical_link": "right_front_foot_link",
+      "occurrence_full_path": "araco - end v2 v13:2",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "right_rear_foot",
+      "canonical_link": "right_rear_foot_link",
+      "occurrence_full_path": "araco - end v2 v13:3",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_middle_coxa",
+      "canonical_link": "left_middle_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v35(Mirror):1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_front_coxa",
+      "canonical_link": "left_front_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v35(Mirror):2",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_rear_coxa",
+      "canonical_link": "left_rear_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v35(Mirror):3",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_middle_femur",
+      "canonical_link": "left_middle_femur_link",
+      "occurrence_full_path": "araco - femur v5 v27(Mirror):1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_front_femur",
+      "canonical_link": "left_front_femur_link",
+      "occurrence_full_path": "araco - femur v5 v27(Mirror):2",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_rear_femur",
+      "canonical_link": "left_rear_femur_link",
+      "occurrence_full_path": "araco - femur v5 v27(Mirror):3",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_middle_foot",
+      "canonical_link": "left_middle_foot_link",
+      "occurrence_full_path": "araco - end v2 v12(Mirror):1",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_front_foot",
+      "canonical_link": "left_front_foot_link",
+      "occurrence_full_path": "araco - end v2 v12(Mirror):2",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "left_rear_foot",
+      "canonical_link": "left_rear_foot_link",
+      "occurrence_full_path": "araco - end v2 v12(Mirror):3",
+      "body_name": "Body1",
+      "expected_material": "PETG"
+    },
+    {
+      "asset_id": "base_gimbal_yaw_servo",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - gimbal_mount v1 v26:1",
+      "body_name": "Body2",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "base_frame_servo_1",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - frame v3 v6:1",
+      "body_name": "Body19",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "base_frame_servo_2",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - frame v3 v6:1",
+      "body_name": "Body20",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "base_frame_servo_3",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - frame v3 v6:1",
+      "body_name": "Body21",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "base_frame_servo_4",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - frame v3 v6:1",
+      "body_name": "Body22",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "base_frame_servo_5",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - frame v3 v6:1",
+      "body_name": "Body23",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "base_frame_servo_6",
+      "canonical_link": "base_link",
+      "occurrence_full_path": "araco - frame v3 v6:1",
+      "body_name": "Body24",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "right_middle_coxa_servo",
+      "canonical_link": "right_middle_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v36:1",
+      "body_name": "Body2",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "right_front_coxa_servo",
+      "canonical_link": "right_front_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v36:2",
+      "body_name": "Body2",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "right_rear_coxa_servo",
+      "canonical_link": "right_rear_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v36:3",
+      "body_name": "Body2",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "left_middle_coxa_servo",
+      "canonical_link": "left_middle_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v35(Mirror):1",
+      "body_name": "Body2",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "left_front_coxa_servo",
+      "canonical_link": "left_front_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v35(Mirror):2",
+      "body_name": "Body2",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "left_rear_coxa_servo",
+      "canonical_link": "left_rear_coxa_link",
+      "occurrence_full_path": "araco - coxa v3 v35(Mirror):3",
+      "body_name": "Body2",
+      "expected_material": "Steel",
+      "visual_role": "servo_case",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "right_middle_tibia_full",
+      "canonical_link": "right_middle_tibia_link",
+      "occurrence_full_path": "araco - tibia v2 v17:1",
+      "export_scope": "occurrence",
+      "expected_bodies": [
+        {"body_name": "Body1", "expected_material": "Steel"},
+        {"body_name": "Body2", "expected_material": "Steel"},
+        {"body_name": "Body3", "expected_material": "Steel"},
+        {"body_name": "Body4", "expected_material": "Steel"}
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source"
+    },
+    {
+      "asset_id": "right_front_tibia_full",
+      "canonical_link": "right_front_tibia_link",
+      "occurrence_full_path": "araco - tibia v2 v17:2",
+      "export_scope": "occurrence",
+      "expected_bodies": [
+        {"body_name": "Body1", "expected_material": "Steel"},
+        {"body_name": "Body2", "expected_material": "Steel"},
+        {"body_name": "Body3", "expected_material": "Steel"},
+        {"body_name": "Body4", "expected_material": "Steel"}
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source"
+    },
+    {
+      "asset_id": "right_rear_tibia_full",
+      "canonical_link": "right_rear_tibia_link",
+      "occurrence_full_path": "araco - tibia v2 v17:3",
+      "export_scope": "occurrence",
+      "expected_bodies": [
+        {"body_name": "Body1", "expected_material": "Steel"},
+        {"body_name": "Body2", "expected_material": "Steel"},
+        {"body_name": "Body3", "expected_material": "Steel"},
+        {"body_name": "Body4", "expected_material": "Steel"}
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source"
+    },
+    {
+      "asset_id": "left_middle_tibia_full",
+      "canonical_link": "left_middle_tibia_link",
+      "occurrence_full_path": "araco - tibia v2 v17(Mirror):1",
+      "export_scope": "occurrence",
+      "expected_bodies": [
+        {"body_name": "Body1", "expected_material": "Steel"},
+        {"body_name": "Body2", "expected_material": "Steel"},
+        {"body_name": "Body3", "expected_material": "Steel"},
+        {"body_name": "Body4", "expected_material": "Steel"}
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source"
+    },
+    {
+      "asset_id": "left_front_tibia_full",
+      "canonical_link": "left_front_tibia_link",
+      "occurrence_full_path": "araco - tibia v2 v17(Mirror):2",
+      "export_scope": "occurrence",
+      "expected_bodies": [
+        {"body_name": "Body1", "expected_material": "Steel"},
+        {"body_name": "Body2", "expected_material": "Steel"},
+        {"body_name": "Body3", "expected_material": "Steel"},
+        {"body_name": "Body4", "expected_material": "Steel"}
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source"
+    },
+    {
+      "asset_id": "left_rear_tibia_full",
+      "canonical_link": "left_rear_tibia_link",
+      "occurrence_full_path": "araco - tibia v2 v17(Mirror):3",
+      "export_scope": "occurrence",
+      "expected_bodies": [
+        {"body_name": "Body1", "expected_material": "Steel"},
+        {"body_name": "Body2", "expected_material": "Steel"},
+        {"body_name": "Body3", "expected_material": "Steel"},
+        {"body_name": "Body4", "expected_material": "Steel"}
+      ],
+      "visual_role": "tibia_component_auto",
+      "creator": "Araco Hexapod contributors and upstream CAD authors",
+      "license": "mixed-open-source"
+    },
+    {
+      "asset_id": "gemini_upper_housing_1",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+UPPER_HOUS_ASM_1_ASM:1+00_1-35637:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_upper_housing_2",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+UPPER_HOUS_ASM_1_ASM:1+00_1-36659:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_upper_pad_1",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+UPPER_HOUS_ASM_1_ASM:1+SILICONE_PAD_1_ASM:1+SILICONE_PAD_1_1:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_upper_pad_2",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+UPPER_HOUS_ASM_1_ASM:1+SILICONE_PAD_1_ASM:1+SILICONE_PAD_1_2:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_mounting_bracket",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+BRACKET_ASM_1_ASM:1+BRACKET_MAX_1:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_lower_housing_1",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+LOWER_HOU_1:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_lower_housing_2",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+PRT0002_1:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_body",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_lower_screw_1",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+2_ASM_1_ASM:1+SCREW_CM2X035-035X1_1:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_lower_screw_2",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+2_ASM_1_ASM:1+SCREW_CM2X035-035X1_1:2",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_lower_screw_3",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+2_ASM_1_ASM:1+SCREW_CM2X035-035X1_1:3",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_lower_screw_4",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_MD_ASM_1_ASM:1+LOWER_HOU_ASM_1_ASM:1+2_ASM_1_ASM:1+SCREW_CM2X035-035X1_1:4",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_hardware",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_left_ir_optic",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_STACK_ASM_1_ASM:1+GEMINI_II_HEAD_ASSEMBLY_ASM_1_ASM:1+AT_IRM2001_MODULE_ASM_1_ASM:1+AT_IRM2001_MODULE_1_ASM_1_ASM:1+DS69005A-ASSM-09_LU06900501_FOR:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_optics",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_rgb_optic",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_STACK_ASM_1_ASM:1+GEMINI_II_HEAD_ASSEMBLY_ASM_1_ASM:1+AT_RGB2017_MODULE_ASM_1_ASM:1+AT_RGB2017_MODULE_1_ASM_1_ASM:1+LENS_SPY8379B_2:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_optics",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_projector_optic",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_STACK_ASM_1_ASM:1+GEMINI_II_HEAD_ASSEMBLY_ASM_1_ASM:1+AT_LDM2005_503_MODULE_ASM_1_ASM:1+AT_LDM2005_503_MODULE_1_ASM_1_ASM:1+LENS_DS46042A_ASSY_ASM_1_ASM:1+MDE400A_DOE_2:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_optics",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    },
+    {
+      "asset_id": "gemini_right_ir_optic",
+      "canonical_link": "camera_link",
+      "occurrence_full_path": "araco - gimbal v5 v41:1+Gemini 335 v3:1+00_GEMINI_II_3D_ALL_ASM_1_ASM:1+GEMINI_II_STACK_ASM_1_ASM:1+GEMINI_II_HEAD_ASSEMBLY_ASM_1_ASM:1+AT_IRM2001_MODULE_ASM_1_ASM:2+AT_IRM2001_MODULE_1_ASM_1_ASM:1+DS69005A-ASSM-09_LU06900501_FOR:1",
+      "body_name": "Body1",
+      "expected_material": "Steel",
+      "visual_role": "camera_optics",
+      "creator": "upstream CAD authors",
+      "license": "LicenseRef-UserConfirmed-Open-Source-CAD"
+    }
+  ],
+  "retained_proxy_links": [],
+  "excluded_geometry": [
+    {
+      "category": "deferred_electronics_and_sensors",
+      "examples": ["Raspberry Pi", "Gemini 335 internals", "Raspberry Pi Camera", "battery", "servo controller"],
+      "reason": "The current visual task includes the exact Gemini 335 exterior housing, mounting hardware, and four externally visible optical elements. Internal connector/PCB geometry, the Raspberry Pi camera, battery, and controller remain outside this bounded export."
+    },
+    {
+      "category": "unlisted_araco_bodies",
+      "reason": "An araco-prefixed component name alone is insufficient; only the exact occurrence/body pairs above are authorized."
+    }
+  ]
+}

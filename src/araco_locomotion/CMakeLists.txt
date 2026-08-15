@@ -8,6 +8,27 @@ find_package(ament_cmake REQUIRED)
 find_package(araco_description REQUIRED)
 find_package(araco_interfaces REQUIRED)
 find_package(araco_kinematics REQUIRED)
+find_package(generate_parameter_library REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(trajectory_msgs REQUIRED)
+
+generate_parameter_library(
+  locomotion_parameters
+  parameters/locomotion.yaml
+)
+
+add_executable(locomotion_node src/locomotion_node.cpp)
+target_link_libraries(locomotion_node locomotion_parameters)
+ament_target_dependencies(
+  locomotion_node
+  araco_interfaces
+  rclcpp
+  rclcpp_lifecycle
+  trajectory_msgs
+)
+
+install(TARGETS locomotion_node DESTINATION "lib/${PROJECT_NAME}")
 
 install(FILES LICENSE DESTINATION "share/${PROJECT_NAME}")
 

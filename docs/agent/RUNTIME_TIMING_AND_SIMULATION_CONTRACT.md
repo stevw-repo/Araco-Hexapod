@@ -132,7 +132,7 @@ source activation edge are required.
 | Gazebo physics | `1000 Hz` / `0.001 s` step | simulation | Same in `gazebo_dev_v0` and `gazebo_ci_v0` |
 | Controller manager | `250 Hz` / `0.004 s` | simulation-triggered | Synchronous read/update/write |
 | Leg and gimbal JTC update | `250 Hz` | controller manager | No asynchronous controller threads |
-| Joint-state broadcaster | `100 Hz` | controller manager divisor | `update_rate: 100`; dynamic topic disabled initially |
+| Joint-state broadcaster | `125 Hz` | controller manager divisor | `update_rate: 125`; dynamic topic disabled initially |
 | Teleop candidate publication | `50 Hz` | steady timer | Publishes active and explicit release states |
 | Future navigation candidate | `20 Hz` | source-specific | Disabled in initial profiles |
 | System-test candidate | `100 Hz` | test fixture | Enabled only by individual test composition |

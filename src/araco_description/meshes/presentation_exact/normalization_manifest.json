@@ -1,0 +1,1924 @@
+{
+  "schema": {
+    "name": "araco_fusion_exact_visual_normalization",
+    "version": 1
+  },
+  "generator": {
+    "name": "normalize_fusion_exact_visuals.py",
+    "coordinate_math": "float64",
+    "output_encoding": "deterministic_binary_stl_float32",
+    "connected_solid_classification": "exact_float32_shared_vertex_topology"
+  },
+  "inputs": {
+    "source_manifest_sha256": "de97ed3cbbd417d220e30fcf20907a28f937023ef0a7d578beb80f40a07fa573",
+    "canonical_model_sha256": "a7d0d50472eff3f6b9bb08332a1797fefc7a522bc45cf3d05a8db3bae2b7eee4",
+    "nominal_pose_sha256": "76ba6ad316237ae1837ec806ba9b84dfb07bd7feac0b6ba35abc159b449a2a2d"
+  },
+  "transform_pipeline": [
+    "millimeter source-component-local STL to meters",
+    "recorded Fusion occurrence transform to Fusion root",
+    "accepted Fusion-to-ROS rotation and base datum to base_link",
+    "inverse canonical nominal link transform to ROS link-local coordinates"
+  ],
+  "alignment_policy": "preserve recorded Fusion occurrence; no forced tibia alignment",
+  "visual_only": true,
+  "collision_changed": false,
+  "dynamics_changed": false,
+  "joint_contract_changed": false,
+  "retained_proxy_links": [],
+  "classification_records": [
+    {
+      "asset_id": "base_bottom_cover",
+      "input_triangle_count": 26684,
+      "output_roles": {
+        "primary": 26684
+      }
+    },
+    {
+      "asset_id": "base_battery_holder_1",
+      "input_triangle_count": 1128,
+      "output_roles": {
+        "primary": 1128
+      }
+    },
+    {
+      "asset_id": "base_battery_holder_2",
+      "input_triangle_count": 1128,
+      "output_roles": {
+        "primary": 1128
+      }
+    },
+    {
+      "asset_id": "base_top_cover",
+      "input_triangle_count": 24842,
+      "output_roles": {
+        "primary": 24842
+      }
+    },
+    {
+      "asset_id": "base_gimbal_mount",
+      "input_triangle_count": 2400,
+      "output_roles": {
+        "primary": 2400
+      }
+    },
+    {
+      "asset_id": "base_frame",
+      "input_triangle_count": 31260,
+      "output_roles": {
+        "primary": 31260
+      }
+    },
+    {
+      "asset_id": "gimbal_yaw",
+      "input_triangle_count": 8518,
+      "output_roles": {
+        "primary": 8518
+      }
+    },
+    {
+      "asset_id": "right_middle_coxa",
+      "input_triangle_count": 9560,
+      "output_roles": {
+        "primary": 9560
+      }
+    },
+    {
+      "asset_id": "right_front_coxa",
+      "input_triangle_count": 9560,
+      "output_roles": {
+        "primary": 9560
+      }
+    },
+    {
+      "asset_id": "right_rear_coxa",
+      "input_triangle_count": 9560,
+      "output_roles": {
+        "primary": 9560
+      }
+    },
+    {
+      "asset_id": "right_middle_femur",
+      "input_triangle_count": 4246,
+      "output_roles": {
+        "primary": 4246
+      }
+    },
+    {
+      "asset_id": "right_front_femur",
+      "input_triangle_count": 4246,
+      "output_roles": {
+        "primary": 4246
+      }
+    },
+    {
+      "asset_id": "right_rear_femur",
+      "input_triangle_count": 4246,
+      "output_roles": {
+        "primary": 4246
+      }
+    },
+    {
+      "asset_id": "right_middle_foot",
+      "input_triangle_count": 2438,
+      "output_roles": {
+        "primary": 2438
+      }
+    },
+    {
+      "asset_id": "right_front_foot",
+      "input_triangle_count": 2438,
+      "output_roles": {
+        "primary": 2438
+      }
+    },
+    {
+      "asset_id": "right_rear_foot",
+      "input_triangle_count": 2438,
+      "output_roles": {
+        "primary": 2438
+      }
+    },
+    {
+      "asset_id": "left_middle_coxa",
+      "input_triangle_count": 9560,
+      "output_roles": {
+        "primary": 9560
+      }
+    },
+    {
+      "asset_id": "left_front_coxa",
+      "input_triangle_count": 9560,
+      "output_roles": {
+        "primary": 9560
+      }
+    },
+    {
+      "asset_id": "left_rear_coxa",
+      "input_triangle_count": 9560,
+      "output_roles": {
+        "primary": 9560
+      }
+    },
+    {
+      "asset_id": "left_middle_femur",
+      "input_triangle_count": 4246,
+      "output_roles": {
+        "primary": 4246
+      }
+    },
+    {
+      "asset_id": "left_front_femur",
+      "input_triangle_count": 4246,
+      "output_roles": {
+        "primary": 4246
+      }
+    },
+    {
+      "asset_id": "left_rear_femur",
+      "input_triangle_count": 4246,
+      "output_roles": {
+        "primary": 4246
+      }
+    },
+    {
+      "asset_id": "left_middle_foot",
+      "input_triangle_count": 2438,
+      "output_roles": {
+        "primary": 2438
+      }
+    },
+    {
+      "asset_id": "left_front_foot",
+      "input_triangle_count": 2438,
+      "output_roles": {
+        "primary": 2438
+      }
+    },
+    {
+      "asset_id": "left_rear_foot",
+      "input_triangle_count": 2438,
+      "output_roles": {
+        "primary": 2438
+      }
+    },
+    {
+      "asset_id": "base_gimbal_yaw_servo",
+      "input_triangle_count": 56700,
+      "output_roles": {
+        "servo_case": 52584,
+        "servo_horn": 4116
+      }
+    },
+    {
+      "asset_id": "base_frame_servo_1",
+      "input_triangle_count": 56700,
+      "output_roles": {
+        "servo_case": 52584,
+        "servo_horn": 4116
+      }
+    },
+    {
+      "asset_id": "base_frame_servo_2",
+      "input_triangle_count": 55426,
+      "output_roles": {
+        "servo_case": 51422,
+        "servo_horn": 4004
+      }
+    },
+    {
+      "asset_id": "base_frame_servo_3",
+      "input_triangle_count": 55426,
+      "output_roles": {
+        "servo_case": 51422,
+        "servo_horn": 4004
+      }
+    },
+    {
+      "asset_id": "base_frame_servo_4",
+      "input_triangle_count": 56700,
+      "output_roles": {
+        "servo_case": 52584,
+        "servo_horn": 4116
+      }
+    },
+    {
+      "asset_id": "base_frame_servo_5",
+      "input_triangle_count": 55426,
+      "output_roles": {
+        "servo_case": 51422,
+        "servo_horn": 4004
+      }
+    },
+    {
+      "asset_id": "base_frame_servo_6",
+      "input_triangle_count": 55426,
+      "output_roles": {
+        "servo_case": 51422,
+        "servo_horn": 4004
+      }
+    },
+    {
+      "asset_id": "right_middle_coxa_servo",
+      "input_triangle_count": 38224,
+      "output_roles": {
+        "servo_case": 38224
+      }
+    },
+    {
+      "asset_id": "right_front_coxa_servo",
+      "input_triangle_count": 38224,
+      "output_roles": {
+        "servo_case": 38224
+      }
+    },
+    {
+      "asset_id": "right_rear_coxa_servo",
+      "input_triangle_count": 38224,
+      "output_roles": {
+        "servo_case": 38224
+      }
+    },
+    {
+      "asset_id": "left_middle_coxa_servo",
+      "input_triangle_count": 38224,
+      "output_roles": {
+        "servo_case": 38224
+      }
+    },
+    {
+      "asset_id": "left_front_coxa_servo",
+      "input_triangle_count": 38224,
+      "output_roles": {
+        "servo_case": 38224
+      }
+    },
+    {
+      "asset_id": "left_rear_coxa_servo",
+      "input_triangle_count": 38224,
+      "output_roles": {
+        "servo_case": 38224
+      }
+    },
+    {
+      "asset_id": "right_middle_tibia_full",
+      "input_triangle_count": 111048,
+      "output_roles": {
+        "primary": 6448,
+        "servo_case": 96872,
+        "servo_horn": 7728
+      }
+    },
+    {
+      "asset_id": "right_front_tibia_full",
+      "input_triangle_count": 111048,
+      "output_roles": {
+        "primary": 6448,
+        "servo_case": 96872,
+        "servo_horn": 7728
+      }
+    },
+    {
+      "asset_id": "right_rear_tibia_full",
+      "input_triangle_count": 111048,
+      "output_roles": {
+        "primary": 6448,
+        "servo_case": 96872,
+        "servo_horn": 7728
+      }
+    },
+    {
+      "asset_id": "left_middle_tibia_full",
+      "input_triangle_count": 111048,
+      "output_roles": {
+        "primary": 6448,
+        "servo_case": 96872,
+        "servo_horn": 7728
+      }
+    },
+    {
+      "asset_id": "left_front_tibia_full",
+      "input_triangle_count": 111048,
+      "output_roles": {
+        "primary": 6448,
+        "servo_case": 96872,
+        "servo_horn": 7728
+      }
+    },
+    {
+      "asset_id": "left_rear_tibia_full",
+      "input_triangle_count": 111048,
+      "output_roles": {
+        "primary": 6448,
+        "servo_case": 96872,
+        "servo_horn": 7728
+      }
+    },
+    {
+      "asset_id": "gemini_upper_housing_1",
+      "input_triangle_count": 117918,
+      "output_roles": {
+        "camera_body": 117918
+      }
+    },
+    {
+      "asset_id": "gemini_upper_housing_2",
+      "input_triangle_count": 2188,
+      "output_roles": {
+        "camera_body": 2188
+      }
+    },
+    {
+      "asset_id": "gemini_upper_pad_1",
+      "input_triangle_count": 7346,
+      "output_roles": {
+        "camera_hardware": 7346
+      }
+    },
+    {
+      "asset_id": "gemini_upper_pad_2",
+      "input_triangle_count": 7346,
+      "output_roles": {
+        "camera_hardware": 7346
+      }
+    },
+    {
+      "asset_id": "gemini_mounting_bracket",
+      "input_triangle_count": 10332,
+      "output_roles": {
+        "camera_body": 10332
+      }
+    },
+    {
+      "asset_id": "gemini_lower_housing_1",
+      "input_triangle_count": 201480,
+      "output_roles": {
+        "camera_body": 201480
+      }
+    },
+    {
+      "asset_id": "gemini_lower_housing_2",
+      "input_triangle_count": 3996,
+      "output_roles": {
+        "camera_body": 3996
+      }
+    },
+    {
+      "asset_id": "gemini_lower_screw_1",
+      "input_triangle_count": 22730,
+      "output_roles": {
+        "camera_hardware": 22730
+      }
+    },
+    {
+      "asset_id": "gemini_lower_screw_2",
+      "input_triangle_count": 22730,
+      "output_roles": {
+        "camera_hardware": 22730
+      }
+    },
+    {
+      "asset_id": "gemini_lower_screw_3",
+      "input_triangle_count": 22730,
+      "output_roles": {
+        "camera_hardware": 22730
+      }
+    },
+    {
+      "asset_id": "gemini_lower_screw_4",
+      "input_triangle_count": 22730,
+      "output_roles": {
+        "camera_hardware": 22730
+      }
+    },
+    {
+      "asset_id": "gemini_left_ir_optic",
+      "input_triangle_count": 46696,
+      "output_roles": {
+        "camera_optics": 46696
+      }
+    },
+    {
+      "asset_id": "gemini_rgb_optic",
+      "input_triangle_count": 50658,
+      "output_roles": {
+        "camera_optics": 50658
+      }
+    },
+    {
+      "asset_id": "gemini_projector_optic",
+      "input_triangle_count": 340,
+      "output_roles": {
+        "camera_optics": 340
+      }
+    },
+    {
+      "asset_id": "gemini_right_ir_optic",
+      "input_triangle_count": 46696,
+      "output_roles": {
+        "camera_optics": 46696
+      }
+    }
+  ],
+  "output_count": 49,
+  "output_role_counts": {
+    "primary": 26,
+    "servo_case": 13,
+    "servo_horn": 7,
+    "camera_body": 1,
+    "camera_hardware": 1,
+    "camera_optics": 1
+  },
+  "outputs": [
+    {
+      "canonical_link": "base_link",
+      "visual_role": "primary",
+      "path": "base.stl",
+      "sha256": "f0f808c610f9f6abe3fce27f5a65250e1e09c4cce1e14fc9eacb5e9aadae0c6d",
+      "size_bytes": 4372184,
+      "triangle_count": 87442,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.10127525329589844,
+        -0.1080999984292015,
+        -0.07200000018651134
+      ],
+      "bounds_max_m": [
+        0.10003265380859375,
+        0.108099998519041,
+        0.06560000019495893
+      ],
+      "source_asset_ids": [
+        "base_bottom_cover",
+        "base_battery_holder_1",
+        "base_battery_holder_2",
+        "base_top_cover",
+        "base_gimbal_mount",
+        "base_frame"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "base_link",
+      "visual_role": "servo_case",
+      "path": "base__servo_case.stl",
+      "sha256": "f3dfcdef36d0686f839ab9ae7a69f8f450dee2f93b522b42d03f6074f94e4b5c",
+      "size_bytes": 18172084,
+      "triangle_count": 363440,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.10116255187988281,
+        -0.11500531001367417,
+        -0.026750000186511524
+      ],
+      "bounds_max_m": [
+        0.10116255187988281,
+        0.11500531010351359,
+        0.08434999828761029
+      ],
+      "source_asset_ids": [
+        "base_gimbal_yaw_servo",
+        "base_frame_servo_1",
+        "base_frame_servo_2",
+        "base_frame_servo_3",
+        "base_frame_servo_4",
+        "base_frame_servo_5",
+        "base_frame_servo_6"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "base_link",
+      "visual_role": "servo_horn",
+      "path": "base__servo_horn.stl",
+      "sha256": "595244e388a27dc78c8bbc1283279eaa3ab4b89129b2b3d60ddbb41330612139",
+      "size_bytes": 1418284,
+      "triangle_count": 28364,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.08491954803466797,
+        -0.09309614558496308,
+        -0.025750000186511496
+      ],
+      "bounds_max_m": [
+        0.08491954803466797,
+        0.09309614567480276,
+        0.08334999828761029
+      ],
+      "source_asset_ids": [
+        "base_gimbal_yaw_servo",
+        "base_frame_servo_1",
+        "base_frame_servo_2",
+        "base_frame_servo_3",
+        "base_frame_servo_4",
+        "base_frame_servo_5",
+        "base_frame_servo_6"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "left_front_coxa_link",
+      "visual_role": "primary",
+      "path": "left_front_coxa.stl",
+      "sha256": "b26b296bef45522652f5c65bb8ceac5b331fef2243e576c6bbac1d9a5f69b67b",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011498172376588747,
+        -0.021972801569005263,
+        -0.015250000186510921
+      ],
+      "bounds_max_m": [
+        0.06157815345510226,
+        0.009692832239952678,
+        0.06574999981348932
+      ],
+      "source_asset_ids": [
+        "left_front_coxa"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "left_front_coxa_link",
+      "visual_role": "servo_case",
+      "path": "left_front_coxa__servo_case.stl",
+      "sha256": "8be19db0484ac9ddf9fdf64217ba7b3ca59ba7b6883d1cb8e4d1a8798a59f0e3",
+      "size_bytes": 1910984,
+      "triangle_count": 38218,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 6,
+      "bounds_min_m": [
+        0.02274824031326223,
+        -0.03533117880414684,
+        -0.0157500001865109
+      ],
+      "bounds_max_m": [
+        0.06373187422900191,
+        0.024432966759151905,
+        0.06624999981348932
+      ],
+      "source_asset_ids": [
+        "left_front_coxa_servo"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "left_front_femur_link",
+      "visual_role": "primary",
+      "path": "left_front_femur.stl",
+      "sha256": "d336fa2b94e1b6e332c888fd1803f1cd68c08fd5a949df61678f5e85ef74b5af",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.010144315931823519,
+        -0.057706871996620564,
+        -0.016696564742691683
+      ],
+      "bounds_max_m": [
+        0.1376227834272058,
+        0.026822520425321034,
+        0.037359906269899934
+      ],
+      "source_asset_ids": [
+        "left_front_femur"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "left_front_tibia_link",
+      "visual_role": "primary",
+      "path": "left_front_tibia.stl",
+      "sha256": "411099316bac368af6ab0dc700ee325719a9b4071632218d34537e3d62636405",
+      "size_bytes": 322484,
+      "triangle_count": 6448,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.02519519728545049,
+        -0.051737637431002084,
+        -0.013631208200273345
+      ],
+      "bounds_max_m": [
+        0.131496829024364,
+        -0.019083655774001076,
+        0.014982095059030219
+      ],
+      "source_asset_ids": [
+        "left_front_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_front_tibia_link",
+      "visual_role": "servo_case",
+      "path": "left_front_tibia__servo_case.stl",
+      "sha256": "59f2ea975cf1135197074dc1ffdb69d2bdab022973349966e8b86c9e27a9c858",
+      "size_bytes": 4843684,
+      "triangle_count": 96872,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.032502315868236084,
+        -0.0586662378700592,
+        -0.015341402310451273
+      ],
+      "bounds_max_m": [
+        0.13691723283263302,
+        -0.0017870473038324227,
+        0.01433973034954511
+      ],
+      "source_asset_ids": [
+        "left_front_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_front_tibia_link",
+      "visual_role": "servo_horn",
+      "path": "left_front_tibia__servo_horn.stl",
+      "sha256": "0bc73b01faa8dc82b071ff82949def550b593d89a9754e4458fd3909104e3bcb",
+      "size_bytes": 386484,
+      "triangle_count": 7728,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.007624958568068483,
+        -0.016661012820513986,
+        6.456206785267204e-05
+      ],
+      "bounds_max_m": [
+        0.1181896236121916,
+        -0.004355200722764741,
+        0.007385834808115973
+      ],
+      "source_asset_ids": [
+        "left_front_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_front_foot_link",
+      "visual_role": "primary",
+      "path": "left_front_foot.stl",
+      "sha256": "30de68bbecce4b6f1610053ec05656a1e94f3e7a0f7b1f59299ce48a679df99b",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.01724996374497974,
+        -0.06676261711586151,
+        -0.021560879168871158
+      ],
+      "bounds_max_m": [
+        0.044247072142423564,
+        -0.009103373676219795,
+        0.013251160839588777
+      ],
+      "source_asset_ids": [
+        "left_front_foot"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_coxa_link",
+      "visual_role": "primary",
+      "path": "left_middle_coxa.stl",
+      "sha256": "3f03c51e58f277dc6beb5e2e4a6facb4377be9e64d7992d552ddbc4b1d5c5d57",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011494555497182285,
+        -0.007999999934664166,
+        -0.01525000018651083
+      ],
+      "bounds_max_m": [
+        0.06139141843317664,
+        0.0080000000653359,
+        0.06574999981348924
+      ],
+      "source_asset_ids": [
+        "left_middle_coxa"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_coxa_link",
+      "visual_role": "servo_case",
+      "path": "left_middle_coxa__servo_case.stl",
+      "sha256": "42f44f19f85389a14bef3382ce240e3e4dff34ec5b70e05d812247e13ad4e791",
+      "size_bytes": 1910984,
+      "triangle_count": 38218,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 6,
+      "bounds_min_m": [
+        0.027999999976145367,
+        -0.02288235276364367,
+        -0.01575000018651083
+      ],
+      "bounds_max_m": [
+        0.05799999997614539,
+        0.03331764609194723,
+        0.06624999981348925
+      ],
+      "source_asset_ids": [
+        "left_middle_coxa_servo"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_femur_link",
+      "visual_role": "primary",
+      "path": "left_middle_femur.stl",
+      "sha256": "0fe35b4979cde40ca95e3bab49572f643858b7b914d33a9fa695ce2d90f402d8",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.012820225533943328,
+        -0.031482355927598855,
+        -0.0120804113820959
+      ],
+      "bounds_max_m": [
+        0.13517260258735897,
+        0.034317647124160314,
+        0.03241926177616279
+      ],
+      "source_asset_ids": [
+        "left_middle_femur"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_tibia_link",
+      "visual_role": "primary",
+      "path": "left_middle_tibia.stl",
+      "sha256": "580ee8290c663280415364834e73e061980a242a5bf2c7e52dc8dc999f3b91e4",
+      "size_bytes": 322484,
+      "triangle_count": 6448,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.02311607988037956,
+        -0.007882352875843008,
+        -0.0073756394242750975
+      ],
+      "bounds_max_m": [
+        0.13288393324909992,
+        0.008117647124160382,
+        0.017624474144044337
+      ],
+      "source_asset_ids": [
+        "left_middle_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_tibia_link",
+      "visual_role": "servo_case",
+      "path": "left_middle_tibia__servo_case.stl",
+      "sha256": "8bf7f10387669eccb79079446735d0ae57c7d2c3ef759f6996a12d48c9f5b218",
+      "size_bytes": 4843684,
+      "triangle_count": 96872,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.030121388933312232,
+        -0.016432353066577636,
+        -0.007446072501626051
+      ],
+      "bounds_max_m": [
+        0.13988923861424624,
+        0.02686764712416012,
+        0.012694912960960673
+      ],
+      "source_asset_ids": [
+        "left_middle_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_tibia_link",
+      "visual_role": "servo_horn",
+      "path": "left_middle_tibia__servo_horn.stl",
+      "sha256": "db6a04a8c255d739c5a35189c8ecee772447245ec21ede65b9567fa2dd04cc09",
+      "size_bytes": 386484,
+      "triangle_count": 7728,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.008216073395218777,
+        0.025067647887096804,
+        -0.0004703818710293031
+      ],
+      "bounds_max_m": [
+        0.11798392522191517,
+        0.025867647124159912,
+        0.00571922233035491
+      ],
+      "source_asset_ids": [
+        "left_middle_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_foot_link",
+      "visual_role": "primary",
+      "path": "left_middle_foot.stl",
+      "sha256": "8c04cbf31cceb1e09ebb0a89e0acc5ca3f814054402c559527b3f09e0e0ef0b6",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.017249916650189573,
+        -0.024432351514991228,
+        -0.011500050894441227
+      ],
+      "bounds_max_m": [
+        0.04424711747819825,
+        0.02936764772206964,
+        0.011499952867713697
+      ],
+      "source_asset_ids": [
+        "left_middle_foot"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_coxa_link",
+      "visual_role": "primary",
+      "path": "left_rear_coxa.stl",
+      "sha256": "413b0e228b960bf03674cddaab4cf033e97cd646549c9be7e19d8ace8defe14f",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011498172376588563,
+        -0.00969283223995253,
+        -0.015250000186510838
+      ],
+      "bounds_max_m": [
+        0.0615781534551024,
+        0.021972801569005346,
+        0.0657499998134893
+      ],
+      "source_asset_ids": [
+        "left_rear_coxa"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_coxa_link",
+      "visual_role": "servo_case",
+      "path": "left_rear_coxa__servo_case.stl",
+      "sha256": "d5caa3c77935f1dd846b772f959e7093dcda0ee1aa07e34387237a25f75065ae",
+      "size_bytes": 1910984,
+      "triangle_count": 38218,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 6,
+      "bounds_min_m": [
+        0.01993948675019406,
+        -0.01545396988447292,
+        -0.015750000186510852
+      ],
+      "bounds_max_m": [
+        0.0609231225216366,
+        0.04431017611967175,
+        0.06624999981348927
+      ],
+      "source_asset_ids": [
+        "left_rear_coxa_servo"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_femur_link",
+      "visual_role": "primary",
+      "path": "left_rear_femur.stl",
+      "sha256": "0646a7019220107df59bc521e811a0195b3b1adf9c84127cb1711b6c5223ff88",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.018996377836246303,
+        -0.022538547683177756,
+        -0.007850955804177882
+      ],
+      "bounds_max_m": [
+        0.13365800728617083,
+        0.06146734752741298,
+        0.03783794557303753
+      ],
+      "source_asset_ids": [
+        "left_rear_femur"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_tibia_link",
+      "visual_role": "primary",
+      "path": "left_rear_tibia.stl",
+      "sha256": "2919a23a6d56b1531049d98e33cd7d17efd64e2b659f24f0a886c3c7b849a2f2",
+      "size_bytes": 322484,
+      "triangle_count": 6448,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.02521499206827372,
+        0.019312578572858268,
+        -0.013681861338996175
+      ],
+      "bounds_max_m": [
+        0.1314762837710462,
+        0.051966560039577,
+        0.014931441920307117
+      ],
+      "source_asset_ids": [
+        "left_rear_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_tibia_link",
+      "visual_role": "servo_case",
+      "path": "left_rear_tibia__servo_case.stl",
+      "sha256": "e2de977344ffe7d55363bd23d0b346c6d0bcfd12db383c48fef31bec618ba580",
+      "size_bytes": 4843684,
+      "triangle_count": 96872,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.030637649673867055,
+        0.011906085668315284,
+        -0.017854477340451144
+      ],
+      "bounds_max_m": [
+        0.138781902828015,
+        0.06878527571304381,
+        0.011826655253746265
+      ],
+      "source_asset_ids": [
+        "left_rear_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_tibia_link",
+      "visual_role": "servo_horn",
+      "path": "left_rear_tibia__servo_horn.stl",
+      "sha256": "f3a96ba1885fe1dbcd7b52400fefdc96b9455fa748bb05f342834ba241d35d5d",
+      "size_bytes": 386484,
+      "triangle_count": 7728,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.0119100364148495,
+        0.05391131024650645,
+        -0.010900581856886547
+      ],
+      "bounds_max_m": [
+        0.11390454576541074,
+        0.06621712234425554,
+        -0.003579309116623474
+      ],
+      "source_asset_ids": [
+        "left_rear_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_foot_link",
+      "visual_role": "primary",
+      "path": "left_rear_foot.stl",
+      "sha256": "e2ef3eb4be2944e2b25c1c0c8cb3edc3709966827bdcc43d2aecf6bb71ec3162",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.01724996411775375,
+        0.013905035735265385,
+        -0.022701575812373594
+      ],
+      "bounds_max_m": [
+        0.04424707220697277,
+        0.07156427917490708,
+        0.01211046419608628
+      ],
+      "source_asset_ids": [
+        "left_rear_foot"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_front_coxa_link",
+      "visual_role": "primary",
+      "path": "right_front_coxa.stl",
+      "sha256": "fa0503e6eea4b737712f5ecfa4d75acea07b8d00478df508ec5a2850f889b172",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011498172444185984,
+        -0.009692832180776767,
+        -0.015250000186511566
+      ],
+      "bounds_max_m": [
+        0.06157815338750515,
+        0.021972801628181084,
+        0.06574999981348872
+      ],
+      "source_asset_ids": [
+        "right_front_coxa"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_front_coxa_link",
+      "visual_role": "servo_case",
+      "path": "right_front_coxa__servo_case.stl",
+      "sha256": "a72edf356611f2744ababbd5583e0b46e27069681790bd7aaf202b7f2297e663",
+      "size_bytes": 1910984,
+      "triangle_count": 38218,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 6,
+      "bounds_min_m": [
+        0.02274824024566504,
+        -0.02443296669997601,
+        -0.01575000018651158
+      ],
+      "bounds_max_m": [
+        0.06373187416140466,
+        0.03533117886332264,
+        0.0662499998134887
+      ],
+      "source_asset_ids": [
+        "right_front_coxa_servo"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "right_front_femur_link",
+      "visual_role": "primary",
+      "path": "right_front_femur.stl",
+      "sha256": "f6725aba95f5cbd505fb2f2a93e20d3a49135695cb20162b4fa1181aa0961906",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.010144315981298776,
+        -0.02682252036614515,
+        -0.01669656469663108
+      ],
+      "bounds_max_m": [
+        0.13762278337773043,
+        0.057706872055796124,
+        0.03735990631596042
+      ],
+      "source_asset_ids": [
+        "right_front_femur"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_front_tibia_link",
+      "visual_role": "primary",
+      "path": "right_front_tibia.stl",
+      "sha256": "14375787abb0e2ba5a0084bf9adb8e5d64df78eff2b8052e97bb9865ed8f4469",
+      "size_bytes": 322484,
+      "triangle_count": 6448,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.025195197310053964,
+        0.01908365583317647,
+        -0.013631208263234294
+      ],
+      "bounds_max_m": [
+        0.13149682899976045,
+        0.05173763749017801,
+        0.014982094996069787
+      ],
+      "source_asset_ids": [
+        "right_front_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_front_tibia_link",
+      "visual_role": "servo_case",
+      "path": "right_front_tibia__servo_case.stl",
+      "sha256": "cd0b1127e2871336d73699cb535eeded391bd75c29fe30f5fac2fff693c939b0",
+      "size_bytes": 4843684,
+      "triangle_count": 96872,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.03250231589283961,
+        0.0017870473630078503,
+        -0.015341402373412184
+      ],
+      "bounds_max_m": [
+        0.13691723280802948,
+        0.058666237929235095,
+        0.01433973028658461
+      ],
+      "source_asset_ids": [
+        "right_front_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_front_tibia_link",
+      "visual_role": "servo_horn",
+      "path": "right_front_tibia__servo_horn.stl",
+      "sha256": "8aed9c1d01378b3909f1f857c8a7522e9daa1ac360f4cf935bc33fe0d42ea0ed",
+      "size_bytes": 386484,
+      "triangle_count": 7728,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.007624958592671852,
+        0.004355200781940148,
+        6.456200489173697e-05
+      ],
+      "bounds_max_m": [
+        0.11818962358758821,
+        0.016661012879689855,
+        0.007385834745155478
+      ],
+      "source_asset_ids": [
+        "right_front_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_front_foot_link",
+      "visual_role": "primary",
+      "path": "right_front_foot.stl",
+      "sha256": "e1f02c5103b8659b47e6a386c7f425e73cf25892d841d6825a635d6644ec67da",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.017249963744978888,
+        0.009103373735395916,
+        -0.021560879236468464
+      ],
+      "bounds_max_m": [
+        0.04424707214242459,
+        0.06676261717503755,
+        0.013251160771991382
+      ],
+      "source_asset_ids": [
+        "right_front_foot"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_coxa_link",
+      "visual_role": "primary",
+      "path": "right_middle_coxa.stl",
+      "sha256": "3fc6f82c516490e30c274d02264b332f5911cc41dceee2292d4cfffdd031e40a",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011494555518247337,
+        -0.008000000000000021,
+        -0.015250000186511483
+      ],
+      "bounds_max_m": [
+        0.06139141841211157,
+        0.008000000000000033,
+        0.06574999981348859
+      ],
+      "source_asset_ids": [
+        "right_middle_coxa"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_coxa_link",
+      "visual_role": "servo_case",
+      "path": "right_middle_coxa__servo_case.stl",
+      "sha256": "8822c8204afa4320d4117c725fe0a13a2fba1b446ad00b46ee61818d3cd8a88c",
+      "size_bytes": 1910984,
+      "triangle_count": 38218,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 6,
+      "bounds_min_m": [
+        0.027999999955080315,
+        -0.033317646026611344,
+        -0.015750000186511483
+      ],
+      "bounds_max_m": [
+        0.057999999955080324,
+        0.022882352828979536,
+        0.06624999981348859
+      ],
+      "source_asset_ids": [
+        "right_middle_coxa_servo"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_femur_link",
+      "visual_role": "primary",
+      "path": "right_middle_femur.stl",
+      "sha256": "8f4ca0bf4fbe337c4598d0f37665e1139abfea477de9afa71f74017f8c95cb57",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.012820225550133867,
+        -0.034317647058824584,
+        -0.01208041136861968
+      ],
+      "bounds_max_m": [
+        0.1351726025711686,
+        0.03148235599293481,
+        0.03241926178963796
+      ],
+      "source_asset_ids": [
+        "right_middle_femur"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_tibia_link",
+      "visual_role": "primary",
+      "path": "right_middle_tibia.stl",
+      "sha256": "66bf005d350d7a02202693f40bc339b7a55e5488dafca52d8bc06cabbf37a905",
+      "size_bytes": 322484,
+      "triangle_count": 6448,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.02311607988999325,
+        -0.008117647058826864,
+        -0.007375639443017633
+      ],
+      "bounds_max_m": [
+        0.1328839332394861,
+        0.007882352941175263,
+        0.017624474125301992
+      ],
+      "source_asset_ids": [
+        "right_middle_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_tibia_link",
+      "visual_role": "servo_case",
+      "path": "right_middle_tibia__servo_case.stl",
+      "sha256": "d123d4b86be74ebd8c5b7ebbfbe3f794405962e3b16dbc379cef4180663f3da1",
+      "size_bytes": 4843684,
+      "triangle_count": 96872,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.03012138894292586,
+        -0.02686764705882661,
+        -0.007446072520368295
+      ],
+      "bounds_max_m": [
+        0.13988923860463262,
+        0.01643235313191003,
+        0.012694912942218379
+      ],
+      "source_asset_ids": [
+        "right_middle_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_tibia_link",
+      "visual_role": "servo_horn",
+      "path": "right_middle_tibia__servo_horn.stl",
+      "sha256": "ca4a7553a1d1360b11281f0fe089142b3df3e3a2e3c2771007b0aef20e658687",
+      "size_bytes": 386484,
+      "triangle_count": 7728,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.00821607340483282,
+        -0.025867647058826316,
+        -0.0004703818897722131
+      ],
+      "bounds_max_m": [
+        0.11798392521230111,
+        -0.0250676478217645,
+        0.005719222311611938
+      ],
+      "source_asset_ids": [
+        "right_middle_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_foot_link",
+      "visual_role": "primary",
+      "path": "right_middle_foot.stl",
+      "sha256": "3bed3f777a73e816eba4fad7ae3260f9751358ed7c088d717747bfdcc6e82fa2",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.01724991665018901,
+        -0.029367647656737505,
+        -0.011500050915506321
+      ],
+      "bounds_max_m": [
+        0.04424711747819878,
+        0.024432351580323877,
+        0.011499952846649824
+      ],
+      "source_asset_ids": [
+        "right_middle_foot"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_coxa_link",
+      "visual_role": "primary",
+      "path": "right_rear_coxa.stl",
+      "sha256": "d42e92cf97e2a948214d11632cdd0f9ad8d1f1a244d128d118af7f38e9f3c897",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011498172444185956,
+        -0.021972801628181094,
+        -0.015250000186511441
+      ],
+      "bounds_max_m": [
+        0.06157815338750505,
+        0.009692832180776729,
+        0.06574999981348865
+      ],
+      "source_asset_ids": [
+        "right_rear_coxa"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_coxa_link",
+      "visual_role": "servo_case",
+      "path": "right_rear_coxa__servo_case.stl",
+      "sha256": "9db8477783fdada76cebb6cd1c084d66e8c36cb0166655f78b0deb876e4084aa",
+      "size_bytes": 1910984,
+      "triangle_count": 38218,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 6,
+      "bounds_min_m": [
+        0.01993948668259668,
+        -0.04431017617884749,
+        -0.01575000018651138
+      ],
+      "bounds_max_m": [
+        0.06092312245403922,
+        0.015453969825297339,
+        0.06624999981348868
+      ],
+      "source_asset_ids": [
+        "right_rear_coxa_servo"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_femur_link",
+      "visual_role": "primary",
+      "path": "right_rear_femur.stl",
+      "sha256": "f00927cf1041b462862a3e3f1aadefcb857cc7609666c0ea92e201259e7375aa",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.0189963778857215,
+        -0.061467347586588256,
+        -0.007850955758117319
+      ],
+      "bounds_max_m": [
+        0.13365800723669544,
+        0.022538547624002127,
+        0.03783794561909802
+      ],
+      "source_asset_ids": [
+        "right_rear_femur"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_tibia_link",
+      "visual_role": "primary",
+      "path": "right_rear_tibia.stl",
+      "sha256": "0dbcb058935a4eb9d54b0ea29d7d72fd10797097aa59442b41621c122871db48",
+      "size_bytes": 322484,
+      "triangle_count": 6448,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.025214992092877076,
+        -0.05196656009875308,
+        -0.013681861401957283
+      ],
+      "bounds_max_m": [
+        0.1314762837464427,
+        -0.019312578632033384,
+        0.014931441857346631
+      ],
+      "source_asset_ids": [
+        "right_rear_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_tibia_link",
+      "visual_role": "servo_case",
+      "path": "right_rear_tibia__servo_case.stl",
+      "sha256": "9e733a342ac4dbb1bbd6602e395367db3f57233869bfb811251f6a2530a7e8e1",
+      "size_bytes": 4843684,
+      "triangle_count": 96872,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.030637649698470305,
+        -0.06878527577221985,
+        -0.017854477403412117
+      ],
+      "bounds_max_m": [
+        0.13878190280341157,
+        -0.011906085727490476,
+        0.01182665519078576
+      ],
+      "source_asset_ids": [
+        "right_rear_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_tibia_link",
+      "visual_role": "servo_horn",
+      "path": "right_rear_tibia__servo_horn.stl",
+      "sha256": "ab9220afbb250ca4fdc06e685ebdea5a567c5cfe212887e2561bcdd98fb76443",
+      "size_bytes": 386484,
+      "triangle_count": 7728,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011910036439453023,
+        -0.0662171224034316,
+        -0.010900581919847507
+      ],
+      "bounds_max_m": [
+        0.11390454574080705,
+        -0.05391131030568168,
+        -0.003579309179583901
+      ],
+      "source_asset_ids": [
+        "right_rear_tibia_full"
+      ],
+      "creators": [
+        "Araco Hexapod contributors and upstream CAD authors"
+      ],
+      "licenses": [
+        "mixed-open-source"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_foot_link",
+      "visual_role": "primary",
+      "path": "right_rear_foot.stl",
+      "sha256": "b127eff589e8e80d70f2609515fced7104e469ce7f8b948285dfd9e300135bfd",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.017249964117753164,
+        -0.07156427923408303,
+        -0.022701575879971188
+      ],
+      "bounds_max_m": [
+        0.04424707220697356,
+        -0.013905035794441356,
+        0.012110464128488681
+      ],
+      "source_asset_ids": [
+        "right_rear_foot"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "gimbal_yaw_link",
+      "visual_role": "primary",
+      "path": "gimbal_yaw.stl",
+      "sha256": "dbbeda089c7b7f0a643276952af0f65712cb3559ba706b22692c3bbd328b6a78",
+      "size_bytes": 425984,
+      "triangle_count": 8518,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.03999999992549418,
+        -0.0274999999550805,
+        -0.0225000001865108
+      ],
+      "bounds_max_m": [
+        0.0900000000745058,
+        0.027500000044919485,
+        0.0374999998134892
+      ],
+      "source_asset_ids": [
+        "gimbal_yaw"
+      ],
+      "creators": [
+        "Araco Hexapod contributors"
+      ],
+      "licenses": [
+        "MIT"
+      ]
+    },
+    {
+      "canonical_link": "camera_link",
+      "visual_role": "camera_body",
+      "path": "camera__camera_body.stl",
+      "sha256": "06c79e12a723a0ac554e74552a5b00122127587f7d4b3c0c1464ba107a490c5e",
+      "size_bytes": 16795784,
+      "triangle_count": 335914,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        0.019999998548626836,
+        -0.04472879023828351,
+        -0.03501235092455941
+      ],
+      "bounds_max_m": [
+        0.05000000045597565,
+        0.04472871403417726,
+        -0.00998765362078731
+      ],
+      "source_asset_ids": [
+        "gemini_upper_housing_1",
+        "gemini_upper_housing_2",
+        "gemini_mounting_bracket",
+        "gemini_lower_housing_1",
+        "gemini_lower_housing_2"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "camera_link",
+      "visual_role": "camera_hardware",
+      "path": "camera__camera_hardware.stl",
+      "sha256": "fa361a92bdd067ac801b39802c48bab98fa60d14f4a888018df09ce959841237",
+      "size_bytes": 5280684,
+      "triangle_count": 105612,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        0.02765000007450591,
+        -0.041649968126200115,
+        -0.035300000079222654
+      ],
+      "bounds_max_m": [
+        0.04715000007450593,
+        0.04164980168066168,
+        -0.016150017769880814
+      ],
+      "source_asset_ids": [
+        "gemini_upper_pad_1",
+        "gemini_upper_pad_2",
+        "gemini_lower_screw_1",
+        "gemini_lower_screw_2",
+        "gemini_lower_screw_3",
+        "gemini_lower_screw_4"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    },
+    {
+      "canonical_link": "camera_link",
+      "visual_role": "camera_optics",
+      "path": "camera__camera_optics.stl",
+      "sha256": "80896b1fb3d59f5623b29118c9bd21e5076c23e824cec3aa716f8525515c6b02",
+      "size_bytes": 7219584,
+      "triangle_count": 144390,
+      "degenerate_triangle_count": 0,
+      "removed_source_degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        0.039400000074505795,
+        -0.030081337407015234,
+        -0.027581337340422507
+      ],
+      "bounds_max_m": [
+        0.048350000074505836,
+        0.030081337496854307,
+        -0.017418662436552518
+      ],
+      "source_asset_ids": [
+        "gemini_left_ir_optic",
+        "gemini_rgb_optic",
+        "gemini_projector_optic",
+        "gemini_right_ir_optic"
+      ],
+      "creators": [
+        "upstream CAD authors"
+      ],
+      "licenses": [
+        "LicenseRef-UserConfirmed-Open-Source-CAD"
+      ]
+    }
+  ]
+}

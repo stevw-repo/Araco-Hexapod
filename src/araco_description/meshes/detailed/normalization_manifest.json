@@ -1,0 +1,462 @@
+{
+  "schema": {
+    "name": "araco_fusion_visual_normalization",
+    "version": 1
+  },
+  "generator": {
+    "name": "normalize_fusion_visuals.py",
+    "coordinate_math": "float64",
+    "output_encoding": "deterministic_binary_stl_float32"
+  },
+  "inputs": {
+    "source_manifest_sha256": "2c79583a96dbbd6c64d0340567edb64c278a31b8468ecfc0df3fc6e5bf7fd7f5",
+    "canonical_model_sha256": "fd8c5c648433fbcfcecc556f47669d30437d88f63896589bbebd61bebbe321ff",
+    "nominal_pose_sha256": "76ba6ad316237ae1837ec806ba9b84dfb07bd7feac0b6ba35abc159b449a2a2d"
+  },
+  "transform_pipeline": [
+    "millimeter source-component-local STL to meters",
+    "recorded Fusion occurrence transform to Fusion root",
+    "accepted Fusion-to-ROS rotation and base datum to base_link",
+    "inverse canonical nominal link transform to ROS link-local coordinates"
+  ],
+  "visual_only": true,
+  "collision_changed": false,
+  "dynamics_changed": false,
+  "joint_contract_changed": false,
+  "retained_proxy_links": [
+    "left_front_tibia_link",
+    "left_middle_tibia_link",
+    "left_rear_tibia_link",
+    "right_front_tibia_link",
+    "right_middle_tibia_link",
+    "right_rear_tibia_link"
+  ],
+  "output_count": 20,
+  "outputs": [
+    {
+      "canonical_link": "base_link",
+      "path": "base.stl",
+      "sha256": "e3d4d51b5cecaee9073d5d657fdeeb5ab10a3f26099d04c373a2327671d4666a",
+      "size_bytes": 4372184,
+      "triangle_count": 87442,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.10127525329589844,
+        -0.1080999984292015,
+        -0.07200000018651134
+      ],
+      "bounds_max_m": [
+        0.10003265380859375,
+        0.108099998519041,
+        0.06560000019495893
+      ],
+      "source_asset_ids": [
+        "base_bottom_cover",
+        "base_battery_holder_1",
+        "base_battery_holder_2",
+        "base_top_cover",
+        "base_gimbal_mount",
+        "base_frame"
+      ]
+    },
+    {
+      "canonical_link": "left_front_coxa_link",
+      "path": "left_front_coxa.stl",
+      "sha256": "e7da4e76ca3d4f59cd85512f72acd481a0aba0c54767743ca01e93f81aa10b19",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011498172376588747,
+        -0.021972801569005263,
+        -0.015250000186510921
+      ],
+      "bounds_max_m": [
+        0.06157815345510226,
+        0.009692832239952678,
+        0.06574999981348932
+      ],
+      "source_asset_ids": [
+        "left_front_coxa"
+      ]
+    },
+    {
+      "canonical_link": "left_front_femur_link",
+      "path": "left_front_femur.stl",
+      "sha256": "966209c22c58761d05cc7edd87151758ff3e974a945dd03c8cfeffad9ebf8581",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.010144315931823519,
+        -0.057706871996620564,
+        -0.016696564742691683
+      ],
+      "bounds_max_m": [
+        0.1376227834272058,
+        0.026822520425321034,
+        0.037359906269899934
+      ],
+      "source_asset_ids": [
+        "left_front_femur"
+      ]
+    },
+    {
+      "canonical_link": "left_front_foot_link",
+      "path": "left_front_foot.stl",
+      "sha256": "72b451efa947c14c3af73e2fa06e53ca489c92512a6bc2272264d3718aacff40",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.01724996374497974,
+        -0.06676261711586151,
+        -0.021560879168871158
+      ],
+      "bounds_max_m": [
+        0.044247072142423564,
+        -0.009103373676219795,
+        0.013251160839588777
+      ],
+      "source_asset_ids": [
+        "left_front_foot"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_coxa_link",
+      "path": "left_middle_coxa.stl",
+      "sha256": "d3bf0fdd08d8d2e4a981237540fa88ae83bffc87e2f0e1f471a282d33f61a90f",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011494555497182285,
+        -0.007999999934664166,
+        -0.01525000018651083
+      ],
+      "bounds_max_m": [
+        0.06139141843317664,
+        0.0080000000653359,
+        0.06574999981348924
+      ],
+      "source_asset_ids": [
+        "left_middle_coxa"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_femur_link",
+      "path": "left_middle_femur.stl",
+      "sha256": "b5dd67b2710c22b7f9de189c762f76b9c00b11c60f60797006af712fbadb7e32",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.012820225533943328,
+        -0.031482355927598855,
+        -0.0120804113820959
+      ],
+      "bounds_max_m": [
+        0.13517260258735897,
+        0.034317647124160314,
+        0.03241926177616279
+      ],
+      "source_asset_ids": [
+        "left_middle_femur"
+      ]
+    },
+    {
+      "canonical_link": "left_middle_foot_link",
+      "path": "left_middle_foot.stl",
+      "sha256": "240eef83c5cef49fd2347756abba33f411b6cb4d0b038d765b9c08737b0b56c2",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.017249916650189573,
+        -0.024432351514991228,
+        -0.011500050894441227
+      ],
+      "bounds_max_m": [
+        0.04424711747819825,
+        0.02936764772206964,
+        0.011499952867713697
+      ],
+      "source_asset_ids": [
+        "left_middle_foot"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_coxa_link",
+      "path": "left_rear_coxa.stl",
+      "sha256": "80ce383c8d65cd2398c97aced7313bdc1e4e46cca7f41a6b672cb57f56d15039",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011498172376588563,
+        -0.00969283223995253,
+        -0.015250000186510838
+      ],
+      "bounds_max_m": [
+        0.0615781534551024,
+        0.021972801569005346,
+        0.0657499998134893
+      ],
+      "source_asset_ids": [
+        "left_rear_coxa"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_femur_link",
+      "path": "left_rear_femur.stl",
+      "sha256": "6e17d892ee1e7d5b5aa269123680f979670834ce3010d22de3315c89677a989a",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.018996377836246303,
+        -0.022538547683177756,
+        -0.007850955804177882
+      ],
+      "bounds_max_m": [
+        0.13365800728617083,
+        0.06146734752741298,
+        0.03783794557303753
+      ],
+      "source_asset_ids": [
+        "left_rear_femur"
+      ]
+    },
+    {
+      "canonical_link": "left_rear_foot_link",
+      "path": "left_rear_foot.stl",
+      "sha256": "e50ea15ec611dcc94ca43bdeb2045c0576f50324b433a854a9375e9a1f54d4ca",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.01724996411775375,
+        0.013905035735265385,
+        -0.022701575812373594
+      ],
+      "bounds_max_m": [
+        0.04424707220697277,
+        0.07156427917490708,
+        0.01211046419608628
+      ],
+      "source_asset_ids": [
+        "left_rear_foot"
+      ]
+    },
+    {
+      "canonical_link": "right_front_coxa_link",
+      "path": "right_front_coxa.stl",
+      "sha256": "7c8c9d4c6896910c08f3de57835464f80907a19432cb68b83691e3c958f968e3",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011498172444185984,
+        -0.009692832180776767,
+        -0.015250000186511566
+      ],
+      "bounds_max_m": [
+        0.06157815338750515,
+        0.021972801628181084,
+        0.06574999981348872
+      ],
+      "source_asset_ids": [
+        "right_front_coxa"
+      ]
+    },
+    {
+      "canonical_link": "right_front_femur_link",
+      "path": "right_front_femur.stl",
+      "sha256": "895e555aaad0b7cfce81bcb50540f82e644165fb943d7956e55da41d7e2d266d",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.010144315981298776,
+        -0.02682252036614515,
+        -0.01669656469663108
+      ],
+      "bounds_max_m": [
+        0.13762278337773043,
+        0.057706872055796124,
+        0.03735990631596042
+      ],
+      "source_asset_ids": [
+        "right_front_femur"
+      ]
+    },
+    {
+      "canonical_link": "right_front_foot_link",
+      "path": "right_front_foot.stl",
+      "sha256": "87b5b76c3c8890f5471ac19461cce1aa60f933f7f9bdbdfd28e1462e2055fe8f",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.017249963744978888,
+        0.009103373735395916,
+        -0.021560879236468464
+      ],
+      "bounds_max_m": [
+        0.04424707214242459,
+        0.06676261717503755,
+        0.013251160771991382
+      ],
+      "source_asset_ids": [
+        "right_front_foot"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_coxa_link",
+      "path": "right_middle_coxa.stl",
+      "sha256": "1c12af6e3720826055898d978fe55ecf392ea57805814ce7dd804b70b2a7292d",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011494555518247337,
+        -0.008000000000000021,
+        -0.015250000186511483
+      ],
+      "bounds_max_m": [
+        0.06139141841211157,
+        0.008000000000000033,
+        0.06574999981348859
+      ],
+      "source_asset_ids": [
+        "right_middle_coxa"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_femur_link",
+      "path": "right_middle_femur.stl",
+      "sha256": "5c98b3496b5ca3c19eb719260e9799e4456fad6c1290cb9c12bc0ebc2b864b9a",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.012820225550133867,
+        -0.034317647058824584,
+        -0.01208041136861968
+      ],
+      "bounds_max_m": [
+        0.1351726025711686,
+        0.03148235599293481,
+        0.03241926178963796
+      ],
+      "source_asset_ids": [
+        "right_middle_femur"
+      ]
+    },
+    {
+      "canonical_link": "right_middle_foot_link",
+      "path": "right_middle_foot.stl",
+      "sha256": "96e11dc6a5cc208ecf67e773a0c595761ed4311df10dc1de22687494592b7487",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.01724991665018901,
+        -0.029367647656737505,
+        -0.011500050915506321
+      ],
+      "bounds_max_m": [
+        0.04424711747819878,
+        0.024432351580323877,
+        0.011499952846649824
+      ],
+      "source_asset_ids": [
+        "right_middle_foot"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_coxa_link",
+      "path": "right_rear_coxa.stl",
+      "sha256": "52b63cda590aba4c68e94b1fb03b9dcef850c16444f1ac2066c2ef4df1803139",
+      "size_bytes": 478084,
+      "triangle_count": 9560,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.011498172444185956,
+        -0.021972801628181094,
+        -0.015250000186511441
+      ],
+      "bounds_max_m": [
+        0.06157815338750505,
+        0.009692832180776729,
+        0.06574999981348865
+      ],
+      "source_asset_ids": [
+        "right_rear_coxa"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_femur_link",
+      "path": "right_rear_femur.stl",
+      "sha256": "059efca1125b3a64b8e9ca56d8d6c4f6b7634c442da9f626ee6009aaec7a018c",
+      "size_bytes": 212384,
+      "triangle_count": 4246,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.0189963778857215,
+        -0.061467347586588256,
+        -0.007850955758117319
+      ],
+      "bounds_max_m": [
+        0.13365800723669544,
+        0.022538547624002127,
+        0.03783794561909802
+      ],
+      "source_asset_ids": [
+        "right_rear_femur"
+      ]
+    },
+    {
+      "canonical_link": "right_rear_foot_link",
+      "path": "right_rear_foot.stl",
+      "sha256": "ef03e24a5c71b0043b5d5197dc40b2654c26f1f1c0bf3a8c62a96ec54697b1df",
+      "size_bytes": 121984,
+      "triangle_count": 2438,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.017249964117753164,
+        -0.07156427923408303,
+        -0.022701575879971188
+      ],
+      "bounds_max_m": [
+        0.04424707220697356,
+        -0.013905035794441356,
+        0.012110464128488681
+      ],
+      "source_asset_ids": [
+        "right_rear_foot"
+      ]
+    },
+    {
+      "canonical_link": "gimbal_yaw_link",
+      "path": "gimbal_yaw.stl",
+      "sha256": "7205a3155fb900562a44726103e528da69c03d98a43452ae3b4db3928f3cecff",
+      "size_bytes": 425984,
+      "triangle_count": 8518,
+      "degenerate_triangle_count": 0,
+      "bounds_min_m": [
+        -0.03999999992549418,
+        -0.0274999999550805,
+        -0.0225000001865108
+      ],
+      "bounds_max_m": [
+        0.0900000000745058,
+        0.027500000044919485,
+        0.0374999998134892
+      ],
+      "source_asset_ids": [
+        "gimbal_yaw"
+      ]
+    }
+  ]
+}

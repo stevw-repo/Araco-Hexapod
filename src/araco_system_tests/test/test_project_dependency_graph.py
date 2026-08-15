@@ -20,11 +20,12 @@ EXPECTED_PROJECT_DEPENDENCIES = {
     'araco_bringup': {
         'araco_description',
         'araco_gazebo',
+        'araco_interfaces',
         'araco_locomotion',
         'araco_supervision',
         'araco_teleop',
     },
-    'araco_system_tests': {'araco_bringup'},
+    'araco_system_tests': {'araco_bringup', 'araco_interfaces'},
 }
 
 DEPENDENCY_TAGS = (

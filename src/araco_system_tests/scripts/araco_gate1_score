@@ -1,0 +1,478 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Measure one live Gate 1 stable-hold window and emit structured metrics."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from pathlib import Path
+import time
+
+from araco_interfaces.msg import JointStateProvenance
+from araco_interfaces.msg import LocomotionStatus
+from araco_interfaces.msg import SafeCommand
+from araco_interfaces.msg import SafetyStatus
+from araco_system_tests.gate1 import quaternion_roll_pitch
+from araco_system_tests.gate1 import rms
+from araco_system_tests.gate1 import state_path
+from araco_system_tests.gate1 import vector_norm
+from control_msgs.msg import JointTrajectoryControllerState
+from controller_manager_msgs.srv import ListControllers
+from controller_manager_msgs.srv import ListHardwareComponents
+from nav_msgs.msg import Odometry
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
+from ros_gz_interfaces.msg import Contacts
+from rosgraph_msgs.msg import Clock
+from sensor_msgs.msg import JointState
+from tf2_msgs.msg import TFMessage
+
+
+FEET = (
+    'left_front', 'left_middle', 'left_rear',
+    'right_front', 'right_middle', 'right_rear',
+)
+
+
+def _seconds(stamp):
+    return float(stamp.sec) + float(stamp.nanosec) * 1e-9
+
+
+def _finite(values):
+    return all(math.isfinite(value) for value in values)
+
+
+class Gate1Scorer(Node):
+    """Observe simulation-only truth while production nodes remain truth-blind."""
+
+    def __init__(self, bundle, thresholds, started_monotonic):
+        super().__init__('gate1_scorer', namespace='araco/system_tests')
+        self.bundle = bundle
+        self.thresholds = thresholds
+        self.started_monotonic = started_monotonic
+        pose = json.loads((
+            bundle / 'normalized_artifacts/'
+            'araco_description_nominal-standing-reference.json'
+        ).read_text(encoding='utf-8'))['data']
+        manifest = json.loads((bundle / 'manifest.json').read_text(encoding='utf-8'))
+        self.leg_names = manifest['controller_partitions']['leg_joints']
+        self.state_names = manifest['controller_partitions']['state_joints']
+        self.targets = pose['joint_positions_rad']
+        self.base_target = pose['base_pose']
+        self.sim_time = None
+        self.holding_sim_time = None
+        self.holding_wall_time = None
+        self.safety_states = []
+        self.safety_epochs = []
+        self.forbidden_motion_state = False
+        self.forbidden_execute = False
+        self.fault_observed = False
+        self.joint_samples = []
+        self.odom_samples = []
+        self.contact_samples = []
+        self.max_penetration = 0.0
+        self.nonfoot_ground_contact = False
+        self.nonfinite_observed = False
+        self.clock_samples = 0
+        self.tf_samples = 0
+        self.leg_state_samples = 0
+        self.gimbal_state_samples = 0
+        self.locomotion_samples = 0
+        self.provenance_valid = False
+        self.controller_response = None
+        self.hardware_response = None
+        sensor_qos = QoSProfile(
+            depth=50, reliability=ReliabilityPolicy.BEST_EFFORT)
+        reliable_qos = QoSProfile(
+            depth=100, reliability=ReliabilityPolicy.RELIABLE)
+        transient_qos = QoSProfile(
+            depth=1, reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.create_subscription(Clock, '/clock', self._on_clock, 10)
+        self.create_subscription(
+            SafetyStatus, '/araco/safety/status', self._on_safety, reliable_qos)
+        self.create_subscription(
+            SafeCommand, '/araco/command/safe', self._on_safe, reliable_qos)
+        self.create_subscription(
+            JointState, '/joint_states', self._on_joints, sensor_qos)
+        self.create_subscription(
+            Odometry, '/araco/simulation/ground_truth/odom',
+            self._on_odom, sensor_qos)
+        self.create_subscription(
+            Contacts, '/araco/simulation/contacts/all',
+            self._on_contacts, sensor_qos)
+        self.create_subscription(
+            JointTrajectoryControllerState,
+            '/leg_trajectory_controller/controller_state',
+            self._on_leg_state, sensor_qos)
+        self.create_subscription(
+            JointTrajectoryControllerState,
+            '/gimbal_trajectory_controller/controller_state',
+            self._on_gimbal_state, sensor_qos)
+        self.create_subscription(
+            LocomotionStatus, '/araco/locomotion/status',
+            self._on_locomotion, reliable_qos)
+        self.create_subscription(
+            JointStateProvenance, '/araco/state/joint_state_provenance',
+            self._on_provenance, transient_qos)
+        self.create_subscription(TFMessage, '/tf', self._on_tf, sensor_qos)
+        self.controller_client = self.create_client(
+            ListControllers, '/controller_manager/list_controllers')
+        self.hardware_client = self.create_client(
+            ListHardwareComponents, '/controller_manager/list_hardware_components')
+        self.controller_future = None
+        self.hardware_future = None
+
+    def _on_clock(self, message):
+        sample = _seconds(message.clock)
+        if self.sim_time is not None and sample < self.sim_time:
+            self.nonfinite_observed = True
+        self.sim_time = sample
+        self.clock_samples += 1
+
+    def _on_safety(self, message):
+        if not self.safety_states or self.safety_states[-1] != message.state:
+            self.safety_states.append(message.state)
+            self.safety_epochs.append(message.safety_epoch)
+        if message.state == message.STATE_MOTION_ENABLED:
+            self.forbidden_motion_state = True
+        if message.state == message.STATE_FAULT_HOLD:
+            self.fault_observed = True
+        if (message.state == message.STATE_HOLDING and
+                message.readiness_mask == message.required_readiness_mask == 127 and
+                self.holding_sim_time is None and self.sim_time is not None):
+            self.holding_sim_time = self.sim_time
+            self.holding_wall_time = time.monotonic() - self.started_monotonic
+
+    def _on_safe(self, message):
+        if message.disposition != message.DISPOSITION_HOLD:
+            self.forbidden_execute = True
+
+    def _on_joints(self, message):
+        if self.sim_time is None or len(message.name) != len(message.position):
+            return
+        positions = dict(zip(message.name, message.position))
+        if set(positions) != set(self.state_names) or not _finite(positions.values()):
+            self.nonfinite_observed = True
+            return
+        self.joint_samples.append((self.sim_time, positions))
+
+    def _on_odom(self, message):
+        if self.sim_time is None:
+            return
+        pose = message.pose.pose
+        twist = message.twist.twist
+        values = (
+            pose.position.x, pose.position.y, pose.position.z,
+            pose.orientation.x, pose.orientation.y,
+            pose.orientation.z, pose.orientation.w,
+            twist.linear.x, twist.linear.y, twist.linear.z,
+            twist.angular.x, twist.angular.y, twist.angular.z,
+        )
+        if not _finite(values):
+            self.nonfinite_observed = True
+            return
+        self.odom_samples.append((self.sim_time, values))
+
+    @staticmethod
+    def _is_ground(name):
+        return 'ground_plane' in name or 'ground::' in name
+
+    def _on_contacts(self, message):
+        if self.sim_time is None:
+            return
+        touching = set()
+        forbidden = False
+        maximum = 0.0
+        for contact in message.contacts:
+            names = (contact.collision1.name, contact.collision2.name)
+            ground_index = next(
+                (index for index, name in enumerate(names) if self._is_ground(name)), None)
+            if ground_index is not None:
+                robot_collision = names[1 - ground_index]
+                foot = next(
+                    (item for item in FEET
+                     if f'{item}_foot_link' in robot_collision), None)
+                if foot is None:
+                    forbidden = True
+                else:
+                    touching.add(foot)
+            if contact.depths:
+                maximum = max(maximum, max(contact.depths))
+        if not math.isfinite(maximum):
+            self.nonfinite_observed = True
+        self.max_penetration = max(self.max_penetration, maximum)
+        self.nonfoot_ground_contact |= forbidden
+        self.contact_samples.append((self.sim_time, touching))
+
+    def _on_leg_state(self, message):
+        if (set(message.joint_names) == set(self.leg_names) and
+                len(message.feedback.positions) == 24 and
+                _finite(message.feedback.positions)):
+            self.leg_state_samples += 1
+        else:
+            self.nonfinite_observed = True
+
+    def _on_gimbal_state(self, message):
+        if (list(message.joint_names) == ['gimbal_yaw_joint'] and
+                len(message.feedback.positions) == 1 and
+                _finite(message.feedback.positions)):
+            self.gimbal_state_samples += 1
+        else:
+            self.nonfinite_observed = True
+
+    def _on_locomotion(self, message):
+        if (message.mode == message.MODE_HOLDING and message.trajectory_valid and
+                message.gait_phase == 0.0 and message.gait_cycle == 0):
+            self.locomotion_samples += 1
+        else:
+            self.nonfinite_observed = True
+
+    def _on_provenance(self, message):
+        simulated = message.SOURCE_SIMULATED_PHYSICS
+        self.provenance_valid = (
+            set(message.joint_names) == set(self.state_names) and
+            len(message.joint_names) == 25 and
+            list(message.position_source) == [simulated] * 25 and
+            list(message.velocity_source) == [simulated] * 25 and
+            list(message.effort_source) == [simulated] * 25)
+
+    def _on_tf(self, message):
+        self.tf_samples += len(message.transforms)
+
+    def poll_services(self):
+        if (self.controller_future is None and
+                self.controller_client.service_is_ready()):
+            self.controller_future = self.controller_client.call_async(
+                ListControllers.Request())
+        if self.controller_future is not None and self.controller_future.done():
+            self.controller_response = self.controller_future.result()
+            self.controller_future = None
+        if self.hardware_future is None and self.hardware_client.service_is_ready():
+            self.hardware_future = self.hardware_client.call_async(
+                ListHardwareComponents.Request())
+        if self.hardware_future is not None and self.hardware_future.done():
+            self.hardware_response = self.hardware_future.result()
+            self.hardware_future = None
+
+    def complete(self):
+        return (self.holding_sim_time is not None and self.sim_time is not None and
+                self.sim_time - self.holding_sim_time >= self.thresholds['settle_sim_s'] and
+                self.controller_response is not None and self.hardware_response is not None)
+
+    def _controllers_valid(self):
+        if self.controller_response is None:
+            return False
+        expected = {
+            'leg_trajectory_controller': {
+                f'{name}/position' for name in self.leg_names},
+            'gimbal_trajectory_controller': {'gimbal_yaw_joint/position'},
+            'joint_state_broadcaster': set(),
+        }
+        actual = {
+            item.name: (item.state, set(item.claimed_interfaces))
+            for item in self.controller_response.controller
+        }
+        return set(actual) == set(expected) and all(
+            actual[name] == ('active', claims)
+            for name, claims in expected.items())
+
+    def _hardware_valid(self):
+        if self.hardware_response is None or len(self.hardware_response.component) != 1:
+            return False
+        component = self.hardware_response.component[0]
+        commands = {
+            item.name for item in component.command_interfaces
+            if item.is_available and item.is_claimed and item.data_type == 'double'
+        }
+        states = {
+            item.name for item in component.state_interfaces
+            if item.is_available and item.data_type == 'double'
+        }
+        expected_commands = {f'{name}/position' for name in self.state_names}
+        expected_states = {
+            f'{name}/{interface}'
+            for name in self.state_names
+            for interface in ('position', 'velocity', 'effort')
+        }
+        return (
+            component.name == 'GazeboSimSystem' and component.state.id == 3 and
+            not component.is_async and commands == expected_commands and
+            states == expected_states and
+            len(component.command_interfaces) == 25 and
+            len(component.state_interfaces) == 75)
+
+    def score(self):
+        end = self.sim_time if self.sim_time is not None else 0.0
+        window_start = end - self.thresholds['score_window_sim_s']
+        joints = [item for stamp, item in self.joint_samples if stamp >= window_start]
+        odometry = [item for stamp, item in self.odom_samples if stamp >= window_start]
+        contacts = [item for stamp, item in self.contact_samples if stamp >= window_start]
+        errors = [
+            positions[name] - self.targets[name]
+            for positions in joints for name in self.leg_names
+        ]
+        gimbal_errors = [
+            abs(positions['gimbal_yaw_joint'] - self.targets['gimbal_yaw_joint'])
+            for positions in joints
+        ]
+        linear_speeds = []
+        angular_speeds = []
+        roll_errors = []
+        pitch_errors = []
+        height_errors = []
+        for values in odometry:
+            roll, pitch = quaternion_roll_pitch(*values[3:7])
+            linear_speeds.append(vector_norm(*values[7:10]))
+            angular_speeds.append(vector_norm(*values[10:13]))
+            roll_errors.append(abs(roll))
+            pitch_errors.append(abs(pitch))
+            height_errors.append(abs(values[2] - self.base_target['position_xyz_m'][2]))
+        duties = {
+            foot: (sum(foot in sample for sample in contacts) / len(contacts)
+                   if contacts else 0.0)
+            for foot in FEET
+        }
+        state_sequence = state_path(self.safety_states)
+        epochs_valid = (
+            self.safety_epochs == list(range(len(self.safety_epochs))) and
+            state_sequence == [SafetyStatus.STATE_INITIALIZING,
+                               SafetyStatus.STATE_INACTIVE,
+                               SafetyStatus.STATE_HOLDING])
+        maximum_leg_error = max(map(abs, errors)) if errors else None
+        rms_leg_error = rms(errors) if errors else None
+        maximum_gimbal_error = max(gimbal_errors) if gimbal_errors else None
+        maximum_linear_speed = max(linear_speeds) if linear_speeds else None
+        maximum_angular_speed = max(angular_speeds) if angular_speeds else None
+        maximum_roll_error = max(roll_errors) if roll_errors else None
+        maximum_pitch_error = max(pitch_errors) if pitch_errors else None
+        maximum_height_error = max(height_errors) if height_errors else None
+        metrics = {
+            'startup_wall_s': self.holding_wall_time,
+            'scored_end_sim_s': end,
+            'score_window_sim_s': self.thresholds['score_window_sim_s'],
+            'joint_sample_count': len(joints),
+            'odom_sample_count': len(odometry),
+            'contact_sample_count': len(contacts),
+            'maximum_absolute_leg_error_rad': maximum_leg_error,
+            'rms_leg_error_rad': rms_leg_error,
+            'maximum_gimbal_error_rad': maximum_gimbal_error,
+            'maximum_base_linear_speed_m_s': maximum_linear_speed,
+            'maximum_base_angular_speed_rad_s': maximum_angular_speed,
+            'maximum_roll_error_rad': maximum_roll_error,
+            'maximum_pitch_error_rad': maximum_pitch_error,
+            'maximum_base_height_error_m': maximum_height_error,
+            'foot_contact_duty': duties,
+            'maximum_penetration_m': self.max_penetration,
+            'nonfoot_ground_contact': self.nonfoot_ground_contact,
+            'safety_state_sequence': state_sequence,
+            'safety_epochs': self.safety_epochs,
+            'clock_samples': self.clock_samples,
+            'tf_transforms': self.tf_samples,
+            'leg_controller_state_samples': self.leg_state_samples,
+            'gimbal_controller_state_samples': self.gimbal_state_samples,
+            'locomotion_holding_samples': self.locomotion_samples,
+            'simulated_provenance_valid': self.provenance_valid,
+            'controller_ownership_valid': self._controllers_valid(),
+            'hardware_backend_valid': self._hardware_valid(),
+            'forbidden_motion_state': self.forbidden_motion_state,
+            'forbidden_execute': self.forbidden_execute,
+            'fault_observed': self.fault_observed,
+            'nonfinite_observed': self.nonfinite_observed,
+        }
+        minimum = self.thresholds['minimum_window_samples']
+        checks = {
+            'startup_wall_time': (
+                self.holding_wall_time is not None and
+                self.holding_wall_time <= self.thresholds['startup_wall_max_s']),
+            'safety_state_and_epochs': epochs_valid,
+            'never_motion_enabled': not self.forbidden_motion_state,
+            'safe_command_hold_only': not self.forbidden_execute,
+            'no_fault': not self.fault_observed,
+            'finite_data': not self.nonfinite_observed,
+            'minimum_joint_samples': len(joints) >= minimum,
+            'minimum_odom_samples': len(odometry) >= minimum,
+            'minimum_contact_samples': len(contacts) >= minimum,
+            'leg_maximum_error': (
+                maximum_leg_error is not None and maximum_leg_error <=
+                self.thresholds['maximum_absolute_leg_error_rad']),
+            'leg_rms_error': (
+                rms_leg_error is not None and
+                rms_leg_error <= self.thresholds['rms_leg_error_rad']),
+            'gimbal_zero': (
+                maximum_gimbal_error is not None and maximum_gimbal_error <=
+                self.thresholds['maximum_gimbal_error_rad']),
+            'base_linear_speed': (
+                maximum_linear_speed is not None and maximum_linear_speed <=
+                self.thresholds['maximum_base_linear_speed_m_s']),
+            'base_angular_speed': (
+                maximum_angular_speed is not None and maximum_angular_speed <=
+                self.thresholds['maximum_base_angular_speed_rad_s']),
+            'base_roll': (
+                maximum_roll_error is not None and maximum_roll_error <=
+                self.thresholds['maximum_roll_pitch_error_rad']),
+            'base_pitch': (
+                maximum_pitch_error is not None and maximum_pitch_error <=
+                self.thresholds['maximum_roll_pitch_error_rad']),
+            'base_height': (
+                maximum_height_error is not None and maximum_height_error <=
+                self.thresholds['maximum_base_height_error_m']),
+            'six_foot_contact': all(
+                duty >= self.thresholds['minimum_foot_contact_duty']
+                for duty in duties.values()),
+            'no_nonfoot_ground_contact': not self.nonfoot_ground_contact,
+            'penetration': (
+                self.max_penetration <= self.thresholds['maximum_penetration_m']),
+            'clock': self.clock_samples > 0,
+            'tf': self.tf_samples > 0,
+            'controller_state_topics': (
+                self.leg_state_samples > 0 and self.gimbal_state_samples > 0),
+            'locomotion_hold_status': self.locomotion_samples > 0,
+            'simulated_provenance': self.provenance_valid,
+            'controller_ownership': self._controllers_valid(),
+            'hardware_backend': self._hardware_valid(),
+        }
+        return {'status': 'PASS' if all(checks.values()) else 'FAIL',
+                'checks': checks, 'metrics': metrics}
+
+
+def main():
+    """Run the live scorer until the accepted settle interval is complete."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bundle', required=True)
+    parser.add_argument('--thresholds', required=True)
+    parser.add_argument('--output', required=True)
+    parser.add_argument('--started-monotonic', type=float, required=True)
+    arguments, ros_arguments = parser.parse_known_args()
+    bundle = Path(arguments.bundle).resolve()
+    threshold_document = json.loads(
+        Path(arguments.thresholds).read_text(encoding='utf-8'))
+    thresholds = threshold_document.get('data', {}).get('gate1', threshold_document)
+    rclpy.init(args=[parser.prog, *ros_arguments])
+    node = Gate1Scorer(bundle, thresholds, arguments.started_monotonic)
+    wall_deadline = arguments.started_monotonic + thresholds['startup_wall_max_s'] + 15.0
+    try:
+        while rclpy.ok() and time.monotonic() < wall_deadline and not node.complete():
+            rclpy.spin_once(node, timeout_sec=0.05)
+            node.poll_services()
+        result = node.score()
+        Path(arguments.output).write_text(
+            json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + '\n',
+            encoding='utf-8')
+        print(json.dumps(result, sort_keys=True, allow_nan=False))
+        raise SystemExit(0 if result['status'] == 'PASS' else 1)
+    finally:
+        if rclpy.ok():
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

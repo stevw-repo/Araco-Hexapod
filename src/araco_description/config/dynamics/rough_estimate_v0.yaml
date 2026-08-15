@@ -1,0 +1,67 @@
+{
+  "schema_id": "araco://schemas/description/artifacts/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.description.rough-estimate",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_description",
+  "deployment_scope": "simulator_only",
+  "evidence": {"class": "simulator_estimate", "sources": ["tools/fusion/araco_rough_dynamics_v0.json", "docs/agent/ROBOT_DESCRIPTION_MANIFEST.md#rough_estimate_v0-simulation-dynamics"]},
+  "dependencies": [{"artifact_id": "araco.description.canonical-model", "artifact_version": "1.0.0"}],
+  "generated_from": {
+    "source_artifact_sha256": "70735f9c22e2fe74b247b6a7a990a6846b45205409a9b75e5f9783a18cb10763",
+    "mass_override_sha256": "4b8626fc2860befd4e240b495e9b2915706775d3dff759395524c94c2ccfd44d",
+    "offline_generator_sha256": "86ea8c9fa315aa7d2c12f7813bcb1ee228b8d2731452eea66c9e77fdd1e77273",
+    "method": "occurrence mass allocation plus documented primitive inertia and parallel-axis proxy aggregation"
+  },
+  "data": {
+    "kind": "dynamics",
+    "total_mass_kg": 3.924392774795984,
+    "rejected_fusion_all_steel_import_used": false,
+    "base_proxies": [
+      {"id": "pisugar_3_plus", "mass_kg": 0.15, "pose_xyz_m": [0.0, 0.0, 0.028], "box_size_m": [0.085, 0.057, 0.015], "include_in_base_inertia": true, "fidelity": "simulator_estimate"},
+      {"id": "main_servo_battery", "mass_kg": 0.4, "pose_xyz_m": [-0.035, 0.0, -0.005], "box_size_m": [0.15, 0.05, 0.035], "include_in_base_inertia": true, "fidelity": "simulator_estimate"},
+      {"id": "servo_controller", "mass_kg": 0.026, "pose_xyz_m": [0.035, 0.0, 0.015], "box_size_m": [0.063, 0.045, 0.015], "include_in_base_inertia": true, "fidelity": "simulator_estimate"}
+    ],
+    "base_aggregate_method": {
+      "represented_base_mass_kg": 0.7998755099579518,
+      "represented_base_pose_xyz_m": [0.0, 0.0, 0.005],
+      "represented_base_box_size_m": [0.22, 0.18, 0.07],
+      "method": "four-box mass-weighted center and parallel-axis inertia"
+    },
+    "links": {
+      "base_link": {"mass_kg": 1.3758755099579518, "center_of_mass_xyz_m": [-0.00951394214466398, 0.0, 0.00478922511673395], "inertia_kg_m2": {"ixx": 0.00278063525206982, "ixy": 0.0, "ixz": -0.000146340956778047, "iyy": 0.00496502709600677, "iyz": 0.0, "izz": 0.00676038626437656}, "fidelity": "simulator_estimate"},
+
+      "left_front_coxa_link": {"mass_kg": 0.18363522945811908, "center_of_mass_xyz_m": [0.0215, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000489693945221651, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000527798255334211, "iyz": 0.0, "izz": 0.0000527798255334211}, "fidelity": "simulator_estimate"},
+      "left_front_femur_link": {"mass_kg": 0.05207702884641618, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000781155432696243, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000663982117791806, "iyz": 0.0, "izz": 0.0000663982117791806}, "fidelity": "simulator_estimate"},
+      "left_front_tibia_link": {"mass_kg": 0.12, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000245, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00015625, "iyz": 0.0, "izz": 0.00015625}, "fidelity": "simulator_estimate"},
+      "left_front_foot_link": {"mass_kg": 0.022801873543924215, "center_of_mass_xyz_m": [0.025, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000342028103158863, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00000646053083744519, "iyz": 0.0, "izz": 0.00000646053083744519}, "fidelity": "simulator_estimate"},
+
+      "left_middle_coxa_link": {"mass_kg": 0.18363522945811908, "center_of_mass_xyz_m": [0.0215, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000489693945221651, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000527798255334211, "iyz": 0.0, "izz": 0.0000527798255334211}, "fidelity": "simulator_estimate"},
+      "left_middle_femur_link": {"mass_kg": 0.05207702884641618, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000781155432696243, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000663982117791806, "iyz": 0.0, "izz": 0.0000663982117791806}, "fidelity": "simulator_estimate"},
+      "left_middle_tibia_link": {"mass_kg": 0.12, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000245, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00015625, "iyz": 0.0, "izz": 0.00015625}, "fidelity": "simulator_estimate"},
+      "left_middle_foot_link": {"mass_kg": 0.022801873543924215, "center_of_mass_xyz_m": [0.025, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000342028103158863, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00000646053083744519, "iyz": 0.0, "izz": 0.00000646053083744519}, "fidelity": "simulator_estimate"},
+
+      "left_rear_coxa_link": {"mass_kg": 0.18363522945811908, "center_of_mass_xyz_m": [0.0215, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000489693945221651, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000527798255334211, "iyz": 0.0, "izz": 0.0000527798255334211}, "fidelity": "simulator_estimate"},
+      "left_rear_femur_link": {"mass_kg": 0.05207702884641618, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000781155432696243, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000663982117791806, "iyz": 0.0, "izz": 0.0000663982117791806}, "fidelity": "simulator_estimate"},
+      "left_rear_tibia_link": {"mass_kg": 0.12, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000245, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00015625, "iyz": 0.0, "izz": 0.00015625}, "fidelity": "simulator_estimate"},
+      "left_rear_foot_link": {"mass_kg": 0.022801873543924215, "center_of_mass_xyz_m": [0.025, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000342028103158863, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00000646053083744519, "iyz": 0.0, "izz": 0.00000646053083744519}, "fidelity": "simulator_estimate"},
+
+      "right_front_coxa_link": {"mass_kg": 0.18363522945811908, "center_of_mass_xyz_m": [0.0215, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000489693945221651, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000527798255334211, "iyz": 0.0, "izz": 0.0000527798255334211}, "fidelity": "simulator_estimate"},
+      "right_front_femur_link": {"mass_kg": 0.05207702884641618, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000781155432696243, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000663982117791806, "iyz": 0.0, "izz": 0.0000663982117791806}, "fidelity": "simulator_estimate"},
+      "right_front_tibia_link": {"mass_kg": 0.12, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000245, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00015625, "iyz": 0.0, "izz": 0.00015625}, "fidelity": "simulator_estimate"},
+      "right_front_foot_link": {"mass_kg": 0.022801873543924215, "center_of_mass_xyz_m": [0.025, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000342028103158863, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00000646053083744519, "iyz": 0.0, "izz": 0.00000646053083744519}, "fidelity": "simulator_estimate"},
+
+      "right_middle_coxa_link": {"mass_kg": 0.18363522945811908, "center_of_mass_xyz_m": [0.0215, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000489693945221651, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000527798255334211, "iyz": 0.0, "izz": 0.0000527798255334211}, "fidelity": "simulator_estimate"},
+      "right_middle_femur_link": {"mass_kg": 0.05207702884641618, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000781155432696243, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000663982117791806, "iyz": 0.0, "izz": 0.0000663982117791806}, "fidelity": "simulator_estimate"},
+      "right_middle_tibia_link": {"mass_kg": 0.12, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000245, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00015625, "iyz": 0.0, "izz": 0.00015625}, "fidelity": "simulator_estimate"},
+      "right_middle_foot_link": {"mass_kg": 0.022801873543924215, "center_of_mass_xyz_m": [0.025, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000342028103158863, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00000646053083744519, "iyz": 0.0, "izz": 0.00000646053083744519}, "fidelity": "simulator_estimate"},
+
+      "right_rear_coxa_link": {"mass_kg": 0.18363522945811908, "center_of_mass_xyz_m": [0.0215, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000489693945221651, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000527798255334211, "iyz": 0.0, "izz": 0.0000527798255334211}, "fidelity": "simulator_estimate"},
+      "right_rear_femur_link": {"mass_kg": 0.05207702884641618, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000781155432696243, "ixy": 0.0, "ixz": 0.0, "iyy": 0.0000663982117791806, "iyz": 0.0, "izz": 0.0000663982117791806}, "fidelity": "simulator_estimate"},
+      "right_rear_tibia_link": {"mass_kg": 0.12, "center_of_mass_xyz_m": [0.06, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.0000245, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00015625, "iyz": 0.0, "izz": 0.00015625}, "fidelity": "simulator_estimate"},
+      "right_rear_foot_link": {"mass_kg": 0.022801873543924215, "center_of_mass_xyz_m": [0.025, 0.0, 0.0], "inertia_kg_m2": {"ixx": 0.00000342028103158863, "ixy": 0.0, "ixz": 0.0, "iyy": 0.00000646053083744519, "iyz": 0.0, "izz": 0.00000646053083744519}, "fidelity": "simulator_estimate"},
+
+      "gimbal_yaw_link": {"mass_kg": 0.27743247374727487, "center_of_mass_xyz_m": [0.0, 0.0, 0.03], "inertia_kg_m2": {"ixx": 0.0000566424633900687, "ixy": 0.0, "ixz": 0.0, "iyy": 0.000308065642723537, "iyz": 0.0, "izz": 0.000308065642723537}, "fidelity": "simulator_estimate"}
+    }
+  }
+}

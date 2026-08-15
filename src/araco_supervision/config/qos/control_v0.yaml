@@ -1,0 +1,68 @@
+{
+  "schema_id": "araco://schemas/supervision/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.supervision.qos",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_supervision",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [],
+  "data": {
+    "kind": "qos",
+    "profiles": {
+      "candidate_latest": {
+        "history": "keep_last",
+        "depth": 1,
+        "reliability": "best_effort",
+        "durability": "volatile"
+      },
+      "trusted_command_latest": {
+        "history": "keep_last",
+        "depth": 1,
+        "reliability": "reliable",
+        "durability": "volatile"
+      },
+      "controller_command": {
+        "history": "keep_last",
+        "depth": 1,
+        "reliability": "reliable",
+        "durability": "volatile"
+      },
+      "operational_status": {
+        "history": "keep_last",
+        "depth": 1,
+        "reliability": "reliable",
+        "durability": "volatile"
+      },
+      "latched_classification": {
+        "history": "keep_last",
+        "depth": 1,
+        "reliability": "reliable",
+        "durability": "transient_local"
+      },
+      "state_sample": {
+        "history": "keep_last",
+        "depth": 5,
+        "reliability": "best_effort",
+        "durability": "volatile"
+      },
+      "debug_latest": {
+        "history": "keep_last",
+        "depth": 1,
+        "reliability": "best_effort",
+        "durability": "volatile"
+      },
+      "diagnostics": {
+        "history": "keep_last",
+        "depth": 10,
+        "reliability": "reliable",
+        "durability": "volatile"
+      }
+    }
+  }
+}

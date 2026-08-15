@@ -1,0 +1,98 @@
+{
+  "schema_id": "araco://schemas/gazebo/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.gazebo.bridge",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_gazebo",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/INTERFACE_CONTRACTS.md"
+    ]
+  },
+  "dependencies": [],
+  "data": {
+    "kind": "bridge",
+    "endpoints": [
+      {
+        "ros_topic": "/clock",
+        "gz_topic": "/clock",
+        "ros_type": "rosgraph_msgs/msg/Clock",
+        "gz_type": "gz.msgs.Clock",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/contact_sensor/left_front",
+        "gz_topic": "/araco/contact_sensor/left_front",
+        "ros_type": "ros_gz_interfaces/msg/Contacts",
+        "gz_type": "gz.msgs.Contacts",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/contact_sensor/left_middle",
+        "gz_topic": "/araco/contact_sensor/left_middle",
+        "ros_type": "ros_gz_interfaces/msg/Contacts",
+        "gz_type": "gz.msgs.Contacts",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/contact_sensor/left_rear",
+        "gz_topic": "/araco/contact_sensor/left_rear",
+        "ros_type": "ros_gz_interfaces/msg/Contacts",
+        "gz_type": "gz.msgs.Contacts",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/contact_sensor/right_front",
+        "gz_topic": "/araco/contact_sensor/right_front",
+        "ros_type": "ros_gz_interfaces/msg/Contacts",
+        "gz_type": "gz.msgs.Contacts",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/contact_sensor/right_middle",
+        "gz_topic": "/araco/contact_sensor/right_middle",
+        "ros_type": "ros_gz_interfaces/msg/Contacts",
+        "gz_type": "gz.msgs.Contacts",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/contact_sensor/right_rear",
+        "gz_topic": "/araco/contact_sensor/right_rear",
+        "ros_type": "ros_gz_interfaces/msg/Contacts",
+        "gz_type": "gz.msgs.Contacts",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/contact_sensor/nonfoot",
+        "gz_topic": "/araco/contact_sensor/nonfoot",
+        "ros_type": "ros_gz_interfaces/msg/Contacts",
+        "gz_type": "gz.msgs.Contacts",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/simulation/ground_truth/odom",
+        "gz_topic": "/araco/simulation/ground_truth/odom",
+        "ros_type": "nav_msgs/msg/Odometry",
+        "gz_type": "gz.msgs.Odometry",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "camera/color/image_raw",
+        "gz_topic": "/araco/camera/color/image",
+        "ros_type": "sensor_msgs/msg/Image",
+        "gz_type": "gz.msgs.Image",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "camera/depth/image_raw",
+        "gz_topic": "/araco/camera/depth/image",
+        "ros_type": "sensor_msgs/msg/Image",
+        "gz_type": "gz.msgs.Image",
+        "direction": "GZ_TO_ROS"
+      }
+    ],
+    "ground_truth_namespace": "test_only/ground_truth"
+  }
+}

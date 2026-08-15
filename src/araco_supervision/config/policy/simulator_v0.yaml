@@ -1,0 +1,48 @@
+{
+  "schema_id": "araco://schemas/supervision/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.supervision.safety-policy",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_supervision",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/SAFETY_ARCHITECTURE.md",
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.supervision.source-registry",
+      "artifact_version": "0.1.0"
+    }
+  ],
+  "data": {
+    "kind": "safety_policy",
+    "startup_state": "BOOTSTRAP",
+    "motion_requires_explicit_enable": true,
+    "resume_after_time_discontinuity": false,
+    "stop_policy": "controlled_then_hold",
+    "watchdogs_s": {
+      "selected_command": 0.05,
+      "safe_command": 0.05,
+      "joint_state": 0.1,
+      "locomotion_status": 0.1,
+      "controller_state": 0.1,
+      "provenance": 1.5,
+      "clock_progress": 0.25
+    },
+    "maximum_detection_s": {
+      "selected_command": 0.06,
+      "safe_command": 0.06,
+      "joint_state": 0.11,
+      "locomotion_status": 0.11,
+      "controller_state": 0.11,
+      "provenance": 1.51,
+      "clock_progress": 0.26
+    },
+    "fault_reset_requires_readiness": true,
+    "partial_command_policy": "reject"
+  }
+}

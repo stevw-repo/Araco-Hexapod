@@ -1,0 +1,30 @@
+{
+  "schema_id": "araco://schemas/kinematics/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.kinematics.ik",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_kinematics",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.description.canonical-model",
+      "artifact_version": "1.0.0"
+    }
+  ],
+  "data": {
+    "kind": "ik_solver",
+    "algorithm": "damped-least-squares",
+    "position_tolerance_m": 0.0001,
+    "maximum_iterations": 40,
+    "damping": 0.001,
+    "singularity_threshold": 0.0001,
+    "reachability_margin_m": 0.005,
+    "failure_policy": "reject_complete_transaction"
+  }
+}

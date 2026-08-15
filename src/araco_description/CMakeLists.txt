@@ -36,6 +36,10 @@ if(BUILD_TESTING)
     test_package_metadata
     test/test_package_metadata.py
   )
+  ament_add_pytest_test(
+    test_gate0_description
+    test/test_gate0_description.py
+  )
 endif()
 
 ament_package()

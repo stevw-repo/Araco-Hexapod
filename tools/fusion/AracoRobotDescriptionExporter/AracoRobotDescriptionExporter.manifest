@@ -3,7 +3,7 @@
   "type": "script",
   "author": "Araco project",
   "description": {
-    "": "Read-only export of assembly joints, occurrence transforms, materials, and physical properties for the Araco robot description."
+    "": "Fail-closed export of whitelisted open-source mechanical, tibia, servo, and Gemini 335 exterior visual meshes plus assembly inventory and provenance for the Araco robot description."
   },
   "supportedOS": "windows|mac",
   "editEnabled": true

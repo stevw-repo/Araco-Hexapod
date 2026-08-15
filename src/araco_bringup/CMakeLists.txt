@@ -5,8 +5,19 @@ cmake_minimum_required(VERSION 3.16)
 project(araco_bringup)
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
+
+ament_python_install_package(araco_bringup)
 
 install(FILES LICENSE DESTINATION "share/${PROJECT_NAME}")
+
+install(
+  PROGRAMS
+    scripts/araco_config_compose
+    scripts/lifecycle_transition
+    scripts/wait_for_holding
+  DESTINATION "lib/${PROJECT_NAME}"
+)
 
 set(package_resource_directories
   config
@@ -33,6 +44,10 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_package_metadata
     test/test_package_metadata.py
+  )
+  ament_add_pytest_test(
+    test_strict_yaml
+    test/test_strict_yaml.py
   )
 endif()
 

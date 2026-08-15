@@ -1,0 +1,242 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Run Gate 1 headlessly and atomically preserve complete pass/fail evidence."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import platform
+import shutil
+import signal
+import subprocess
+import tempfile
+import time
+import xml.etree.ElementTree as ET
+
+from ament_index_python.packages import get_package_share_directory
+
+
+def _write_json(path, value):
+    path.write_text(
+        json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + '\n',
+        encoding='utf-8')
+
+
+def _run(command, environment, output, timeout=10):
+    started = time.monotonic()
+    try:
+        completed = subprocess.run(
+            command, env=environment, text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, timeout=timeout, check=False)
+        outcome = {
+            'command': command,
+            'return_code': completed.returncode,
+            'wall_s': time.monotonic() - started,
+            'timed_out': False,
+        }
+        text = completed.stdout
+    except subprocess.TimeoutExpired as error:
+        outcome = {
+            'command': command,
+            'return_code': None,
+            'wall_s': time.monotonic() - started,
+            'timed_out': True,
+        }
+        chunks = (error.stdout or b'', error.stderr or b'')
+        text = ''.join(
+            item.decode('utf-8', errors='replace') if isinstance(item, bytes) else item
+            for item in chunks)
+    output.write_text(text, encoding='utf-8')
+    return outcome, text
+
+
+def _junit(path, checks, message):
+    suite = ET.Element('testsuite', {
+        'name': 'araco_gate1',
+        'tests': str(len(checks)),
+        'failures': str(sum(not value for value in checks.values())),
+        'errors': '0',
+    })
+    for name, passed in checks.items():
+        case = ET.SubElement(suite, 'testcase', {
+            'classname': 'araco_system_tests.gate1', 'name': name})
+        if not passed:
+            failure = ET.SubElement(case, 'failure', {'message': message})
+            failure.text = message
+    ET.ElementTree(suite).write(path, encoding='unicode', xml_declaration=True)
+
+
+def _environment(command_environment):
+    packages = (
+        'ros-jazzy-ros-base', 'ros-jazzy-ros-gz', 'ros-jazzy-gz-ros2-control',
+        'ros-jazzy-ros2-control', 'ros-jazzy-ros2-controllers',
+    )
+    versions = subprocess.run(
+        ['dpkg-query', '-W', '-f=${Package}=${Version}\\n', *packages],
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        check=False).stdout.splitlines()
+    revision = subprocess.run(
+        ['git', 'rev-parse', 'HEAD'], text=True, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, check=False).stdout.strip()
+    dirty = subprocess.run(
+        ['git', 'status', '--short'], text=True, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, check=False).stdout.splitlines()
+    return {
+        'captured_wall_time': time.strftime('%Y-%m-%dT%H:%M:%S%z'),
+        'platform': platform.platform(),
+        'python': platform.python_version(),
+        'ros_distro': command_environment.get('ROS_DISTRO'),
+        'ros_domain_id': command_environment['ROS_DOMAIN_ID'],
+        'gz_partition': command_environment['GZ_PARTITION'],
+        'package_versions': versions,
+        'git_revision': revision,
+        'worktree_changes': dirty,
+    }
+
+
+def main():
+    """Execute one immutable Gate 1 evidence run."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('output_directory')
+    parser.add_argument('--profile', default='gazebo_ci_v0', choices=['gazebo_ci_v0'])
+    parser.add_argument('--domain-id', type=int)
+    arguments = parser.parse_args()
+    destination = Path(arguments.output_directory).expanduser().resolve()
+    if destination.exists():
+        parser.error(f'output directory already exists: {destination}')
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(
+        prefix=f'.{destination.name}.tmp.', dir=destination.parent))
+    logs = stage / 'logs'
+    logs.mkdir()
+    (stage / 'ros_logs').mkdir()
+    bundle = stage / 'effective_config'
+    metrics_path = stage / 'metrics.json'
+    threshold_source = (
+        Path(get_package_share_directory('araco_system_tests')) /
+        'config/thresholds/gazebo_baseline_v0.yaml')
+    shutil.copyfile(threshold_source, stage / 'thresholds.json')
+    environment = os.environ.copy()
+    environment['ROS_DOMAIN_ID'] = str(
+        arguments.domain_id if arguments.domain_id is not None else 100 + os.getpid() % 100)
+    environment['GZ_PARTITION'] = f'araco_gate1_{os.getpid()}_{int(time.time())}'
+    environment['ROS_LOG_DIR'] = str(stage / 'ros_logs')
+    started = time.monotonic()
+    launch_command = [
+        'ros2', 'launch', 'araco_bringup', 'gazebo.launch.py',
+        f'profile:={arguments.profile}', f'runtime_bundle:={bundle}',
+    ]
+    outcomes = {}
+    errors = []
+    launch = None
+    launch_stream = (logs / 'launch.log').open('w', encoding='utf-8')
+    try:
+        launch = subprocess.Popen(
+            launch_command, env=environment, text=True, stdout=launch_stream,
+            stderr=subprocess.STDOUT, start_new_session=True)
+        deadline = time.monotonic() + 15.0
+        while (time.monotonic() < deadline and
+               not (bundle / 'manifest.json').is_file() and launch.poll() is None):
+            time.sleep(0.05)
+        if not (bundle / 'manifest.json').is_file():
+            errors.append('runtime bundle was not emitted before launch exit/timeout')
+            score = {'status': 'FAIL', 'checks': {}, 'metrics': {}}
+            outcomes['scorer'] = {'return_code': None, 'not_started': True}
+        else:
+            scorer_command = [
+                'ros2', 'run', 'araco_system_tests', 'araco_gate1_score',
+                '--bundle', str(bundle), '--thresholds', str(threshold_source),
+                '--output', str(metrics_path), '--started-monotonic', str(started),
+            ]
+            outcomes['scorer'], _ = _run(
+                scorer_command, environment, logs / 'scorer.log', timeout=50)
+            if metrics_path.is_file():
+                score = json.loads(metrics_path.read_text(encoding='utf-8'))
+            else:
+                score = {'status': 'FAIL', 'checks': {}, 'metrics': {}}
+                errors.append('scorer did not emit metrics.json')
+
+        shutdown_command = [
+            'ros2', 'action', 'send_goal', '/araco/safety/transition',
+            'araco_interfaces/action/SafetyTransition', '{request: 4}',
+        ]
+        outcomes['safety_shutdown'], shutdown_text = _run(
+            shutdown_command, environment, logs / 'safety_shutdown.log', timeout=10)
+        shutdown_valid = (
+            outcomes['safety_shutdown']['return_code'] == 0 and
+            'accepted: true' in shutdown_text and 'final_state: 7' in shutdown_text)
+        if not shutdown_valid:
+            errors.append('orderly SafetyTransition shutdown was not accepted')
+        gazebo_command = [
+            'gz', 'service', '-s', '/server_control',
+            '--reqtype', 'gz.msgs.ServerControl', '--reptype', 'gz.msgs.Boolean',
+            '--timeout', '3000', '--req', 'stop: true',
+        ]
+        outcomes['gazebo_stop'], _ = _run(
+            gazebo_command, environment, logs / 'gazebo_stop.log', timeout=5)
+    except Exception as error:  # preserve unexpected harness failures as evidence
+        errors.append(f'evidence runner exception: {type(error).__name__}: {error}')
+        score = {'status': 'FAIL', 'checks': {}, 'metrics': {}}
+        shutdown_valid = False
+    finally:
+        if launch is not None:
+            try:
+                launch.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(launch.pid, signal.SIGINT)
+                try:
+                    launch.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    os.killpg(launch.pid, signal.SIGTERM)
+                    launch.wait(timeout=5)
+            outcomes['launch'] = {
+                'command': launch_command,
+                'return_code': launch.returncode,
+                'wall_s': time.monotonic() - started,
+            }
+        launch_stream.close()
+
+    launch_text = (logs / 'launch.log').read_text(encoding='utf-8')
+    forbidden_log_tokens = ('Traceback (most recent call last)', 'process has died', '[ERROR]')
+    log_clean = not any(token in launch_text for token in forbidden_log_tokens)
+    if not log_clean:
+        errors.append('launch log contains a traceback, process death, or ERROR record')
+    launch_valid = outcomes.get('launch', {}).get('return_code') == 0
+    if not launch_valid:
+        errors.append('launch did not exit cleanly')
+    checks = {
+        'gate1_score': score.get('status') == 'PASS',
+        'orderly_safety_shutdown': shutdown_valid,
+        'gazebo_stop_request': outcomes.get('gazebo_stop', {}).get('return_code') == 0,
+        'launch_exit': launch_valid,
+        'launch_log_clean': log_clean,
+    }
+    status = 'PASS' if all(checks.values()) else 'FAIL'
+    manifest = (
+        json.loads((bundle / 'manifest.json').read_text(encoding='utf-8'))
+        if (bundle / 'manifest.json').is_file() else {})
+    _write_json(stage / 'environment.json', _environment(environment))
+    _write_json(stage / 'process_outcomes.json', outcomes)
+    _write_json(stage / 'validation_report.json', {
+        'status': status, 'checks': checks, 'errors': errors})
+    _write_json(stage / 'gate_result.json', {
+        'gate': 1,
+        'status': status,
+        'profile': arguments.profile,
+        'run_fingerprint': manifest.get('run_fingerprint'),
+        'behavior_fingerprint': manifest.get('behavior_fingerprint'),
+        'metrics': score.get('metrics', {}),
+    })
+    _junit(stage / 'junit.xml', checks, '; '.join(errors) or 'Gate 1 check failed')
+    os.replace(stage, destination)
+    print(f'Gate 1 {status}: {destination}')
+    raise SystemExit(0 if status == 'PASS' else 1)
+
+
+if __name__ == '__main__':
+    main()

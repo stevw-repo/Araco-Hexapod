@@ -5,8 +5,19 @@ cmake_minimum_required(VERSION 3.16)
 project(araco_system_tests)
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
+
+ament_python_install_package(araco_system_tests)
 
 install(FILES LICENSE DESTINATION "share/${PROJECT_NAME}")
+
+install(
+  PROGRAMS
+    scripts/araco_gate0_evidence
+    scripts/araco_gate1_evidence
+    scripts/araco_gate1_score
+  DESTINATION "lib/${PROJECT_NAME}"
+)
 
 set(package_resource_directories
   config
@@ -37,6 +48,20 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_project_dependency_graph
     test/test_project_dependency_graph.py
+  )
+  ament_add_pytest_test(
+    test_gate0_bundle
+    test/test_gate0_bundle.py
+    TIMEOUT 60
+  )
+  ament_add_pytest_test(
+    test_gate1_scoring
+    test/test_gate1_scoring.py
+  )
+  ament_add_pytest_test(
+    test_gate1_preflight
+    test/test_gate1_preflight.py
+    TIMEOUT 60
   )
 endif()
 

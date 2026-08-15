@@ -646,7 +646,7 @@ The user's 2026-08-15 approval freezes:
 - regression invalidation and durable handoff requirements;
 - Gate 6 as the boundary that unlocks later simulator phases but not hardware.
 
-Approval of this plan did not itself authorize Phase 0. The user subsequently
-authorized the exact scope in `FINAL_ARCHITECTURE_REVIEW.md`, and Phase 0 was
-completed on 2026-08-16. No Gazebo gate is claimed. Phase 1 still requires its
-own authorization.
+Approval of this plan did not itself authorize implementation. The user
+subsequently authorized and completed Phase 0, then separately authorized
+Phase 1 / static Gate 0 and Phase 2 / live Gate 1, both of which passed on
+2026-08-16. Phase 3 / Gate 2 still requires its own authorization.

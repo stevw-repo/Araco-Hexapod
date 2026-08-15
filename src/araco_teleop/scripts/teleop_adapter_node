@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Lifecycle keyboard adapter that always starts and releases inactive."""
+
+from __future__ import annotations
+
+import json
+import select
+import sys
+import termios
+import tty
+
+from araco_interfaces.msg import CommandCandidate
+from araco_teleop.keyboard import KeyboardState
+from araco_teleop.teleop_adapter_parameters import teleop_adapter
+import rclpy
+from rclpy.lifecycle import LifecycleNode
+from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.qos import QoSProfile, ReliabilityPolicy
+from std_msgs.msg import String
+
+
+class TeleopAdapter(LifecycleNode):
+    """Translate keyboard events into deadman-gated command candidates."""
+
+    def __init__(self) -> None:
+        super().__init__('teleop_adapter', namespace='araco')
+        self._listener = None
+        self._params = None
+        self._publisher = None
+        self._timer = None
+        self._state = None
+        self._sequence = 0
+        self._terminal_settings = None
+        self._key_subscription = None
+
+    def on_configure(self, _state):
+        try:
+            self._listener = teleop_adapter.ParamListener(self)
+            self._params = self._listener.get_params()
+            with open(self._params.mapping_path, encoding='utf-8') as stream:
+                document = json.load(stream)
+            mapping = document['data']
+            if mapping['source_id'] != 10 or mapping['frame_id'] != 'base_link':
+                raise ValueError('unexpected keyboard source authority or frame')
+            self._state = KeyboardState(mapping['keys'])
+            qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT)
+            self._publisher = self.create_lifecycle_publisher(
+                CommandCandidate, 'command/candidates/teleop', qos)
+            self._key_subscription = self.create_subscription(
+                String, 'teleop/key', lambda message: self._state.accept(message.data), 10)
+        except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+            self.get_logger().error(f'keyboard mapping validation failed: {error}')
+            return TransitionCallbackReturn.FAILURE
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state):
+        result = super().on_activate(state)
+        if result != TransitionCallbackReturn.SUCCESS:
+            return result
+        if sys.stdin.isatty():
+            self._terminal_settings = termios.tcgetattr(sys.stdin)
+            tty.setcbreak(sys.stdin.fileno())
+        self._timer = self.create_timer(1.0 / self._params.loop_rate_hz, self._tick)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_deactivate(self, state):
+        if self._timer is not None:
+            self.destroy_timer(self._timer)
+            self._timer = None
+        self._restore_terminal()
+        return super().on_deactivate(state)
+
+    def _restore_terminal(self) -> None:
+        if self._terminal_settings is not None:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self._terminal_settings)
+            self._terminal_settings = None
+
+    def _tick(self) -> None:
+        if sys.stdin.isatty():
+            while select.select([sys.stdin], [], [], 0.0)[0]:
+                self._state.accept(sys.stdin.read(1))
+        intent = self._state.sample()
+        output = CommandCandidate()
+        output.header.stamp = self.get_clock().now().to_msg()
+        output.header.frame_id = 'base_link'
+        self._sequence += 1
+        output.sequence = self._sequence
+        output.active = intent.active
+        output.intent.gait = output.intent.GAIT_STAND
+        output.intent.planar_velocity.linear.x = intent.vx
+        output.intent.planar_velocity.linear.y = intent.vy
+        output.intent.planar_velocity.angular.z = intent.wz
+        output.intent.body_pose_offset.orientation.w = 1.0
+        self._publisher.publish(output)
+
+    def destroy_node(self):
+        self._restore_terminal()
+        return super().destroy_node()
+
+
+def main() -> None:
+    rclpy.init()
+    node = TeleopAdapter()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if rclpy.ok():
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

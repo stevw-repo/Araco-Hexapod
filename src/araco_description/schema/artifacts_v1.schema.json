@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "araco://schemas/description/artifacts/v1",
+  "$defs": {
+    "vec3": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}, {"type": "number"}], "items": false},
+    "vec4": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}, {"type": "number"}, {"type": "number"}], "items": false},
+    "inertia": {
+      "type": "object",
+      "required": ["ixx", "ixy", "ixz", "iyy", "iyz", "izz"],
+      "properties": {"ixx": {"type": "number"}, "ixy": {"type": "number"}, "ixz": {"type": "number"}, "iyy": {"type": "number"}, "iyz": {"type": "number"}, "izz": {"type": "number"}},
+      "additionalProperties": false
+    },
+    "limit": {
+      "type": "object",
+      "required": ["lower_rad", "upper_rad", "velocity_rad_s", "effort_nm", "damping_nms_rad", "friction_nm"],
+      "properties": {"lower_rad": {"type": "number"}, "upper_rad": {"type": "number"}, "velocity_rad_s": {"type": "number", "exclusiveMinimum": 0}, "effort_nm": {"type": "number", "exclusiveMinimum": 0}, "damping_nms_rad": {"type": "number", "minimum": 0}, "friction_nm": {"type": "number", "minimum": 0}},
+      "additionalProperties": false
+    },
+    "linkDynamics": {
+      "type": "object",
+      "required": ["mass_kg", "center_of_mass_xyz_m", "inertia_kg_m2", "fidelity"],
+      "properties": {"mass_kg": {"type": "number", "exclusiveMinimum": 0}, "center_of_mass_xyz_m": {"$ref": "#/$defs/vec3"}, "inertia_kg_m2": {"$ref": "#/$defs/inertia"}, "fidelity": {"const": "simulator_estimate"}},
+      "additionalProperties": false
+    },
+    "servoVisual": {
+      "type": "object",
+      "required": ["body_size_m", "horn_radius_m", "horn_length_m"],
+      "properties": {
+        "body_size_m": {"$ref": "#/$defs/vec3"},
+        "horn_radius_m": {"type": "number", "exclusiveMinimum": 0},
+        "horn_length_m": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "auxiliaryVisual": {
+      "type": "object",
+      "required": ["role", "mesh_uri"],
+      "properties": {
+        "role": {"enum": ["servo_case", "servo_horn"]},
+        "mesh_uri": {"type": "string", "pattern": "^package://"}
+      },
+      "additionalProperties": false
+    },
+    "fixedFrameVisual": {
+      "type": "object",
+      "required": ["role", "mesh_uri"],
+      "properties": {
+        "role": {"enum": ["camera_body", "camera_hardware", "camera_optics"]},
+        "mesh_uri": {"type": "string", "pattern": "^package://"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["kind", "model_name", "root_link", "primary_link_order", "links", "geometry_classes", "visual_policy", "joints", "fixed_frames", "frame_conversion"],
+      "properties": {
+        "kind": {"const": "canonical_model"}, "model_name": {"const": "araco"}, "root_link": {"const": "base_link"},
+        "primary_link_order": {"type": "array", "items": {"type": "string"}, "minItems": 26, "maxItems": 26},
+        "links": {"type": "array", "items": {"type": "object", "required": ["name", "role", "geometry_class"], "properties": {"name": {"type": "string"}, "role": {"enum": ["base", "leg", "foot", "gimbal"]}, "geometry_class": {"enum": ["base", "coxa", "femur", "tibia", "foot", "gimbal"]}, "visual_mesh_uri": {"type": "string", "pattern": "^package://"}, "auxiliary_visuals": {"type": "array", "items": {"$ref": "#/$defs/auxiliaryVisual"}, "minItems": 1, "maxItems": 2, "uniqueItems": true}}, "additionalProperties": false}},
+        "geometry_classes": {"type": "object", "patternProperties": {"^[a-z]+$": {"type": "object", "required": ["visual_mesh_uri", "collision_origin_xyz_m", "collision_size_m"], "properties": {"visual_mesh_uri": {"type": "string", "pattern": "^package://"}, "visual_boxes": {"type": "array", "items": {"type": "object", "required": ["center_xyz_m", "size_m"], "properties": {"center_xyz_m": {"$ref": "#/$defs/vec3"}, "size_m": {"$ref": "#/$defs/vec3"}}, "additionalProperties": false}, "minItems": 1}, "collision_origin_xyz_m": {"$ref": "#/$defs/vec3"}, "collision_size_m": {"$ref": "#/$defs/vec3"}}, "additionalProperties": false}}, "additionalProperties": false},
+        "visual_policy": {"type": "object", "required": ["fidelity", "primary_material_rgba", "servo_case_material_rgba", "servo_horn_material_rgba", "camera_body_material_rgba", "camera_hardware_material_rgba", "camera_optics_material_rgba", "exact_mesh_inventory"], "properties": {"fidelity": {"const": "fusion_exact_presentation"}, "primary_material_rgba": {"$ref": "#/$defs/vec4"}, "servo_case_material_rgba": {"$ref": "#/$defs/vec4"}, "servo_horn_material_rgba": {"$ref": "#/$defs/vec4"}, "camera_body_material_rgba": {"$ref": "#/$defs/vec4"}, "camera_hardware_material_rgba": {"$ref": "#/$defs/vec4"}, "camera_optics_material_rgba": {"$ref": "#/$defs/vec4"}, "exact_mesh_inventory": {"type": "object", "required": ["source_manifest_uri", "reviewed_source_bodies", "servo_models", "tibia_components", "gemini_335_exterior", "retained_visual_proxies", "alignment_policy"], "properties": {"source_manifest_uri": {"type": "string", "pattern": "^package://"}, "reviewed_source_bodies": {"const": 77}, "servo_models": {"type": "object", "required": ["DS3235", "DS5160"], "properties": {"DS3235": {"const": 19}, "DS5160": {"const": 6}}, "additionalProperties": false}, "tibia_components": {"const": 6}, "gemini_335_exterior": {"type": "object", "required": ["housing_and_bracket_bodies", "hardware_bodies", "optical_bodies", "internal_bodies_included"], "properties": {"housing_and_bracket_bodies": {"const": 5}, "hardware_bodies": {"const": 6}, "optical_bodies": {"const": 4}, "internal_bodies_included": {"const": 0}}, "additionalProperties": false}, "retained_visual_proxies": {"const": 0}, "alignment_policy": {"const": "preserve_fusion_occurrence_no_force_alignment"}}, "additionalProperties": false}}, "additionalProperties": false},
+        "joints": {"type": "array", "items": {"type": "object", "required": ["name", "parent", "child", "type", "origin_xyz_m", "origin_rpy_rad", "axis", "roles", "leg", "segment"], "properties": {"name": {"type": "string"}, "parent": {"type": "string"}, "child": {"type": "string"}, "type": {"const": "revolute"}, "origin_xyz_m": {"$ref": "#/$defs/vec3"}, "origin_rpy_rad": {"$ref": "#/$defs/vec3"}, "axis": {"$ref": "#/$defs/vec3"}, "roles": {"type": "array", "items": {"enum": ["leg_command", "gimbal_command", "state"]}, "minItems": 2, "uniqueItems": true}, "leg": {"type": "string"}, "segment": {"type": "string"}}, "additionalProperties": false}},
+        "fixed_frames": {"type": "array", "items": {"type": "object", "required": ["name", "parent", "child", "origin_xyz_m", "origin_rpy_rad", "fidelity"], "properties": {"name": {"type": "string"}, "parent": {"type": "string"}, "child": {"type": "string"}, "origin_xyz_m": {"$ref": "#/$defs/vec3"}, "origin_rpy_rad": {"$ref": "#/$defs/vec3"}, "fidelity": {"const": "simulator_estimate"}, "visuals": {"type": "array", "items": {"$ref": "#/$defs/fixedFrameVisual"}, "minItems": 3, "maxItems": 3, "uniqueItems": true}}, "additionalProperties": false}},
+        "frame_conversion": {"type": "object", "required": ["fusion_to_ros_rotation", "base_datum_fusion_m", "convention"], "properties": {"fusion_to_ros_rotation": {"type": "array", "items": {"$ref": "#/$defs/vec3"}, "minItems": 3, "maxItems": 3}, "base_datum_fusion_m": {"$ref": "#/$defs/vec3"}, "convention": {"const": "REP-103"}}, "additionalProperties": false}
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["kind", "classes", "assignments", "physical_profile_eligible"],
+      "properties": {"kind": {"const": "joint_limits"}, "classes": {"type": "object", "properties": {"coxa": {"$ref": "#/$defs/limit"}, "femur": {"$ref": "#/$defs/limit"}, "tibia": {"$ref": "#/$defs/limit"}, "foot": {"$ref": "#/$defs/limit"}, "gimbal": {"$ref": "#/$defs/limit"}}, "required": ["coxa", "femur", "tibia", "foot", "gimbal"], "additionalProperties": false}, "assignments": {"type": "object", "patternProperties": {"^[a-z0-9_]+_joint$": {"enum": ["coxa", "femur", "tibia", "foot", "gimbal"]}}, "additionalProperties": false}, "physical_profile_eligible": {"const": false}},
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["kind", "base_pose", "joint_positions_rad", "hardware_startup_authorized"],
+      "properties": {"kind": {"const": "nominal_pose"}, "base_pose": {"type": "object", "required": ["frame", "position_xyz_m", "orientation_xyzw"], "properties": {"frame": {"const": "base_link"}, "position_xyz_m": {"$ref": "#/$defs/vec3"}, "orientation_xyzw": {"$ref": "#/$defs/vec4"}}, "additionalProperties": false}, "joint_positions_rad": {"type": "object", "patternProperties": {"^[a-z0-9_]+_joint$": {"type": "number"}}, "additionalProperties": false}, "hardware_startup_authorized": {"const": false}},
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["kind", "total_mass_kg", "rejected_fusion_all_steel_import_used", "base_proxies", "base_aggregate_method", "links"],
+      "properties": {
+        "kind": {"const": "dynamics"}, "total_mass_kg": {"type": "number", "exclusiveMinimum": 0}, "rejected_fusion_all_steel_import_used": {"const": false},
+        "base_proxies": {"type": "array", "items": {"type": "object", "required": ["id", "mass_kg", "pose_xyz_m", "box_size_m", "include_in_base_inertia", "fidelity"], "properties": {"id": {"type": "string"}, "mass_kg": {"type": "number", "exclusiveMinimum": 0}, "pose_xyz_m": {"$ref": "#/$defs/vec3"}, "box_size_m": {"$ref": "#/$defs/vec3"}, "include_in_base_inertia": {"const": true}, "fidelity": {"const": "simulator_estimate"}}, "additionalProperties": false}, "minItems": 3, "maxItems": 3},
+        "base_aggregate_method": {"type": "object", "required": ["represented_base_mass_kg", "represented_base_pose_xyz_m", "represented_base_box_size_m", "method"], "properties": {"represented_base_mass_kg": {"type": "number", "exclusiveMinimum": 0}, "represented_base_pose_xyz_m": {"$ref": "#/$defs/vec3"}, "represented_base_box_size_m": {"$ref": "#/$defs/vec3"}, "method": {"type": "string"}}, "additionalProperties": false},
+        "links": {"type": "object", "patternProperties": {"^[a-z0-9_]+_link$": {"$ref": "#/$defs/linkDynamics"}}, "additionalProperties": false}
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["kind", "resources"],
+      "properties": {"kind": {"const": "resources"}, "resources": {"type": "array", "items": {"type": "object", "required": ["id", "uri", "sha256", "media_type", "creator", "source", "license", "attribution", "modified", "redistribution", "generated", "preferred_editable_source_uri", "generator_uri"], "properties": {"id": {"type": "string"}, "uri": {"type": "string", "pattern": "^package://"}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "media_type": {"type": "string"}, "creator": {"type": "string"}, "source": {"type": "string"}, "license": {"type": "string"}, "attribution": {"type": "string"}, "modified": {"type": "boolean"}, "redistribution": {"const": "allowed"}, "generated": {"type": "boolean"}, "preferred_editable_source_uri": {"type": "string", "pattern": "^package://"}, "generator_uri": {"type": "string", "pattern": "^package://"}}, "additionalProperties": false}}},
+      "additionalProperties": false
+    }
+  ]
+}

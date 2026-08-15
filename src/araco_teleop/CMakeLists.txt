@@ -5,9 +5,22 @@ cmake_minimum_required(VERSION 3.16)
 project(araco_teleop)
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(araco_interfaces REQUIRED)
+find_package(generate_parameter_library REQUIRED)
+
+ament_python_install_package(araco_teleop)
+generate_parameter_module(
+  teleop_adapter_parameters
+  parameters/teleop_adapter.yaml
+)
 
 install(FILES LICENSE DESTINATION "share/${PROJECT_NAME}")
+
+install(
+  PROGRAMS scripts/teleop_adapter_node
+  DESTINATION "lib/${PROJECT_NAME}"
+)
 
 set(package_resource_directories
   config
@@ -39,6 +52,10 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_package_metadata
     test/test_package_metadata.py
+  )
+  ament_add_pytest_test(
+    test_keyboard
+    test/test_keyboard.py
   )
 endif()
 

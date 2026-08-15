@@ -49,6 +49,15 @@ The Raspberry Pi Camera Module 3 is explicitly deferred and may be omitted from
 the operational software entirely. It must not constrain simulator development
 or the Pi OS/runtime choice. Gemini 335 remains the primary planned RGB-D sensor.
 
+For presentation, the exact Gemini 335 vendor exterior is integrated as three
+visual-only meshes on `camera_link`. The imported Fusion `0.4.0` / specification
+`3.0.0` bundle covers 59 exports and 77 reviewed bodies. Its camera scope is 15
+exterior bodies (housing/bracket, pads/fasteners, and four optics); internal
+connector/PCB geometry and the separate Raspberry Pi camera remain excluded.
+The complete presentation model has 49 exact mesh visuals and 2,066,740
+triangles. This visual upgrade does not calibrate or change simulated optical
+frames, collision, dynamics, or sensor behavior.
+
 The physical robot is confirmed unchanged from the hardware used with the legacy code and March 2026 documentation. Total mass is not measured; the user's estimate is 2–4 kg.
 
 The raw Fusion version 2 physical-property export remains unsuitable as direct
@@ -70,11 +79,11 @@ initial simulator estimate rather than requiring full physical accuracy. The
 derived `rough_estimate_v0` preserves the raw export, replaces Steel-derived
 servo/electronics contributions, and estimates total robot mass at
 `3.924393 kg`. It uses round assumptions of `0.050 kg` for the installed Pi,
-`0.150 kg` for PiSugar, and `0.400 kg` for the unknown main battery. Aggregate
-center of mass and inertia remain unresolved because the missing electronics'
-poses and per-body physical properties are unavailable. The derived files are
-under `tools/fusion/`; measured evidence is still required before physical
-validation.
+`0.150 kg` for PiSugar, and `0.400 kg` for the unknown main battery. Phase 1
+adds explicit PiSugar, main-battery, and servo-controller proxy poses and a
+positive-valid aggregate `base_link` center of mass and inertia. Those values
+are simulator estimates, not measurements. Offline derivation evidence remains
+under `tools/fusion/`; the runtime snapshot is owned by `araco_description`.
 
 ## Legacy software inventory
 
@@ -256,8 +265,9 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 - The complete configuration and validation contract is maintained in
   `docs/agent/CONFIGURATION_AND_VALIDATION_ARCHITECTURE.md`.
 - The accepted simulator runtime baseline uses `1000 Hz` physics, a `250 Hz`
-  controller manager, `100 Hz` arbitration/safety/locomotion loops, and `50 Hz`
-  teleop publication. It uses a `0.040 s` leg-trajectory horizon and layered
+  controller manager, a `125 Hz` joint-state broadcaster, `100 Hz`
+  arbitration/safety/locomotion loops, and `50 Hz` teleop publication. It uses
+  a `0.040 s` leg-trajectory horizon and layered
   steady-time watchdogs, with a JTC last-line hold at about `0.144 s` after the
   last trajectory receipt.
 - Gait/trajectory progression uses ROS simulation time; motion-authority and
@@ -289,8 +299,9 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   only presentation/reporting fields and closed input-adapter presence recorded
   in the input-selection/run identity may differ. Both use seed `42`, the same
   physics, and the same source registry.
-- Acceptance did not authorize or create any ROS package, schema, YAML, Xacro,
-  launch file, or test.
+- Phase 1 and Phase 2 subsequently implemented the accepted composition. A
+  fresh installed-space CI composition must reproduce the accepted evidence
+  fingerprints before a live result is trusted.
 
 ## Accepted phased simulator delivery
 
@@ -310,7 +321,8 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   hardware.
 - This delivery-plan acceptance did not itself authorize Phase 0. The user
   subsequently authorized Phase 0 on 2026-08-16, and the foundation is now
-  complete.
+  complete. Phase 1 / Gate 0 and Phase 2 / Gate 1 were later separately
+  authorized and completed on 2026-08-16.
 
 ## Completed architecture closeout and license selection
 
@@ -333,10 +345,29 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   Autodesk API boundary and the future Isaac adapter's proprietary SDK boundary
   still require terms and redistribution review; MIT does not license those
   third-party systems.
-- Vendor CAD and other third-party assets are not relicensed. A bundled asset
-  requires exact provenance, license/attribution, modification, and
-  redistribution metadata; unknown-rights geometry is excluded or replaced by
-  project-authored simplified proxies.
+- Vendor CAD and other third-party assets are not relicensed by the repository
+  MIT license. Preserve per-asset provenance and upstream license/attribution
+  metadata.
+- The user confirmed on 2026-08-16 that all CAD they have in the Fusion
+  assembly is open source, that licensing is not a blocker, and that exact
+  vendor meshes may be used. Presentation-quality recorded simulator visuals
+  are an explicit requirement.
+- Fusion exporter `0.3.1` established the fail-closed 62-body allowlist packaged as 44
+  mesh files: the existing 25 project mechanical bodies, 13 directly attached
+  servo bodies, and six complete tibia-component files containing all 24 tibia
+  bodies. This covers all 25 servos and every canonical link while retaining no
+  visual proxy. Project-authored
+  assets remain MIT; vendor bodies are currently marked
+  `LicenseRef-UserConfirmed-Open-Source-CAD` until more specific upstream
+  attribution metadata is recorded. Unrelated nested electronics and sensor
+  internals remain outside this bounded export.
+- The current reviewed exporter `0.4.0` / specification `3.0.0` is mirrored at
+  `/media/stevw-s14/DATA-ST/New folder/AracoRobotDescriptionExporter`. The
+  exact 59-export / 77-reviewed-body bundle was produced, validated, imported,
+  and integrated on 2026-08-16. The earlier 25-body and 44-export bundles remain
+  preserved as superseded source evidence.
+  Fusion emits these bodies in source-component-local coordinates; the bundle's
+  recorded occurrence transforms are required to reconstruct the assembly.
 - The review reconciled source-registry ownership, profile naming/seed/input
   selection, startup watchdog arming, gimbal hold ownership, backend readiness,
   orderly shutdown, and the simulator-versus-physical robot-description gate.
@@ -365,6 +396,68 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 - Clean validation passed: rosdep satisfied; 9 packages built; 111 tests passed
   with 0 errors, failures, or skips; all packages and all eight interfaces were
   discoverable from the install space.
+
+## Completed Phase 1 and Phase 2 simulator baseline
+
+- Phase 1 / static Gate 0 and Phase 2 / live Gate 1 both pass as of 2026-08-16.
+- The Gate 1 runtime uses Gazebo Harmonic with DART, `gz_ros2_control`, exact
+  24-leg + 1-gimbal trajectory-controller claims, the complete 25-joint state,
+  simulated provenance, robot-state TF, odometry, six foot-contact streams, and
+  a non-foot ground-contact alarm.
+- Locomotion is intentionally hold-only at Gate 1. It publishes the accepted
+  nominal 24-joint standing reference at 100 Hz; no computed IK, gait, body-pose
+  command, physical profile, or hardware path exists yet.
+- Safety follows `INITIALIZING -> INACTIVE -> HOLDING`, refuses motion enable,
+  and exposes the typed `/araco/safety/transition` action for fail-closed hold,
+  latch/reset, and orderly shutdown.
+- Gate 1 model measurement corrected all femur/tibia/foot pitch axes from the
+  proposed local `+Y` to local `-Y` and sets the simulator nominal spawn height
+  to `0.10675 m`. This is a simulator geometry correction, not physical servo
+  direction or zero calibration.
+- Gazebo collision sensors publish at 50 Hz on six independent foot topics and
+  one shared non-foot alarm topic. A ROS filter produces the fixed 100 Hz
+  aggregate used for scoring. URDF collision references account for Gazebo's
+  `_collision` suffix conversion.
+- The passing evidence directories are
+  `log/gate_0_20260816_phase2_regression/` and
+  `log/gate_1_20260816_phase2_hold_pass/`. Both share behavior fingerprint
+  `c1c2b51d4e082bcfab0e5d09618566c3a9245ce79d46833295c1eb9ec7922283`;
+  the CI run fingerprint is
+  `e435b0244f9412f9b88e693f247d6f5f0773cc80c4b02842eebdff9287a4b35b`.
+- Clean validation after deleting/recreating generated build/install output is
+  9 built packages and 175 tests with 0 errors, 0 failures, and 3 expected
+  `cppcheck` skips. Dependency closure, independent URDF parsing, Gazebo SDF
+  validation, and fresh fingerprint reproduction also pass.
+- The exact post-Phase-2 visual-fidelity task imports 59 approved Fusion
+  exports covering 77 reviewed bodies as 34 deduplicated source blobs. It
+  deterministically generates 49 meter-scale link-local presentation meshes:
+  26 primary, 13 servo-case, seven separable servo-horn, and three Gemini
+  exterior role assets. No visual proxy remains; collision, dynamics, joint,
+  controller, safety, optical-frame, sensor, and standing artifacts remain
+  unchanged.
+- Headed Gazebo resource discovery is self-contained: bringup prepends the
+  installed `araco_description` share parent to `GZ_SIM_RESOURCE_PATH` before
+  launch. The headed run resolves all detailed `package://` resources.
+- Fresh detailed-visual evidence passes at
+  `log/gate_0_20260816_detailed_visuals/` and
+  `log/gate_1_20260816_detailed_visuals_hold_host/`, with behavior fingerprint
+  `87eef7bca155569674450e9342856ed89fb7e9f74e3e3df2c11311d8c9a937d7`.
+  Gate 1 physics metrics match the proxy-visual baseline within numerical
+  precision. The exact-visual configuration builds all nine packages and passes
+  182 tests with 0 errors, 0 failures, and 3 expected skips. Fresh formal Gate
+  0 / Gate 1 evidence is deferred until user visual acceptance.
+- The rejected flat-blue/proxy preview has been replaced by exact Fusion/vendor
+  solids, six material roles, directional lighting, ambient light, and
+  shadows. The current generated URDF contains 49 meshes and zero visual
+  primitives. A headed preview has reached `HOLDING`; final visual acceptance
+  is pending.
+- The tibia proxy offset seen by the user is real rather than a lighting
+  illusion. The Fusion tibia occurrence and canonical kinematic tibia frame
+  differ by about `9.7567 mm` transversely and `90 deg` about the longitudinal
+  axis. The box intentionally follows the joint-to-joint centerline; exact
+  Fusion normalization would preserve the assembly offset. This currently
+  limits visual and collision fidelity, but does not alone disprove the
+  accepted joint origins or Gate 1 hold behavior.
 
 ## Cloud simulation evidence (2026-08-14)
 
@@ -510,8 +603,9 @@ physical measurements:
 - The rebuild targets the current supported Isaac Sim/Isaac Lab generation at implementation time. Legacy Isaac Sim 4.5 assets are migration references, not a compatibility target.
 - Simulator acceptance criteria are required before implementation; the user approved defining explicit model, control, determinism, real-time-factor, sensor, and regression gates.
 - Reinforcement learning is explicitly deferred. Initial milestones must use deterministic, conventional algorithms for kinematics, tripod gait generation, body control, teleoperation, state estimation, SLAM, and Nav2. RL may later adapt or improve a proven algorithmic baseline.
-- Phase 0 repository/package scaffolding is complete. Phase 1 implementation
-  and every later simulator or hardware phase require separate authorization.
+- Phase 0 repository/package scaffolding, Phase 1 / static Gate 0, and Phase 2 /
+  live Gate 1 are complete. Phase 3 / Gate 2 and every later phase require
+  separate authorization.
 
 ## Evidence boundary
 

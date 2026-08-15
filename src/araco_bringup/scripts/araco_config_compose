@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Compile one installed Araco deployment profile into a runtime bundle."""
+
+import argparse
+import json
+
+from araco_bringup.composer import compose_profile
+
+
+def main():
+    """Parse the closed CLI surface and run preflight."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('profile', choices=('gazebo_dev_v0', 'gazebo_ci_v0'))
+    parser.add_argument('output_directory')
+    parser.add_argument('--robot-namespace', default='araco')
+    parser.add_argument('--gui', action=argparse.BooleanOptionalAction, default=None)
+    parser.add_argument('--rviz', action=argparse.BooleanOptionalAction, default=None)
+    parser.add_argument('--log-level', choices=('debug', 'info', 'warn', 'error', 'fatal'), default='info')
+    parser.add_argument('--record-on-failure', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--report-destination', choices=('run_directory', 'none'), default='run_directory')
+    arguments = parser.parse_args()
+    manifest = compose_profile(
+        arguments.profile,
+        arguments.output_directory,
+        robot_namespace=arguments.robot_namespace,
+        gui=arguments.gui,
+        rviz=arguments.rviz,
+        log_level=arguments.log_level,
+        record_on_failure=arguments.record_on_failure,
+        report_destination=arguments.report_destination,
+    )
+    print(json.dumps({
+        'profile_id': manifest['profile_id'],
+        'behavior_fingerprint': manifest['behavior_fingerprint'],
+        'run_fingerprint': manifest['run_fingerprint'],
+    }, indent=2))
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,136 @@
+{
+  "schema_id": "araco://schemas/description/artifacts/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.description.canonical-model",
+  "artifact_version": "1.0.0",
+  "owner_package": "araco_description",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "design_fact",
+    "sources": [
+      "docs/agent/ROBOT_DESCRIPTION_MANIFEST.md",
+      "fusion-export-sha256:843974cc090e76d17c691d4e097c602ccd4e966e07e158ba392ae1bef54b7352"
+    ]
+  },
+  "dependencies": [],
+  "data": {
+    "kind": "canonical_model",
+    "model_name": "araco",
+    "root_link": "base_link",
+    "primary_link_order": [
+      "base_link",
+      "left_front_coxa_link", "left_front_femur_link", "left_front_tibia_link", "left_front_foot_link",
+      "left_middle_coxa_link", "left_middle_femur_link", "left_middle_tibia_link", "left_middle_foot_link",
+      "left_rear_coxa_link", "left_rear_femur_link", "left_rear_tibia_link", "left_rear_foot_link",
+      "right_front_coxa_link", "right_front_femur_link", "right_front_tibia_link", "right_front_foot_link",
+      "right_middle_coxa_link", "right_middle_femur_link", "right_middle_tibia_link", "right_middle_foot_link",
+      "right_rear_coxa_link", "right_rear_femur_link", "right_rear_tibia_link", "right_rear_foot_link",
+      "gimbal_yaw_link"
+    ],
+    "links": [
+      {"name": "base_link", "role": "base", "geometry_class": "base", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/base.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/base__servo_case.stl"}, {"role": "servo_horn", "mesh_uri": "package://araco_description/meshes/presentation_exact/base__servo_horn.stl"}]},
+      {"name": "left_front_coxa_link", "role": "leg", "geometry_class": "coxa", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_front_coxa.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_front_coxa__servo_case.stl"}]},
+      {"name": "left_front_femur_link", "role": "leg", "geometry_class": "femur", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_front_femur.stl"},
+      {"name": "left_front_tibia_link", "role": "leg", "geometry_class": "tibia", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_front_tibia.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_front_tibia__servo_case.stl"}, {"role": "servo_horn", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_front_tibia__servo_horn.stl"}]},
+      {"name": "left_front_foot_link", "role": "foot", "geometry_class": "foot", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_front_foot.stl"},
+      {"name": "left_middle_coxa_link", "role": "leg", "geometry_class": "coxa", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_middle_coxa.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_middle_coxa__servo_case.stl"}]},
+      {"name": "left_middle_femur_link", "role": "leg", "geometry_class": "femur", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_middle_femur.stl"},
+      {"name": "left_middle_tibia_link", "role": "leg", "geometry_class": "tibia", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_middle_tibia.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_middle_tibia__servo_case.stl"}, {"role": "servo_horn", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_middle_tibia__servo_horn.stl"}]},
+      {"name": "left_middle_foot_link", "role": "foot", "geometry_class": "foot", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_middle_foot.stl"},
+      {"name": "left_rear_coxa_link", "role": "leg", "geometry_class": "coxa", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_rear_coxa.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_rear_coxa__servo_case.stl"}]},
+      {"name": "left_rear_femur_link", "role": "leg", "geometry_class": "femur", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_rear_femur.stl"},
+      {"name": "left_rear_tibia_link", "role": "leg", "geometry_class": "tibia", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_rear_tibia.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_rear_tibia__servo_case.stl"}, {"role": "servo_horn", "mesh_uri": "package://araco_description/meshes/presentation_exact/left_rear_tibia__servo_horn.stl"}]},
+      {"name": "left_rear_foot_link", "role": "foot", "geometry_class": "foot", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/left_rear_foot.stl"},
+      {"name": "right_front_coxa_link", "role": "leg", "geometry_class": "coxa", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_front_coxa.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_front_coxa__servo_case.stl"}]},
+      {"name": "right_front_femur_link", "role": "leg", "geometry_class": "femur", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_front_femur.stl"},
+      {"name": "right_front_tibia_link", "role": "leg", "geometry_class": "tibia", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_front_tibia.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_front_tibia__servo_case.stl"}, {"role": "servo_horn", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_front_tibia__servo_horn.stl"}]},
+      {"name": "right_front_foot_link", "role": "foot", "geometry_class": "foot", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_front_foot.stl"},
+      {"name": "right_middle_coxa_link", "role": "leg", "geometry_class": "coxa", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_middle_coxa.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_middle_coxa__servo_case.stl"}]},
+      {"name": "right_middle_femur_link", "role": "leg", "geometry_class": "femur", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_middle_femur.stl"},
+      {"name": "right_middle_tibia_link", "role": "leg", "geometry_class": "tibia", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_middle_tibia.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_middle_tibia__servo_case.stl"}, {"role": "servo_horn", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_middle_tibia__servo_horn.stl"}]},
+      {"name": "right_middle_foot_link", "role": "foot", "geometry_class": "foot", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_middle_foot.stl"},
+      {"name": "right_rear_coxa_link", "role": "leg", "geometry_class": "coxa", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_rear_coxa.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_rear_coxa__servo_case.stl"}]},
+      {"name": "right_rear_femur_link", "role": "leg", "geometry_class": "femur", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_rear_femur.stl"},
+      {"name": "right_rear_tibia_link", "role": "leg", "geometry_class": "tibia", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_rear_tibia.stl", "auxiliary_visuals": [{"role": "servo_case", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_rear_tibia__servo_case.stl"}, {"role": "servo_horn", "mesh_uri": "package://araco_description/meshes/presentation_exact/right_rear_tibia__servo_horn.stl"}]},
+      {"name": "right_rear_foot_link", "role": "foot", "geometry_class": "foot", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/right_rear_foot.stl"},
+      {"name": "gimbal_yaw_link", "role": "gimbal", "geometry_class": "gimbal", "visual_mesh_uri": "package://araco_description/meshes/presentation_exact/gimbal_yaw.stl"}
+    ],
+    "geometry_classes": {
+      "base": {"visual_mesh_uri": "package://araco_description/meshes/generated/base.stl", "collision_origin_xyz_m": [0.0, 0.0, 0.0], "collision_size_m": [0.19, 0.15, 0.05]},
+      "coxa": {"visual_mesh_uri": "package://araco_description/meshes/generated/coxa.stl", "collision_origin_xyz_m": [0.0215, 0.0, 0.0], "collision_size_m": [0.043, 0.04, 0.04]},
+      "femur": {"visual_mesh_uri": "package://araco_description/meshes/generated/femur.stl", "collision_origin_xyz_m": [0.06, 0.0, 0.0], "collision_size_m": [0.12, 0.03, 0.03]},
+      "tibia": {
+        "visual_mesh_uri": "package://araco_description/meshes/generated/tibia.stl",
+        "visual_boxes": [
+          {"center_xyz_m": [0.06, 0.0135, 0.0], "size_m": [0.12, 0.007, 0.012]},
+          {"center_xyz_m": [0.06, -0.0135, 0.0], "size_m": [0.12, 0.007, 0.012]}
+        ],
+        "collision_origin_xyz_m": [0.06, 0.0, 0.0],
+        "collision_size_m": [0.12, 0.035, 0.035]
+      },
+      "foot": {"visual_mesh_uri": "package://araco_description/meshes/generated/foot.stl", "collision_origin_xyz_m": [0.025, 0.0, 0.0], "collision_size_m": [0.05, 0.03, 0.03]},
+      "gimbal": {"visual_mesh_uri": "package://araco_description/meshes/generated/gimbal.stl", "collision_origin_xyz_m": [0.0, 0.0, 0.03], "collision_size_m": [0.11, 0.035, 0.035]}
+    },
+    "visual_policy": {
+      "fidelity": "fusion_exact_presentation",
+      "primary_material_rgba": [0.62, 0.72, 0.86, 1.0],
+      "servo_case_material_rgba": [0.055, 0.065, 0.085, 1.0],
+      "servo_horn_material_rgba": [0.68, 0.71, 0.76, 1.0],
+      "camera_body_material_rgba": [0.22, 0.24, 0.27, 1.0],
+      "camera_hardware_material_rgba": [0.58, 0.61, 0.66, 1.0],
+      "camera_optics_material_rgba": [0.015, 0.04, 0.075, 1.0],
+      "exact_mesh_inventory": {
+        "source_manifest_uri": "package://araco_description/meshes/source/fusion_v2_exact_camera/source_manifest.json",
+        "reviewed_source_bodies": 77,
+        "servo_models": {"DS3235": 19, "DS5160": 6},
+        "tibia_components": 6,
+        "gemini_335_exterior": {"housing_and_bracket_bodies": 5, "hardware_bodies": 6, "optical_bodies": 4, "internal_bodies_included": 0},
+        "retained_visual_proxies": 0,
+        "alignment_policy": "preserve_fusion_occurrence_no_force_alignment"
+      }
+    },
+    "joints": [
+      {"name": "left_front_coxa_joint", "parent": "base_link", "child": "left_front_coxa_link", "type": "revolute", "origin_xyz_m": [0.081819805, 0.066819805, -0.02675], "origin_rpy_rad": [0.0, 0.0, 0.684823427809552], "axis": [0.0, 0.0, 1.0], "roles": ["leg_command", "state"], "leg": "left_front", "segment": "coxa"},
+      {"name": "left_front_femur_joint", "parent": "left_front_coxa_link", "child": "left_front_femur_link", "type": "revolute", "origin_xyz_m": [0.043, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_front", "segment": "femur"},
+      {"name": "left_front_tibia_joint", "parent": "left_front_femur_link", "child": "left_front_tibia_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_front", "segment": "tibia"},
+      {"name": "left_front_foot_joint", "parent": "left_front_tibia_link", "child": "left_front_foot_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_front", "segment": "foot"},
+
+      {"name": "left_middle_coxa_joint", "parent": "base_link", "child": "left_middle_coxa_link", "type": "revolute", "origin_xyz_m": [0.0, 0.09, -0.02675], "origin_rpy_rad": [0.0, 0.0, 1.570796326794897], "axis": [0.0, 0.0, 1.0], "roles": ["leg_command", "state"], "leg": "left_middle", "segment": "coxa"},
+      {"name": "left_middle_femur_joint", "parent": "left_middle_coxa_link", "child": "left_middle_femur_link", "type": "revolute", "origin_xyz_m": [0.043, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_middle", "segment": "femur"},
+      {"name": "left_middle_tibia_joint", "parent": "left_middle_femur_link", "child": "left_middle_tibia_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_middle", "segment": "tibia"},
+      {"name": "left_middle_foot_joint", "parent": "left_middle_tibia_link", "child": "left_middle_foot_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_middle", "segment": "foot"},
+
+      {"name": "left_rear_coxa_joint", "parent": "base_link", "child": "left_rear_coxa_link", "type": "revolute", "origin_xyz_m": [-0.081819805, 0.066819805, -0.02675], "origin_rpy_rad": [0.0, 0.0, 2.456769225780241], "axis": [0.0, 0.0, 1.0], "roles": ["leg_command", "state"], "leg": "left_rear", "segment": "coxa"},
+      {"name": "left_rear_femur_joint", "parent": "left_rear_coxa_link", "child": "left_rear_femur_link", "type": "revolute", "origin_xyz_m": [0.043, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_rear", "segment": "femur"},
+      {"name": "left_rear_tibia_joint", "parent": "left_rear_femur_link", "child": "left_rear_tibia_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_rear", "segment": "tibia"},
+      {"name": "left_rear_foot_joint", "parent": "left_rear_tibia_link", "child": "left_rear_foot_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "left_rear", "segment": "foot"},
+
+      {"name": "right_front_coxa_joint", "parent": "base_link", "child": "right_front_coxa_link", "type": "revolute", "origin_xyz_m": [0.081819805, -0.066819805, -0.02675], "origin_rpy_rad": [0.0, 0.0, -0.684823427809552], "axis": [0.0, 0.0, 1.0], "roles": ["leg_command", "state"], "leg": "right_front", "segment": "coxa"},
+      {"name": "right_front_femur_joint", "parent": "right_front_coxa_link", "child": "right_front_femur_link", "type": "revolute", "origin_xyz_m": [0.043, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_front", "segment": "femur"},
+      {"name": "right_front_tibia_joint", "parent": "right_front_femur_link", "child": "right_front_tibia_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_front", "segment": "tibia"},
+      {"name": "right_front_foot_joint", "parent": "right_front_tibia_link", "child": "right_front_foot_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_front", "segment": "foot"},
+
+      {"name": "right_middle_coxa_joint", "parent": "base_link", "child": "right_middle_coxa_link", "type": "revolute", "origin_xyz_m": [0.0, -0.09, -0.02675], "origin_rpy_rad": [0.0, 0.0, -1.570796326794897], "axis": [0.0, 0.0, 1.0], "roles": ["leg_command", "state"], "leg": "right_middle", "segment": "coxa"},
+      {"name": "right_middle_femur_joint", "parent": "right_middle_coxa_link", "child": "right_middle_femur_link", "type": "revolute", "origin_xyz_m": [0.043, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_middle", "segment": "femur"},
+      {"name": "right_middle_tibia_joint", "parent": "right_middle_femur_link", "child": "right_middle_tibia_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_middle", "segment": "tibia"},
+      {"name": "right_middle_foot_joint", "parent": "right_middle_tibia_link", "child": "right_middle_foot_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_middle", "segment": "foot"},
+
+      {"name": "right_rear_coxa_joint", "parent": "base_link", "child": "right_rear_coxa_link", "type": "revolute", "origin_xyz_m": [-0.081819805, -0.066819805, -0.02675], "origin_rpy_rad": [0.0, 0.0, -2.456769225780241], "axis": [0.0, 0.0, 1.0], "roles": ["leg_command", "state"], "leg": "right_rear", "segment": "coxa"},
+      {"name": "right_rear_femur_joint", "parent": "right_rear_coxa_link", "child": "right_rear_femur_link", "type": "revolute", "origin_xyz_m": [0.043, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_rear", "segment": "femur"},
+      {"name": "right_rear_tibia_joint", "parent": "right_rear_femur_link", "child": "right_rear_tibia_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_rear", "segment": "tibia"},
+      {"name": "right_rear_foot_joint", "parent": "right_rear_tibia_link", "child": "right_rear_foot_link", "type": "revolute", "origin_xyz_m": [0.12, 0.0, 0.0], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, -1.0, 0.0], "roles": ["leg_command", "state"], "leg": "right_rear", "segment": "foot"},
+
+      {"name": "gimbal_yaw_joint", "parent": "base_link", "child": "gimbal_yaw_link", "type": "revolute", "origin_xyz_m": [-0.005, 0.0, 0.08435], "origin_rpy_rad": [0.0, 0.0, 0.0], "axis": [0.0, 0.0, 1.0], "roles": ["gimbal_command", "state"], "leg": "none", "segment": "gimbal_yaw"}
+    ],
+    "fixed_frames": [
+      {"name": "camera_mount_joint", "parent": "gimbal_yaw_link", "child": "camera_link", "origin_xyz_m": [0.04, 0.0, 0.04], "origin_rpy_rad": [0.0, 0.0, 0.0], "fidelity": "simulator_estimate", "visuals": [{"role": "camera_body", "mesh_uri": "package://araco_description/meshes/presentation_exact/camera__camera_body.stl"}, {"role": "camera_hardware", "mesh_uri": "package://araco_description/meshes/presentation_exact/camera__camera_hardware.stl"}, {"role": "camera_optics", "mesh_uri": "package://araco_description/meshes/presentation_exact/camera__camera_optics.stl"}]},
+      {"name": "camera_color_optical_joint", "parent": "camera_link", "child": "camera_color_optical_frame", "origin_xyz_m": [0.0, 0.0, 0.0], "origin_rpy_rad": [-1.570796326794897, 0.0, -1.570796326794897], "fidelity": "simulator_estimate"},
+      {"name": "camera_depth_optical_joint", "parent": "camera_link", "child": "camera_depth_optical_frame", "origin_xyz_m": [0.0, 0.0, 0.0], "origin_rpy_rad": [-1.570796326794897, 0.0, -1.570796326794897], "fidelity": "simulator_estimate"}
+    ],
+    "frame_conversion": {
+      "fusion_to_ros_rotation": [[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+      "base_datum_fusion_m": [-0.000313602, 0.0, 0.008072807],
+      "convention": "REP-103"
+    }
+  }
+}

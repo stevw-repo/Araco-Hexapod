@@ -7,11 +7,12 @@ targets Ubuntu 24.04, ROS 2 Jazzy, and Gazebo Harmonic.
 
 ## Current status
 
-Phase 0 is complete: the nine accepted ROS packages build, install, and test,
-and the seven messages plus one action generate and introspect successfully.
-The repository does not yet contain a robot model, runnable control nodes, a
-Gazebo world, or a physical-hardware backend. No Gazebo validation gate is
-claimed.
+Phase 2 / Gate 1 is complete. The repository contains the strict configuration
+substrate, canonical 26-link/25-joint model, provisional simulator dynamics,
+Gazebo Harmonic integration, exact 24-leg + 1-gimbal `ros2_control` ownership,
+ordered lifecycle supervision, a hold-only locomotion component, and atomic
+headless scoring evidence. Gate 1 reaches `HOLDING` without ever entering
+`MOTION_ENABLED`; it does not implement computed IK, gait, or physical hardware.
 
 The accepted architecture, interface contracts, safety model, configuration
 rules, and phased delivery plan are maintained under `docs/agent/`.
@@ -42,6 +43,27 @@ source install/setup.bash
 colcon test
 colcon test-result --verbose
 ```
+
+After a successful installed-space build, emit a static Gate 0 evidence bundle:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run araco_system_tests araco_gate0_evidence log/gate_0_local
+```
+
+Run the headless Gate 1 hold, scorer, and orderly-shutdown evidence workflow:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run araco_system_tests araco_gate1_evidence log/gate_1_local
+```
+
+The destination must not already exist. A complete result contains the resolved
+runtime configuration, logs, metrics, JUnit, process outcomes, and validation
+report. Development launch is available with
+`ros2 launch araco_bringup gazebo.launch.py`.
 
 Generated `build/`, `install/`, and `log/` directories are local output and
 must not be committed.

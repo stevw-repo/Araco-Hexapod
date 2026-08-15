@@ -5,9 +5,17 @@ cmake_minimum_required(VERSION 3.16)
 project(araco_gazebo)
 
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(araco_description REQUIRED)
 
+ament_python_install_package(araco_gazebo)
+
 install(FILES LICENSE DESTINATION "share/${PROJECT_NAME}")
+
+install(
+  PROGRAMS scripts/contact_filter_node
+  DESTINATION "lib/${PROJECT_NAME}"
+)
 
 set(package_resource_directories
   config
@@ -39,6 +47,10 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_package_metadata
     test/test_package_metadata.py
+  )
+  ament_add_pytest_test(
+    test_world_rendering
+    test/test_world_rendering.py
   )
 endif()
 
