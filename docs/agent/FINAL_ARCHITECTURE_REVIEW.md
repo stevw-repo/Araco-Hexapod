@@ -1,6 +1,6 @@
 # Araco Hexapod — Final Architecture Consistency Review
 
-Status: **COMPLETE — PASS FOR EXPLICIT PHASE 0 AUTHORIZATION**
+Status: **COMPLETE — PASS; PHASE 0 SUBSEQUENTLY COMPLETED**
 
 Review date: 2026-08-15
 
@@ -77,48 +77,43 @@ Physical deployment remains blocked independently of simulator progress.
 ## License selection
 
 At the user's request on 2026-08-16, the selected license for project-authored
-repository and package content is the **GNU General Public License version 3
-only**, SPDX identifier **`GPL-3.0-only`**. This supersedes the 2026-08-15
-Apache-2.0 selection before either license was applied through a root `LICENSE`
-or ROS package manifest.
+repository and package content is the **MIT License**, SPDX identifier
+**`MIT`**. This supersedes both the 2026-08-15 Apache-2.0 plan and the briefly
+applied 2026-08-16 GPL-3.0-only selection. The user chose MIT after reviewing
+the additional friction GPL creates around proprietary Fusion/Isaac SDK
+boundaries and project lint tooling. “No license” was rejected because default
+copyright would not grant normal open-source reuse, modification, or
+distribution rights.
 
-`GPL-3.0-only` means version 3 specifically; it does not automatically grant
-the option to use a future GPL version. It is a strong-copyleft license:
-distribution of covered modified or combined works must preserve GPLv3 terms,
-and object-code distribution carries the applicable Corresponding Source and
-installation-information obligations in the license. Private modification and
-use without distribution do not trigger a source-publication requirement.
+MIT is permissive: covered project code may be used, modified, distributed,
+sublicensed, or sold while preserving the copyright and permission notice. It
+does not impose GPL Corresponding Source obligations on combined works, but it
+also does not grant rights in third-party dependencies, Autodesk APIs, vendor
+CAD, product logos, or other imported material.
 
-The separately authorized pre-Phase-0 checkpoint applies the unmodified
-official GPLv3 text at root `LICENSE`. Phase 0 completes application as follows:
+Phase 0 applies it as follows:
 
 - place an exact full-text `LICENSE` copy in each of the nine ROS packages so a
   separately distributed package remains self-contained;
-- use `<license file="LICENSE">GPL-3.0-only</license>` in each initial
+- use `<license file="LICENSE">MIT</license>` in each initial
   `package.xml`;
-- add `SPDX-License-Identifier: GPL-3.0-only` to project-authored source files
+- add `SPDX-License-Identifier: MIT` to project-authored source files
   whose format supports comments;
-- audit linked and bundled dependency licenses for GPLv3 compatibility;
-- identify the preferred editable source and generation tooling for covered
-  generated binaries/meshes that may be distributed;
+- audit linked and bundled dependency licenses and required attributions;
+- retain preferred editable source and generation tooling for project-generated
+  binaries/meshes to keep model provenance and maintainability complete;
 - review the existing Fusion add-in's Autodesk API boundary, and later the
-  Isaac adapter's proprietary SDK boundary, before distributing those
-  integrations as GPL-covered combined works;
+  Isaac adapter's proprietary SDK boundary, before distributing integrations;
 - create `THIRD_PARTY_NOTICES.md` only when bundled attribution requires it,
   preserving any exact third-party notice-file requirement.
 
-GPL-3.0-only covers only material the copyright holder has the right to license.
-It does not relicense ROS/Gazebo dependencies, vendor CAD, product logos, or
-other third-party assets. Any bundled work under another license retains that
-license and required notices, and every package containing it must declare the
-additional license as required. This is an engineering license selection, not
-legal advice.
+Any bundled work under another license retains that license and required
+notices, and every package containing it must declare the additional license as
+required. This is an engineering license selection, not legal advice.
 
 Primary references checked on 2026-08-16:
 
-- `https://www.gnu.org/licenses/gpl-3.0.txt`
-- `https://www.gnu.org/licenses/gpl.en.html`
-- `https://spdx.org/licenses/GPL-3.0-only.html`
+- `https://opensource.org/license/mit`
 - `https://github.com/ros-infrastructure/rep/blob/master/rep-0149.rst`
 - `https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository`
 
@@ -129,21 +124,21 @@ Primary references checked on 2026-08-16:
 | Expanded mount rotations and canonical simulator sign checks | Gate 0 model validation | No | Physical sign validation still yes |
 | Provisional simulator ranges/caps | Gate 0 artifact and nominal-margin validation | No | Yes; cannot enter a physical profile |
 | Proxy poses and positive-valid aggregate base inertia | Gate 0 description authoring | No | Physical fidelity still yes |
-| Mesh/model rights and GPL Corresponding Source | Before a resource is bundled in Phase 1/Gate 0 | No | Public distribution blocker for that asset |
+| Mesh/model rights, editable source, and redistribution | Before a resource is bundled in Phase 1/Gate 0 | No | Public distribution blocker for that asset |
 | Proprietary Fusion/Isaac SDK compatibility | Phase 0 for the existing exporter; future Isaac phase for its adapter | License audit only | Distribution blocker if incompatible |
 | Gait/IK/controller behavior | Gates 1–4 as assigned | No | Simulator evidence alone never clears hardware |
 | Full fault/restart/handover behavior | Gate 5 | No | Physical safety design remains separate |
 | Repeatability and operational evidence | Gate 6 | No | Does not establish sim-to-real fidelity |
 | Pi OS, servo transport, power-off/collapse, local stop, measured state | Later physical phase | No | Yes |
 
-## Exact boundary of a future Phase 0 authorization
+## Exact boundary of the Phase 0 authorization
 
 An explicit Phase 0 authorization permits only:
 
 - creating `src/` and the nine accepted package skeletons;
 - adding package manifests, build metadata, install/export rules, package-local
   test structure, and the already accepted IDL;
-- preserving root `LICENSE`, adding package-local GPL-3.0-only license copies,
+- preserving root `LICENSE`, adding package-local MIT license copies,
   and adding project source headers;
 - adding `.gitignore` and replacing the existing minimal `README.md` stub with
   build-focused repository information;
@@ -157,11 +152,11 @@ executables, physical profiles, servo/UART work, hardware commands, commits,
 pushes, releases, hosted CI changes, or publication. Phase 0 claims no Gazebo
 gate and creates no runnable robot.
 
-Before writing public `package.xml` metadata, the maintainer name and email must
-be confirmed as values the user is willing to publish. This is a metadata input,
-not an architecture decision.
+The user subsequently authorized this exact scope and confirmed the public Git
+identity `stevw <steven060520@gmail.com>` for every `package.xml`.
 
-## Next authorization point
+## Current authorization point
 
-The architecture-closeout condition is satisfied. Work remains stopped at the
-Phase 0 boundary until the user explicitly authorizes the exact scope above.
+Phase 0 was explicitly authorized and completed on 2026-08-16. Work remains
+stopped before Phase 1 model/configuration implementation. Phase 0 claims no
+Gazebo gate.

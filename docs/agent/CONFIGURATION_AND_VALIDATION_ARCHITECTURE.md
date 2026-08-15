@@ -154,7 +154,7 @@ Before Gazebo starts, automated validation must establish:
 - normalized finite axes, finite transforms, resolved mesh resources, and
   REP-103-consistent frames;
 - complete redistributable-asset metadata, with no unknown-license or
-  unknown-redistribution resource and no GPL-covered generated form missing its
+  unknown-redistribution resource and no project-generated form missing its
   required preferred editable source in the installed description;
 - positive finite masses and physically valid inertia tensors for every dynamic
   link, with fidelity/provenance labels and no rejected all-Steel import;

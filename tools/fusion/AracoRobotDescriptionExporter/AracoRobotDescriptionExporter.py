@@ -1,3 +1,5 @@
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
 # Author: Araco project
 # Description: Read-only robot-description inventory exporter for Autodesk Fusion.
 

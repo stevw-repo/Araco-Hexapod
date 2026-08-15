@@ -155,7 +155,7 @@ araco-hexapod-temp/
 ├── tools/
 │   └── fusion/                  # Offline CAD evidence/export tooling
 ├── README.md
-├── LICENSE                      # GNU GPL v3.0 only; pre-Phase-0 checkpoint
+├── LICENSE                      # MIT License
 └── .gitignore                   # Added only when scaffolding is authorized
 ```
 
@@ -165,28 +165,22 @@ remain untracked once the workspace exists.
 ## License and redistributable-asset policy
 
 Project-authored code, configuration, documentation, tests, and original assets
-use the GNU General Public License version 3 only (`GPL-3.0-only`). The
-separately authorized pre-Phase-0 checkpoint adds the unmodified full GPLv3
-text at the repository root. Phase 0 adds an exact package-local copy in each
-ROS package, `<license file="LICENSE">GPL-3.0-only</license>` in every initial
-`package.xml`, and `SPDX-License-Identifier: GPL-3.0-only` in project-authored
+use the MIT License (`MIT`). Phase 0 installs an exact full-text copy in each
+ROS package, uses `<license file="LICENSE">MIT</license>` in every initial
+`package.xml`, and adds `SPDX-License-Identifier: MIT` to project-authored
 source files where the format supports comments.
 
-This is a strong-copyleft selection. Distribution of covered modified or
-combined object-code works must preserve GPLv3 terms and the corresponding-
-source obligations. Phase 0 therefore audits direct linked/bundled dependency
-licenses for GPLv3 compatibility before declaring the package foundation
-complete.
+MIT is permissive and permits proprietary as well as open-source integrations
+while requiring preservation of its copyright and permission notice. Phase 0
+still audits direct linked/bundled dependency licenses and attributions before
+declaring the package foundation complete.
 
-For covered generated forms—such as compiled binaries, containers, generated
-STL/DAE meshes, or other non-preferred editable forms—a distribution must be
-paired with the applicable preferred modification source and generation tools
-as required by GPLv3. The description workflow therefore cannot rely on a
-project-authored derived mesh whose editable source cannot be published.
+Project-generated forms—such as compiled binaries, containers, generated
+STL/DAE meshes, or other non-preferred editable forms—retain their preferred
+modification source and generation tools for provenance and maintainability.
 Proprietary API integrations, including the existing Fusion add-in and the
-future Isaac adapter, receive a specific compatibility review before GPL-
-covered distribution; compatibility is not inferred merely because the SDK is
-installed separately.
+future Isaac adapter, still receive a specific terms and redistribution review;
+MIT does not grant rights in a separately licensed SDK.
 
 The repository license does not relicense third-party dependencies, vendor CAD,
 logos, data, or other imported assets. Every bundled non-project asset must have
@@ -240,6 +234,6 @@ concrete topic names, QoS, loop rates, and provisional simulator values.
 Configuration schemas/composition are frozen in the accepted
 `PARAMETER_AND_CONFIGURATION_COMPOSITION.md` contract; physical safety behavior
 remains open. The repository implementation order is frozen in the accepted
-`PHASED_DELIVERY_PLAN.md`. The final review and GPL-3.0-only selection are recorded
+`PHASED_DELIVERY_PLAN.md`. The final review and MIT selection are recorded
 in `FINAL_ARCHITECTURE_REVIEW.md`. No architecture approval yet permits
 scaffolding; Phase 0 still requires an explicit user authorization.

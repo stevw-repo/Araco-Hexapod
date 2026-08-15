@@ -109,17 +109,15 @@ claim that the robot model or runtime is valid.
 
 - Create the accepted nine packages under `src/` with correct package types,
   maintainers, selected license, build tools, and dependency direction.
-- Preserve the root GNU GPL version 3 text added by the separately authorized
-  pre-Phase-0 checkpoint and add an exact copy in every package; set each
-  initial package manifest to
-  `<license file="LICENSE">GPL-3.0-only</license>` and apply project source SPDX
-  headers.
-- Audit direct linked and bundled dependency licenses for GPLv3 compatibility
-  and record every third-party license/attribution obligation without
+- Apply the selected MIT License at the repository root and as an exact copy in
+  every package; set each initial package manifest to
+  `<license file="LICENSE">MIT</license>` and apply project source SPDX headers.
+- Audit direct linked and bundled dependency licenses and record every
+  third-party license/attribution obligation without
   relicensing dependencies or imported assets.
 - Review the existing Fusion add-in's proprietary Autodesk API boundary before
-  treating that tool as distributable GPL-covered code; record any required
-  scope separation or exception rather than assuming compatibility.
+  treating that tool as a supported distributable integration; MIT does not
+  replace Autodesk entitlement or developer terms.
 - Add root workspace hygiene appropriate to a public repository: `.gitignore`,
   replace the existing minimal `README.md` stub with a concise build-focused
   overview, and track no `build/`, `install/`, or `log/` output.
@@ -135,8 +133,8 @@ claim that the robot model or runtime is valid.
 ### Required checks
 
 - Dependency graph matches `REPOSITORY_ARCHITECTURE.md` and contains no cycle.
-- Direct linked/bundled dependencies have no unresolved GPLv3 license
-  incompatibility or missing required attribution/source-distribution plan.
+- Direct linked/bundled dependencies have no unresolved license incompatibility
+  or missing required attribution/source-distribution plan.
 - A clean `rosdep` resolution and `colcon build` succeeds.
 - Interface generation and introspection succeed with exact accepted fields,
   constants, and dependency types.
@@ -179,10 +177,9 @@ must explicitly say “no Gazebo gate claimed.”
   redistribution status for every bundled mesh/model resource. Exclude vendor
   CAD with unknown redistribution terms and replace it with project-authored
   simplified geometry when necessary.
-- For every GPL-covered generated mesh/model form, include or offer the
-  preferred editable source and reproducible generation tooling required for
-  compliant distribution; do not depend on an unpublished mixed-rights Fusion
-  archive as its source.
+- For every project-generated mesh/model form, retain the preferred editable
+  source and reproducible generation tooling; do not depend on an unpublished
+  mixed-rights Fusion archive as its source.
 - Encode the simulator-only nominal standing reference and provisional joint
   limits with evidence/fidelity labels.
 - Convert `rough_estimate_v0` into the package-owned runtime dynamics artifact
@@ -649,8 +646,7 @@ The user's 2026-08-15 approval freezes:
 - regression invalidation and durable handoff requirements;
 - Gate 6 as the boundary that unlocks later simulator phases but not hardware.
 
-Approval does not authorize Phase 0. The final consistency review and revised
-GPL-3.0-only selection are complete in
-`FINAL_ARCHITECTURE_REVIEW.md`, including the exact boundary of a future
-scaffolding authorization. The user may now explicitly authorize Phase 0, but
-no such authorization is inferred from the architecture or license review.
+Approval of this plan did not itself authorize Phase 0. The user subsequently
+authorized the exact scope in `FINAL_ARCHITECTURE_REVIEW.md`, and Phase 0 was
+completed on 2026-08-16. No Gazebo gate is claimed. Phase 1 still requires its
+own authorization.

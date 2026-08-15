@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!-- Copyright 2026 Araco Hexapod contributors -->
+<!-- SPDX-License-Identifier: MIT -->
+<package format="3">
+  <name>araco_locomotion</name>
+  <version>0.1.0</version>
+  <description>Deterministic body, gait, foot-trajectory, and leg-command logic.</description>
+  <maintainer email="steven060520@gmail.com">stevw</maintainer>
+  <license file="LICENSE">MIT</license>
+
+  <url type="repository">https://github.com/stevw-repo/araco-hexapod-temp</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>araco_description</depend>
+  <depend>araco_interfaces</depend>
+  <depend>araco_kinematics</depend>
+
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

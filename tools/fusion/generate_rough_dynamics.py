@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
 """Generate a non-destructive, rough dynamics snapshot from a Fusion export."""
 
 from __future__ import annotations

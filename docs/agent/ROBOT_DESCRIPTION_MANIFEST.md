@@ -209,7 +209,7 @@ Raspberry Pi, camera, servos, and electronics whose redistribution terms have
 not been established. Their geometry is placement/mass evidence only and must
 not be copied automatically into the public ROS package. Phase 1 either records
 rights-compatible source/license/attribution metadata for a bundled asset or
-uses project-authored simplified proxy geometry. The repository's GPL-3.0-only
+uses project-authored simplified proxy geometry. The repository's MIT
 selection cannot grant rights in those imported models.
 
 ## Accepted base-frame conversion

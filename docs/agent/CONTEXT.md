@@ -308,28 +308,31 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 - Gate 6 requires three clean no-retry headless runs with the accepted
   reproducibility thresholds. It unlocks later simulator phases, not
   hardware.
-- Acceptance did not authorize Phase 0 or create `src/`.
+- This delivery-plan acceptance did not itself authorize Phase 0. The user
+  subsequently authorized Phase 0 on 2026-08-16, and the foundation is now
+  complete.
 
 ## Completed architecture closeout and license selection
 
 - The final cross-contract review is complete in
-  `docs/agent/FINAL_ARCHITECTURE_REVIEW.md`; architecture is ready for a
-  separate explicit Phase 0 authorization.
+  `docs/agent/FINAL_ARCHITECTURE_REVIEW.md`. The user subsequently authorized
+  Phase 0, and its repository foundation is complete.
 - Project-authored code, configuration, documentation, tests, and original
-  assets will use GNU GPL version 3 only (`GPL-3.0-only`), superseding the
-  earlier Apache-2.0 plan on 2026-08-16. The unmodified GPLv3 text is present
-  in root `LICENSE`; package-local copies and source SPDX headers remain part
-  of authorized Phase 0.
-- Package manifests will use
-  `<license file="LICENSE">GPL-3.0-only</license>` and project-authored source
-  files will carry SPDX identifiers where their format supports comments.
-- Phase 0 must audit linked/bundled dependencies for GPLv3 compatibility and
-  record the source-distribution and attribution obligations of distributed
-  combined/object-code forms.
-- Covered generated meshes require publishable preferred editable source and
-  generation tooling when distributed. The existing Fusion add-in's Autodesk
-  API boundary and the future Isaac adapter's proprietary SDK boundary require
-  explicit compatibility review.
+  assets use the MIT License (`MIT`) as of 2026-08-16. This supersedes the
+  earlier Apache-2.0 and GPL-3.0-only selections. Root and package-local
+  `LICENSE` files carry the MIT text and Phase 0 source uses exact MIT SPDX
+  headers.
+- Package manifests use `<license file="LICENSE">MIT</license>` and Phase 0
+  project source files carry MIT SPDX identifiers where their format supports
+  comments.
+- The completed Phase 0 audit records linked/bundled dependency, attribution,
+  and source-distribution boundaries in
+  `docs/agent/PHASE_0_LICENSE_AUDIT.md`.
+- Project-authored generated meshes should retain publishable preferred
+  editable source and generation tooling. The existing Fusion add-in's
+  Autodesk API boundary and the future Isaac adapter's proprietary SDK boundary
+  still require terms and redistribution review; MIT does not license those
+  third-party systems.
 - Vendor CAD and other third-party assets are not relicensed. A bundled asset
   requires exact provenance, license/attribution, modification, and
   redistribution metadata; unknown-rights geometry is excluded or replaced by
@@ -337,9 +340,30 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 - The review reconciled source-registry ownership, profile naming/seed/input
   selection, startup watchdog arming, gimbal hold ownership, backend readiness,
   orderly shutdown, and the simulator-versus-physical robot-description gate.
-- The user explicitly authorized committing and pushing the licensed
-  architecture/evidence checkpoint on 2026-08-16. That authorization does not
-  authorize Phase 0; `src/` remains absent.
+- The user explicitly authorized and pushed the licensed pre-Phase-0
+  architecture/evidence checkpoint on 2026-08-16. They later authorized Phase
+  0, which now provides all nine package skeletons under `src/`. On 2026-08-16
+  the user separately authorized committing and pushing the completed MIT Phase
+  0 checkpoint to `origin/main`.
+
+## Completed Phase 0 repository foundation
+
+- Phase 0 completed on 2026-08-16 and claims repository integrity only. It
+  claims no Gazebo gate and creates no runnable robot.
+- All nine accepted `ament_cmake` packages exist at version `0.1.0` and use the
+  verified Git identity `stevw <steven060520@gmail.com>` as public maintainer
+  metadata.
+- `araco_interfaces` generates the accepted seven messages and one
+  `SafetyTransition` action. Generated Python type introspection is tested
+  against the accepted fields, types, fixed arrays, and constants.
+- Exact project dependency edges and acyclicity are tested. No Phase 1 model,
+  configuration, launch, Gazebo runtime, executable, or hardware content was
+  introduced.
+- Root and package-local MIT licenses are identical and each package installs
+  its `LICENSE` beside `package.xml`.
+- Clean validation passed: rosdep satisfied; 9 packages built; 111 tests passed
+  with 0 errors, failures, or skips; all packages and all eight interfaces were
+  discoverable from the install space.
 
 ## Cloud simulation evidence (2026-08-14)
 
@@ -485,12 +509,13 @@ physical measurements:
 - The rebuild targets the current supported Isaac Sim/Isaac Lab generation at implementation time. Legacy Isaac Sim 4.5 assets are migration references, not a compatibility target.
 - Simulator acceptance criteria are required before implementation; the user approved defining explicit model, control, determinism, real-time-factor, sensor, and regression gates.
 - Reinforcement learning is explicitly deferred. Initial milestones must use deterministic, conventional algorithms for kinematics, tripod gait generation, body control, teleoperation, state estimation, SLAM, and Nav2. RL may later adapt or improve a proven algorithmic baseline.
-- No implementation or project scaffolding is authorized yet; continue discovery and design discussion only.
+- Phase 0 repository/package scaffolding is complete. Phase 1 implementation
+  and every later simulator or hardware phase require separate authorization.
 
 ## Evidence boundary
 
 Facts above marked as legacy behavior describe inspected files, not necessarily
 the current physical robot or desired future behavior. The new simulator
-architecture recorded above is accepted; the configuration-composition section
-is also accepted. Physical-hardware behavior and the phased implementation plan
-remain later decisions.
+architecture, configuration-composition contract, and phased implementation
+plan recorded above are accepted. Physical-hardware behavior and later
+deployment decisions remain unresolved.

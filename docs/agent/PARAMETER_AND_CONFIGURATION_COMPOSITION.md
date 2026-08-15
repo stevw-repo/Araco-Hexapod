@@ -115,8 +115,8 @@ formats and validators. A structured resource descriptor gives them an artifact
 identity, version, path, dependencies, evidence classification, creator,
 source, SPDX or other exact license expression, required attribution,
 modification status, and redistribution status; preflight computes the resource
-hash. A GPL-covered generated form additionally identifies its preferred
-editable source and generator/tool identity. A resource with unknown
+hash. A project-generated form additionally identifies its preferred editable
+source and generator/tool identity. A resource with unknown
 redistribution permission or unavailable required source is rejected from the
 installed/public bundle. Numeric robot topology is not copied into the
 descriptor.

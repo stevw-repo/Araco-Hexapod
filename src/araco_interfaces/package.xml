@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!-- Copyright 2026 Araco Hexapod contributors -->
+<!-- SPDX-License-Identifier: MIT -->
+<package format="3">
+  <name>araco_interfaces</name>
+  <version>0.1.0</version>
+  <description>Project-specific messages and actions for the Araco hexapod.</description>
+  <maintainer email="steven060520@gmail.com">stevw</maintainer>
+  <license file="LICENSE">MIT</license>
+
+  <url type="repository">https://github.com/stevw-repo/araco-hexapod-temp</url>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <depend>builtin_interfaces</depend>
+  <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

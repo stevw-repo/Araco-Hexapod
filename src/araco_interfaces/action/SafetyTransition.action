@@ -1,0 +1,18 @@
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+# Trusted long-running software safety-state transition request.
+uint8 REQUEST_HOLD=1
+uint8 REQUEST_ENABLE_MOTION=2
+uint8 REQUEST_RESET_FAULT=3
+uint8 REQUEST_SHUTDOWN=4
+uint8 REQUEST_LATCHED_HOLD=5
+
+uint8 request
+---
+bool accepted
+uint8 final_state
+uint16 reason_code
+---
+uint8 state
+uint16 reason_code

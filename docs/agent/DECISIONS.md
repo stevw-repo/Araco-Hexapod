@@ -596,7 +596,8 @@ Consequences:
 
 ## 2026-08-16 — License changed to GNU GPL version 3 only
 
-Status: selected explicitly by the user on 2026-08-16.
+Status: **superseded later on 2026-08-16 by the MIT decision below**. Retained
+as decision and published-checkpoint history.
 
 Decision:
 
@@ -664,3 +665,90 @@ Consequences:
 - The checkpoint may be committed and pushed despite the earlier general
   no-commit/no-push boundary because the user granted specific authorization
   for this checkpoint.
+
+## 2026-08-16 — Phase 0 repository foundation authorized
+
+Status: authorized explicitly by the user on 2026-08-16.
+
+Decision:
+
+- Begin only the Phase 0 scope frozen in
+  `docs/agent/FINAL_ARCHITECTURE_REVIEW.md` and
+  `docs/agent/PHASED_DELIVERY_PLAN.md`.
+- Create the nine package skeletons, accepted seven messages and one action,
+  package metadata/build/install/test structure, package-local license copies,
+  root workspace hygiene and build README, and the required Phase 0 licensing
+  and dependency validation evidence. The then-current GPLv3 license portion
+  was superseded later the same day by the MIT decision below.
+- Do not begin Phase 1 model/configuration authoring, Gazebo runtime work,
+  motion-capable nodes, physical profiles, servo/UART integration, hardware
+  commands, commits, pushes, releases, or hosted CI changes.
+
+Rationale: the licensed architecture checkpoint is complete and the user has
+now crossed the separately defined implementation authorization boundary.
+
+Consequences:
+
+- Phase 0 may claim repository integrity only and must explicitly claim no
+  Gazebo gate.
+- Public package manifests remain blocked until the user confirms the
+  maintainer name and email intended for publication.
+
+## 2026-08-16 — License changed to MIT and maintainer identity confirmed
+
+Status: accepted explicitly by the user on 2026-08-16.
+
+Decision:
+
+- Supersede the earlier Apache-2.0 plan and GPL-3.0-only application with the
+  MIT License, SPDX identifier `MIT`, for project-authored repository and ROS
+  package content.
+- Use `Copyright (c) 2026 Araco Hexapod contributors` in the MIT full text and
+  `SPDX-License-Identifier: MIT` in project-authored source files whose formats
+  support comments.
+- Use `<license file="LICENSE">MIT</license>` and the exact package-local MIT
+  text in every initial package.
+- Publish `stevw <steven060520@gmail.com>` as the maintainer in all nine
+  `package.xml` manifests, as explicitly authorized by the user.
+- Continue preserving third-party licenses, attributions, and redistribution
+  restrictions. MIT does not relicense Autodesk Fusion/API materials, vendor
+  CAD, ROS/Gazebo dependencies, or future proprietary SDKs.
+
+Rationale: GPLv3 was workable but added avoidable friction for the project's
+planned proprietary Fusion/Isaac integration boundaries and did not fit the
+Jazzy copyright-lint template without special handling. MIT is a standard
+permissive open-source license that preserves attribution and warranty
+disclaimers while allowing broader integration. “No license” was rejected
+because default copyright would not grant the reuse, modification, and
+distribution permissions expected for this public repository.
+
+Consequences:
+
+- The Phase 0 license audit checks notices and redistribution terms rather than
+  GPL compatibility/Corresponding Source for combined works.
+- The prior GPL checkpoint remains in Git history as historical licensing; the
+  same rights holder has authorized the current MIT relicense. No commit or
+  push of Phase 0 is authorized by this decision.
+- The public-maintainer input is resolved and package manifests may be written.
+
+## 2026-08-16 — MIT Phase 0 checkpoint commit and push
+
+Status: authorized explicitly by the user on 2026-08-16.
+
+Decision:
+
+- Commit the completed and validated Phase 0 repository foundation under MIT.
+- Push the checkpoint to `origin/main` using the configured Git identity
+  `stevw <steven060520@gmail.com>`.
+- Keep generated `build/`, `install/`, `log/`, and cache artifacts untracked.
+- Do not infer authorization for Phase 1 from this checkpoint operation.
+
+Rationale: preserve the clean Phase 0 result as a recoverable remote baseline
+before any Gate 0 model/configuration implementation begins.
+
+Consequences:
+
+- The remote default branch will move beyond the historical GPL pre-Phase-0
+  checkpoint and contain the current MIT license and package foundation.
+- The prior GPL commit remains in history; no history rewrite is authorized or
+  required.

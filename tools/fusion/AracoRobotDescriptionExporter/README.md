@@ -1,5 +1,9 @@
 # Araco Robot Description Exporter
 
+This project-authored add-in source is licensed under
+`MIT`; see the repository root `LICENSE`. Autodesk Fusion and its API
+are proprietary third-party software and are not included or relicensed here.
+
 This Autodesk Fusion Python script reads the active assembly and writes one JSON
 inventory. It does not edit the design, drive joints, export meshes, or interact
 with the physical robot.
