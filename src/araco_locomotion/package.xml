@@ -15,11 +15,13 @@
   <depend>araco_description</depend>
   <depend>araco_interfaces</depend>
   <depend>araco_kinematics</depend>
+  <depend>geometry_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>trajectory_msgs</depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

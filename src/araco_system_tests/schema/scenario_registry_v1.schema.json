@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["kind", "seed", "repetitions", "preflight_gates", "repeated_gates", "evidence_executables", "failure_evidence"],
+  "properties": {
+    "kind": {"const": "gate6_scenario_registry"},
+    "seed": {"const": 42},
+    "repetitions": {"const": 3},
+    "preflight_gates": {"const": [0, 1, 2, 3, 4, 5]},
+    "repeated_gates": {"const": [0, 1, 2, 3, 4, 5]},
+    "evidence_executables": {
+      "type": "object",
+      "required": ["0", "1", "2", "3", "4", "5"],
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "failure_evidence": {
+      "type": "object",
+      "required": ["automatic_retry", "retain_complete_logs", "focused_bag_topics"],
+      "properties": {
+        "automatic_retry": {"const": false},
+        "retain_complete_logs": {"const": true},
+        "focused_bag_topics": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^/"}
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

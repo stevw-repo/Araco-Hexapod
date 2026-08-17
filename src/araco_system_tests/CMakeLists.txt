@@ -16,7 +16,38 @@ install(
     scripts/araco_gate0_evidence
     scripts/araco_gate1_evidence
     scripts/araco_gate1_score
+    scripts/araco_gate3_score
+    scripts/araco_gate4_score
+    scripts/araco_gate5_score
+    scripts/araco_gate6_evidence
+    scripts/araco_joint_state_relay
   DESTINATION "lib/${PROJECT_NAME}"
+)
+
+# Gate 2 deliberately reuses the Gate 1 physics scorer while the executable
+# name selects the additional computed-IK contract checks.
+install(
+  PROGRAMS scripts/araco_gate1_evidence
+  DESTINATION "lib/${PROJECT_NAME}"
+  RENAME araco_gate2_evidence
+)
+
+install(
+  PROGRAMS scripts/araco_gate1_evidence
+  DESTINATION "lib/${PROJECT_NAME}"
+  RENAME araco_gate3_evidence
+)
+
+install(
+  PROGRAMS scripts/araco_gate1_evidence
+  DESTINATION "lib/${PROJECT_NAME}"
+  RENAME araco_gate4_evidence
+)
+
+install(
+  PROGRAMS scripts/araco_gate1_evidence
+  DESTINATION "lib/${PROJECT_NAME}"
+  RENAME araco_gate5_evidence
 )
 
 set(package_resource_directories
@@ -62,6 +93,10 @@ if(BUILD_TESTING)
     test_gate1_preflight
     test/test_gate1_preflight.py
     TIMEOUT 60
+  )
+  ament_add_pytest_test(
+    test_gate6
+    test/test_gate6.py
   )
 endif()
 

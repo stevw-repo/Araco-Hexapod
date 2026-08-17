@@ -23,3 +23,54 @@ command_arbiter:
     type: string
     description: Expected normalized source-registry hash.
     read_only: true
+  teleop_enabled:
+    type: bool
+    description: Whether the normal keyboard candidate input exists in this profile.
+    read_only: true
+  system_test_enabled:
+    type: bool
+    description: Whether the explicit test-only candidate input exists.
+    read_only: true
+  teleop_source_id:
+    type: int
+    description: Trusted registry identity for the keyboard source.
+    read_only: true
+  teleop_priority:
+    type: int
+    description: Trusted registry priority for the teleop source.
+    read_only: true
+    validation:
+      gt_eq<>: [0]
+  system_test_source_id:
+    type: int
+    description: Trusted registry identity for the system-test source.
+    read_only: true
+  system_test_priority:
+    type: int
+    description: Trusted registry priority for the system-test source.
+    read_only: true
+    validation:
+      gt_eq<>: [0]
+  teleop_timeout_s:
+    type: double
+    description: Steady receipt timeout for keyboard candidates.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  system_test_timeout_s:
+    type: double
+    description: Steady receipt timeout for system-test candidates.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  body_envelope:
+    planar_speed_hard_m_s: {type: double, description: Hard planar speed magnitude., read_only: true}
+    yaw_rate_hard_rad_s: {type: double, description: Hard yaw-rate magnitude., read_only: true}
+    xy_hard_m: {type: double, description: Hard X/Y body-offset magnitude., read_only: true}
+    z_hard_lower_m: {type: double, description: Hard lower Z body offset., read_only: true}
+    z_hard_upper_m: {type: double, description: Hard upper Z body offset., read_only: true}
+    roll_pitch_hard_rad: {type: double, description: Hard roll/pitch magnitude., read_only: true}
+    yaw_hard_rad: {type: double, description: Hard posture-yaw magnitude., read_only: true}
+    quaternion_norm_tolerance: {type: double, description: Unit-quaternion tolerance., read_only: true}
+    reserved_twist_tolerance: {type: double, description: Reserved twist zero tolerance., read_only: true}
+    stand_velocity_tolerance: {type: double, description: Stand velocity zero tolerance., read_only: true}

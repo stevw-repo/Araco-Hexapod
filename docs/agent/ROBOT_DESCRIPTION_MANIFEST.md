@@ -570,7 +570,7 @@ package skeleton:
 - [ ] Physical mass/inertia validation and resolution of the legacy `L1E1`
   outlier.
 
-Phase 0, Phase 1 / Gate 0, Phase 2 / Gate 1, and the bounded detailed-visual
-integration are implemented and validated. Phase 3 / Gate 2 and later work
-remain separately authorized phases. Nothing in this manifest authorizes
-physical motion.
+Phase 0, Phase 1 / Gate 0, Phase 2 / Gate 1, Phase 3 / Gate 2, Phase 4 / Gate 3,
+and the bounded detailed-visual integration are implemented and validated.
+Phase 5 and later work remain separately authorized phases. Nothing in this
+manifest authorizes physical motion.

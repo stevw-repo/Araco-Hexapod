@@ -1,1 +1,31 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","required":["kind","algorithm","position_tolerance_m","maximum_iterations","damping","singularity_threshold","reachability_margin_m","failure_policy"],"properties":{"kind":{"const":"ik_solver"},"algorithm":{"const":"damped-least-squares"},"position_tolerance_m":{"type":"number","exclusiveMinimum":0},"maximum_iterations":{"type":"integer","minimum":1},"damping":{"type":"number","exclusiveMinimum":0},"singularity_threshold":{"type":"number","exclusiveMinimum":0},"reachability_margin_m":{"type":"number","minimum":0},"failure_policy":{"const":"reject_complete_transaction"}},"additionalProperties":false}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "kind",
+    "algorithm",
+    "foot_pitch_target_policy",
+    "orientation_residual_policy",
+    "position_tolerance_m",
+    "singularity_threshold",
+    "near_limit_margin_rad",
+    "oracle_tolerance_rad",
+    "standing_branch",
+    "failure_policy"
+  ],
+  "properties": {
+    "kind": {"const": "ik_solver"},
+    "algorithm": {"const": "analytic-four-dof-position-and-foot-pitch"},
+    "foot_pitch_target_policy": {
+      "const": "project_world_down_into_each_leg_sagittal_plane"
+    },
+    "orientation_residual_policy": {"const": "report_rejected_angle"},
+    "position_tolerance_m": {"type": "number", "exclusiveMinimum": 0},
+    "singularity_threshold": {"type": "number", "exclusiveMinimum": 0},
+    "near_limit_margin_rad": {"type": "number", "minimum": 0},
+    "oracle_tolerance_rad": {"type": "number", "exclusiveMinimum": 0},
+    "standing_branch": {"enum": ["knee_down", "knee_up"]},
+    "failure_policy": {"const": "reject_complete_transaction"}
+  },
+  "additionalProperties": false
+}

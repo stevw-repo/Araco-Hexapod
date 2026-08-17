@@ -907,8 +907,9 @@ Decision:
 - Preserve `log/gate_1_20260816_phase2_hold/` as failed audit evidence: it
   exposed the unquoted workspace path and timeout-log bytes defect that were
   corrected before the passing evidence run.
-- Keep Phase 3 / Gate 2 and later phases unauthorized. Gate 1 must remain unable
-  to enter `MOTION_ENABLED`; simulator evidence does not authorize hardware.
+- At this checkpoint, keep Phase 3 / Gate 2 and later phases unauthorized. This
+  authorization boundary was superseded by the later Phase 3 authorization;
+  the prohibition on `MOTION_ENABLED` and hardware actuation remains active.
 
 Rationale: the passing run reached `HOLDING` in `15.340814665 s`, never entered
 motion or fault states, held exact controller ownership, maintained all six
@@ -1081,3 +1082,848 @@ Implementation evidence:
   `gz sdf -k` pass.
 - Headed Gazebo reached `HOLDING` without motion enablement using the new camera
   visuals.
+
+## 2026-08-16 — Phase 3 / Gate 2 authorization
+
+Status: implemented and validated. Its original Phase 4 authorization boundary
+was superseded by the separate Phase 4 decision recorded below.
+
+Decision:
+
+- Begin the accepted Phase 3 scope: pure typed deterministic FK/IK, explicit
+  branch/reachability/singularity/finite/limit results, canonical-description
+  geometry adaptation, and transactional six-leg standing target generation.
+- Replace only the transitional Gate 1 direct target producer. Retain the
+  nominal standing artifact as the branch/regression oracle and reuse the Gate
+  1 simulator scorer.
+- Require Gates 0 and 1 to regress cleanly before Gate 2 can pass. Do not enable
+  body-pose commands, gait motion, physical actuation, or Phase 4 behavior.
+
+Rationale: the user explicitly requested moving to the next phase after the
+completed Phase 1/2 and detailed-visual checkpoint was committed and pushed as
+`7b44c96`.
+
+Implementation evidence:
+
+- A fresh installed-space build at `/tmp/araco_gate2_final.n0smqm/` built all
+  nine packages and passed 213 tests with zero failures or errors and nine
+  expected `cppcheck` skips.
+- The pure solver passed 40,000 seeded reachable round trips plus explicit
+  branch, boundary, singular, unreachable, non-finite, invalid-configuration,
+  and limit cases. Whole-body tests prove complete ordered output and rejection
+  without partial commit.
+- Gate 0 regression, Gate 1 live regression, and Gate 2 computed standing pass
+  at `log/gate_0_20260816_phase3_regression/`,
+  `log/gate_1_20260816_phase3_regression/`, and
+  `log/gate_2_20260816_computed_standing/` respectively. They share behavior
+  fingerprint
+  `f656ab6f81655d32e3d386d856c56baed64d5d0dfaf3af2c6cc9e7290c0f653c`.
+- Gate 2 proves the analytic solver and all typed six-leg inputs were selected,
+  the transaction committed, all six foot contacts remained valid, and no
+  motion-enabled or execute state occurred. Maximum computed-to-oracle error
+  was `3.27e-7 rad`.
+
+## 2026-08-16 — Phase 4 / Gate 3 authorization
+
+Status: implemented and validated; Phase 5 and later remain unauthorized.
+
+Decision:
+
+- Implement the accepted simulator-only static body-pose scope: absolute body
+  X/Y/Z offsets and roll/pitch/posture-yaw while the six nominal feet remain
+  fixed in the ground/body transform calculation.
+- Exercise the real system-test candidate → arbiter → safety → locomotion →
+  controller → Gazebo path, including release, trusted enable, and a fresh
+  activation edge.
+- Enforce command envelopes and final joint limits transactionally, keep
+  `GAIT_STAND` phase fixed, and keep production nodes isolated from simulation
+  ground truth.
+- Require Gates 0–2 to regress cleanly before Gate 3 may pass. Do not implement
+  walking, controlled gait transitions, physical actuation, or Phase 5 work.
+
+Rationale: the user explicitly requested the next phase after reviewing the
+completed Gate 2 capabilities.
+
+Outcome:
+
+- Gates 0–3 pass on 2026-08-16. Gate 3 passes all 14 accepted zero, ±50%
+  single-axis, and combined-35% cases through the production command path.
+- The exact Fusion/vendor foot visuals remain unchanged. The physical collision
+  approximation is a 4 mm-radius sphere at each kinematic foot tip. Earlier
+  oriented box proxies caused artificial contact loss during roll and pitch;
+  an orientation-independent point contact matches the current planted-foot
+  kinematic abstraction without claiming measured physical geometry.
+- Phase 3/4 remain uncommitted and unpushed until the user separately requests
+  a checkpoint.
+
+## 2026-08-16 — Phase 5 / Gate 4 authorization
+
+Status: implemented and validated; Phase 6 and physical deployment remain
+unauthorized.
+
+Decision:
+
+- Implement the accepted simulator-only deterministic tripod gait and
+  controlled-stop scope through the production command, safety, locomotion,
+  controller, and Gazebo path.
+- Cover bounded forward, reverse, lateral, yaw, and combined motion; ordinary
+  manual hold and source loss; planned return to six-foot stance; stable-hold
+  dwell; and no-surprise resume.
+- Require Gates 0–3 to remain green before Gate 4 may pass. Full fault,
+  restart, and handover matrices remain Phase 6 work.
+- Preserve the uncommitted Phase 3/4 work and do not commit or push without a
+  separate user request.
+
+Rationale: after the successful headed static body-pose demonstration, the user
+explicitly requested the next phase.
+
+Outcome:
+
+- Gates 0–4 pass on 2026-08-16 with behavior fingerprint
+  `4f5d37e91c937543fae18dc76793b57eb58adabacba3c72eba91fd1677f14dc8`.
+- Gate 4 passes all seven accepted forward/reverse/lateral/yaw/combined cases
+  with five complete cycles each, minimum three support contacts, full support
+  contact duty, controlled stops below `0.892 s`, manual hold, and active
+  `GAIT_STAND`.
+- A separate `gazebo_dev_v0` keyboard-adapter smoke test entered motion,
+  advanced the tripod gait cycle, and returned through controlled stopping to
+  holding when input expired.
+- Phase 3–5 remain uncommitted and unpushed pending explicit checkpoint
+  authorization.
+
+## 2026-08-16 — Versioned Gazebo position-response revision
+
+Status: accepted and validated under the Phase 5 no-silent-tuning rule; final
+Gates 0–4 regression passes.
+
+Decision:
+
+- Retain `gz_ros2_control_v0.yaml` as historical version `0.1.0` with gain
+  `0.040`.
+- Add `gz_ros2_control_v1.yaml` as version `0.2.0` with simulator-only position
+  proportional gain `0.100`, and select v1 consistently in the development,
+  CI, Gate 3, and Gate 4 profiles.
+- Do not change the Gate 4 contact, tracking, or stop thresholds. Re-run every
+  gate through Gate 4 with the revised behavior fingerprint.
+
+Rationale:
+
+- Phase 5 contact evidence repeatedly showed the outgoing tripod retained all
+  three contacts while the intended incoming tripod retained zero at phases
+  `0.050–0.067` after each handover. This matched the documented approximate
+  `0.100 s` first-order response of gain `0.040` and could not satisfy the
+  frozen `0.050 s` transition exclusion.
+- Gain `0.100` gives an approximate `0.040 s` simulator response at the
+  accepted 250 Hz controller-manager rate. This addresses the incompatible
+  simulator response rather than weakening the evidence or falsifying gait
+  phase. It remains a provisional simulator value and supplies no physical
+  servo safety evidence.
+
+Outcome:
+
+- The unchanged Gate 4 thresholds pass for all seven direction cases. Support
+  contact duty is `1.0`, swing contact duty is `0.08`, and worst joint tracking
+  error is `0.04256 rad`.
+- The gain remains explicitly provisional and simulator-only.
+
+## 2026-08-16 — Legacy foot-path curve with phase-0.75 continuity fix
+
+Status: accepted by the user, implemented, and validated through Gates 0–4.
+
+Decision:
+
+- Replace the initial generic smoothstep horizontal swing and piecewise-linear
+  lift/touchdown shapes with an independent C++ expression of the legacy
+  function-defined horizontal and vertical foot paths.
+- Normalize the legacy functions to the accepted configurable 60 mm maximum
+  stride and 30 mm swing clearance, and phase-shift them onto the new
+  state-machine swing interval without changing tripod membership or handover
+  timing.
+- Correct the legacy horizontal branch at phase `0.75`: retain the `+0.5`
+  plateau value at the boundary, then decrease linearly to zero at phase
+  `1.0`. This makes position continuous and preserves the constant
+  supporting-foot slope across the cycle wrap.
+- Preserve the new architecture, velocity shaping, transactional IK, joint
+  limits, runtime joint-rate limiter, controlled stop, stable hold, and safety
+  state machine. Do not port the legacy counter/controller architecture.
+- Version the gait artifact as `0.2.0` with identity
+  `tripod_slow_legacy_curve_phase075_fix`. Extend only Gate 4's observation
+  duration from `6.2 s` to `7.6 s`; keep every physical, contact, tracking,
+  stop, and scored-window threshold unchanged.
+
+Rationale:
+
+- The user judged the function-defined legacy curve smoother in practice and
+  rejected a proposed fully smoothed horizontal replacement because its
+  support-foot speed varied and appeared to pause near mid-cycle.
+- The raw legacy polynomial is sharper than the per-update joint-motion cap at
+  some samples. Retaining the production rate limiter is safer than weakening
+  it or distorting the approved path merely to match the nominal phase clock.
+  The longer evidence observation window measures the resulting five complete
+  cycles without changing the acceptance limits.
+
+Outcome:
+
+- A clean nine-package build and 248 tests pass with zero failures.
+- Gates 0–4 pass with behavior fingerprint
+  `fa45b732e967a4f780e297c56b2c736b09d518dc3a10001dbe45160ae1664de9`.
+- All seven Gate 4 direction cases complete five cycles, retain at least three
+  support contacts with `1.0` support-contact duty, avoid non-foot contact,
+  and return to a stable six-foot hold. Worst joint tracking error is
+  `0.04508 rad`; controlled-stop time is at most `1.478 s`.
+- The curve source records its behavioral provenance from the project's
+  Apache-2.0 legacy `algo.py`; no legacy Python source lines were copied.
+
+## 2026-08-16 — Precision-biased speed scheduling direction
+
+Status: accepted by the user, implemented, and validated through Gates 0–4.
+
+Decision:
+
+- Keep the ROS locomotion control loop fixed at 100 Hz and keep gait cadence
+  and stride as separate, observable parameters owned by one scheduler.
+- Prioritize responsive teleoperation and fine gait-level displacement: while
+  moving at low and normal speeds, retain a relatively high cadence in a narrow
+  tested range and use short stride length as the primary speed variable.
+- Increase cadence further only when higher requested velocity would otherwise
+  require excessive stride; retain the existing joint-rate shaper as final
+  authority and saturate infeasible velocity requests.
+- Apply the same normalized amplitude factor `a` to horizontal stride and swing
+  clearance: `S=a*S_max`, `H=a*H_max`. At zero command enter stand. Validate an
+  active-command deadband so the smallest nonzero proportional clearance still
+  clears the ground rather than adding an unapproved independent lift floor.
+
+Rationale:
+
+- The user prefers the shorter displacement per gait cycle and faster arrival
+  of safe tripod boundaries because these make tiny teleoperated moves and
+  command release more responsive.
+- Keeping cadence separate retains headroom for geometric stride limits and
+  measured joint/contact constraints without coupling gait speed to the ROS
+  callback frequency.
+
+Consequences:
+
+- The earlier proposal to slow cadence substantially at low speed while
+  retaining a non-tiny stride is superseded.
+- Exact physical displacement will still be limited by servo resolution,
+  backlash, compliance, contact, and slip; a later odometry-closed finite-nudge
+  command is the stronger solution for guaranteed millimetre-scale moves.
+
+Implementation values selected for simulator validation:
+
+- Fixed locomotion callback: `100 Hz` (unchanged).
+- Responsive baseline cadence: `1.0 Hz`; maximum cadence: `1.5 Hz`; cadence
+  slew limit: `1.0 Hz/s`.
+- Cadence remains at baseline until the largest required leg stride would
+  exceed `0.5` of the `60 mm` maximum, then rises only as needed.
+- Local-foot-speed deadband: `0.005 m/s`. At the smallest admitted speed, the
+  proportional maximum swing clearance begins near `1.25 mm`; Gate 4 must
+  prove that a just-above-deadband command clears the simulated ground.
+- Each leg uses its own stride fraction for clearance, exactly
+  `H_i = H_max * |S_i| / S_max`. There is no independent clearance floor.
+- Requests that still exceed maximum stride at maximum cadence are scaled
+  uniformly. Cadence, maximum stride scale, maximum clearance, and applied
+  velocity scale are exposed in locomotion status.
+
+These numerical values are provisional simulator operating policy. They do
+not authorize physical actuation or assert that the open-loop servos can
+reproduce the same minimum effective motion.
+
+Outcome:
+
+- Gait artifact `araco.locomotion.gait-tripod-slow` is version `0.3.0` with
+  identity `tripod_legacy_curve_responsive_scheduler`.
+- An admitted command ramps stride and lift continuously from zero; velocity
+  shaped below the admission deadband is no longer hidden and released as a
+  discontinuous first step. A zero or below-deadband request still stands.
+- `LocomotionStatus` exposes applied cadence, maximum stride scale, maximum
+  proportional clearance, and uniform velocity saturation scale.
+- A clean nine-package build passes 255 tests with zero failures and 15
+  expected skips. Gates 0–4 pass with behavior fingerprint
+  `6f9678fd5aae3b832b2afede9710d187c3252a326a46a382d5cc74b937b58bda`.
+- Gate 4 passes a `0.006 m/s` precision case at exactly `1.0 Hz`, `0.05`
+  stride scale, and `0.0015 m` clearance, plus all seven prior movement cases.
+  The combined case rises to about `1.293 Hz` at the preferred `0.5` stride
+  scale. All eight cases retain at least three support contacts.
+
+## 2026-08-16 — Simulator response revision for responsive cadence
+
+Status: implemented and validated through Gates 0–4.
+
+Decision:
+
+- Retain the historical backend artifacts v0 (`0.040`) and v1 (`0.100`).
+- Add `gz_ros2_control_v2.yaml`, artifact version `0.3.0`, with provisional
+  simulator-only position proportional gain `0.150`, and select it consistently
+  in development, CI, Gate 3, and Gate 4 profiles.
+- Preserve Gate 4's physical, contact, tracking, and stop thresholds. Treat the
+  mathematically exact `0.050 s` handover-exclusion boundary as excluded with a
+  floating-point tolerance; do not extend the exclusion duration.
+
+Rationale:
+
+- At the responsive 1.0–1.293 Hz measured cadences, gain v1 trailed the
+  commanded handover by about 50–60 ms even though the robot remained stable.
+  The written Gate 4 contract freezes a 50 ms transition exclusion and requires
+  intended support contacts after it.
+- The v2 response aligns simulated tracking with that existing contract rather
+  than weakening contact evidence or modifying the approved legacy foot curve.
+  It remains only a functional simulator estimate.
+
+Outcome:
+
+- Gates 0–4 pass unchanged acceptance limits. In final Gate 4 evidence, all
+  eight cases have minimum three intended support contacts and support-contact
+  duty `1.0`; worst joint tracking error is `0.02639 rad`.
+- This tuning is not a physical-servo response model, calibration, or hardware
+  motion authorization.
+
+## 2026-08-16 — Ground-relative foot orientation during body tilt
+
+Status: accepted by the user, implemented, and validated through Gates 0–4.
+
+Decision:
+
+- Retain the new analytic, fail-closed four-DOF IK and its whole-robot
+  transactional commit. Do not restore the legacy unchecked IK formulas.
+- For body roll and pitch, express world-down in the commanded body frame and
+  project it into each leg's instantaneous sagittal plane. Supply the resulting
+  per-leg pitch to the existing IK.
+- Report the angular component rejected by that projection as the unavoidable
+  orientation residual. A four-DOF leg controls foot-tip position and one foot
+  pitch, so it cannot independently realize every component of a full 3D foot
+  orientation.
+- Preserve the accepted constant standing pitch at the level pose and preserve
+  yaw-only behavior. Reject the complete six-leg transaction if a projection
+  is non-finite or degenerate.
+- Extend unit tests and simulator Gate 3 so roll/pitch evidence checks actual
+  foot-link orientation against the closest realizable projection, checks the
+  excess over the unavoidable world-vertical residual, and retains all six
+  foot-contact requirements.
+
+Rationale:
+
+- The legacy algorithm adjusted the fourth-link direction during body tilt,
+  while the current caller always supplied `-pi/2`. Keeping the modern solver
+  and correcting only its orientation input recovers the useful behavior
+  without losing explicit limits, reachability checks, FK validation, or
+  atomic failure handling.
+
+Outcome:
+
+- The versioned `araco.kinematics.ik` policy is `0.2.0`; composition requires
+  `project_world_down_into_each_leg_sagittal_plane` and explicit rejected-angle
+  residual reporting.
+- Level and yaw-only poses retain the accepted `-pi/2` pitch. Roll/pitch poses
+  produce separate per-leg pitch targets, and non-finite or degenerate
+  projection input rejects the full 24-joint transaction.
+- A clean nine-package build passes 251 tests with zero failures and 15
+  expected skips. Gates 0–4 pass with behavior fingerprint
+  `14cc9acbea9d31ca7c5feb4ab7aa0ab13d84f9dd615227099808d001fc0d2cdd`.
+- Gate 3 reconstructs each actual foot-link axis from Gazebo joint feedback and
+  ground-truth body attitude. All 14 pose cases pass: foot-axis projection
+  error and vertical error above the unavoidable residual are numerically
+  negligible, all six contact duties are `1.0`, and no non-foot collision is
+  observed. The largest measured unavoidable residual is about `0.075 rad` in
+  the accepted 50% pitch cases.
+
+## 2026-08-16 — Focused keyboard-control window
+
+Status: accepted by the user, implemented, and validated.
+
+Decision:
+
+- Replace terminal stdin capture with a development-only Tk window that owns
+  real key press/release and focus state.
+- Publish the complete pressed-key set at `50 Hz` using internal protocol
+  `araco.keyboard-state.v1`. The adapter requires current window focus, the
+  `space` deadman, and a heartbeat no older than `0.120 s`.
+- Permit simultaneous `W/S`, `A/D`, and `Q/E` axes; equal opposite inputs
+  cancel. Focus loss, closing the window, malformed input, adapter lifecycle
+  deactivation, and heartbeat loss all release the command fail-closed.
+- Put guarded Enable Motion and Controlled Hold action controls plus the current
+  safety/readiness state in the window. Do not bypass the arbiter, safety
+  supervisor, locomotion, or controller path.
+- Select versioned keyboard mapping v1 (`0.3.0`) and single-robot wiring v1
+  (`0.2.0`) in every simulator profile so behavior fingerprints remain
+  comparable, while only the development launch starts the UI and adapter.
+
+Rationale:
+
+- A headed test proved `ros2 launch` owns the PTY and does not forward its stdin
+  to the adapter child process. The former two independent 120 ms key pulses
+  also could not represent a normally held `Space + W` chord reliably.
+- A focused full-state heartbeat provides observable simultaneous input and a
+  bounded disconnect/focus-loss stop without weakening the existing source and
+  safety watchdogs.
+
+Consequences:
+
+- Keyboard control will require the `python3-tk` runtime package and a graphical
+  session. Headless CI and scored gates do not start the window.
+- This does not add joystick support; the PXN-2113 Pro remains a separate input
+  adapter and device-mapping task.
+- Interactive usability is validated for the headed Gazebo development profile
+  using a real `Space + W` press/release. Joystick support remains separate.
+
+Outcome:
+
+- Clean root `/tmp/araco_keyboard_ui_final_20260816_02/` builds all nine
+  packages and passes 258 tests with zero failures and 15 expected skips.
+- Gates 0–4 pass with behavior fingerprint
+  `8ac1afc7650e37c5bfafb464cb06bb4ca3bc6e0f2552494a20885d895173280d`.
+- The final headed run used bundle
+  `/tmp/araco_keyboard_ui_demo_20260816_02/`. A real `Space + W` state produced
+  an active `0.05 m/s` forward candidate through the teleop adapter. Releasing
+  it produced an inactive stand candidate, and safety returned to `HOLDING`
+  with readiness `127/127`, zero fault mask, and no reset requirement.
+- The orderly safety/Gazebo shutdown completed with every project process,
+  including the UI, exiting cleanly. An earlier UI cleanup race and its
+  publisher-context traceback were corrected before this final run.
+
+Follow-up correction accepted on 2026-08-16:
+
+- Releasing one direction key must not surrender the already accepted teleop
+  source while the `space` deadman remains held. A fresh, focused deadman with
+  no net direction now publishes `active=true`, zero velocity, and
+  `GAIT_STAND`; it therefore stays motion-authorized while the operator changes
+  direction keys. Releasing `space`, losing focus/heartbeat, or closing the
+  window still releases the source immediately.
+- Tk key releases are committed after a 30 ms repeat-suppression interval and
+  cancelled by a matching press, preventing X11 key-repeat release/press pairs
+  from creating a false gap. Focus loss bypasses that delay and releases all
+  input immediately.
+- This supersedes the earlier headed-test observation that releasing the sole
+  direction key intentionally produced `active=false`. Mapping v1 is bumped
+  from `0.2.0` to `0.3.0`.
+- Clean root `/tmp/araco_keyboard_ui_final_20260816_03/` builds all nine
+  packages and passes 259 tests with zero failures and 15 expected skips.
+  Gates 0–4 pass with behavior fingerprint
+  `35574c357af798bc014d5de8fdf8909ba02af07331e002fd1fd8ae2052c452db`.
+  The final Gate 2 evidence is
+  `/tmp/araco_keyboard_ui_gate2_20260816_04/`; an earlier attempt passed every
+  scored check but lost its lifecycle helper to the normal shutdown race.
+- Headed bundle `/tmp/araco_keyboard_ui_demo_20260816_03/` observed, in order:
+  active tripod `vx=0.05, vy=0.05` for `Space+W+A`; active tripod `vy=0.05`
+  after releasing only `W`; active neutral `GAIT_STAND` after releasing only
+  `A`; and inactive only after releasing `Space`. The safety trace remained in
+  `MOTION_ENABLED` throughout the direction-key releases and entered controlled
+  stopping only after the final deadman release. Gazebo and all project
+  processes then exited cleanly.
+
+## 2026-08-16 — Connected joystick authority and Phase 6 supervision policy
+
+Status: implemented and accepted; Gate 5 and Gate 6 pass. The joystick held-
+deadman clauses below are superseded by the later no-deadman decision; the
+timeout and all supervision controls remain.
+
+Decision:
+
+- Preserve the legacy PXN-2113 Pro axis roles and polarity as behavioral
+  evidence, but do not preserve its positional float-array transport or lack of
+  a deadman/watchdog.
+- Add a separate `gazebo_joystick_v0` profile. It selects the connected device
+  by exact Linux name, launches ROS `joy`, and uses a lifecycle adapter on the
+  registered teleop candidate input. It does not alter keyboard development or
+  headless CI input selection.
+- Require a held deadman, a 120 ms raw-report timeout, an 8% centered deadzone,
+  complete finite six-axis/12-button reports, and fail-closed release. A held
+  deadman with neutral motion retains active stand authority so control changes
+  do not require another enable action.
+- Use a typed `ArbitrationStatus` beside `SelectedCommand` so safety can decide
+  release, quarantine, epochs, and deliberate higher-priority handover without
+  parsing log text or trusting a source-declared reason.
+- Put all eight software safety states and their guards in a deterministic pure
+  `SafetyMachine`. Keep an independent steady-time safe-command guard inside
+  locomotion so loss or corruption of the supervisor stream cannot silently
+  continue gait.
+- Safety actions are long-running: hold, enable, reset, latched hold, and
+  shutdown complete only when the requested target state is actually reached.
+  The controlled-stop availability guard is explicit rather than inferred from
+  aggregate readiness.
+
+Evidence and limitations:
+
+- Linux identifies the controller as `LiteStar PXN-2113 Pro`, USB `11ff:0837`,
+  SDL GUID `0300b14bff1100003708000010010000`; ROS reports six axes and 12
+  buttons. The axis sweep is live-verified.
+- Live isolated ROS Joy observation verified that the main trigger / physical
+  button 1 is ROS index 0 and physical button 2 is ROS index 1. Mapping artifact
+  `0.2.0` therefore assigns the trigger as held deadman and button 2 as the
+  roll/pitch modifier without provisional labeling.
+- Phase 6 Gate 5 and formal Phase 7 Gate 6 pass. The accepted Gate 6 evidence is
+  `/tmp/araco_gate6_final_20260816_06/`.
+- This is simulator software supervision, not a physical emergency stop or a
+  certified safety system. It does not authorize physical actuation.
+
+## 2026-08-16 — Simplified joystick posture controls
+
+Status: implemented. The sentence retaining the joystick held deadman is
+superseded by the later no-deadman decision. Physical buttons 3/4 retain an
+explicit sequential-index assumption eligible for a later live spot-check.
+
+Decision:
+
+- Supersede only the roll/pitch-modifier portion of joystick mapping `0.2.0`.
+  The held deadman and the rest of the Phase 6 supervision policy are unchanged
+  by this decision.
+- Map axis 5 directly to planted-body pitch and keep inverted axis 4 as
+  planted-body posture yaw.
+- Leave physical button 2 unassigned. Assign physical buttons 3 and 4 to
+  dedicated roll-left and roll-right commands respectively. If both are held,
+  command zero roll instead of choosing an arbitrary priority.
+- Record physical buttons 3/4 as sequential ROS indices 2/3. They remain
+  eligible for a later non-blocking live spot-check; simulator development does
+  not require another multi-control calibration exercise.
+
+Rationale:
+
+- The user considers roll the least useful posture function and rejected a
+  modifier chord as unnecessarily complicated. Pitch is the more useful HAT
+  function, while digital buttons are sufficient for rare roll adjustment.
+- A direct one-control/one-function layout is easier to remember and avoids a
+  mode-dependent HAT axis.
+
+## 2026-08-16 — Joystick control has no deadman button
+
+Status: implemented and validated in clean tests, Gate 0 composition, and a
+headed joystick launch.
+
+Decision:
+
+- Supersede the joystick held-deadman requirement. Mapping/profile `0.5.0`
+  grants joystick source authority whenever a complete finite Joy report is
+  fresh; no button is required.
+- Remove the separate operator Enable Motion step for this simulator-only
+  profile. Automatically enable once per lifecycle activation, but only after
+  readiness is complete and the selected joystick command is fresh, valid,
+  neutral, and standing. Translation, walking yaw, roll, pitch, and posture yaw
+  must be neutral; body-height trim may remain at its current position. Do not
+  auto-enable a walking or non-neutral posture command.
+- Emit one internal inactive candidate immediately after joystick-adapter
+  activation, then publish fresh device state normally. This establishes the
+  arbiter's new-session release edge without adding an operator control.
+- Leave physical buttons 1 and 2 unassigned. Preserve buttons 3/4 as dedicated
+  roll left/right.
+- Retain the 120 ms report timeout, finite/dimension validation, inactive output
+  on timeout/disconnect/malformed reports, controlled hold action, independent
+  command freshness guards, and the safety supervisor. Consume automatic enable
+  after its first use so hold, fault/reset, or source loss cannot auto-resume.
+- Do not change the keyboard UI's separate `Space` deadman in this decision.
+
+Rationale and tradeoff:
+
+- The user explicitly rejected a joystick deadman and prefers the legacy-style
+  direct control model.
+- Once startup finishes, moving a joystick control can command motion immediately
+  without holding the trigger or issuing an enable command. The trigger is not
+  an emergency stop; controlled hold and the existing timeout/supervisor remain
+  the stopping mechanisms.
+- Live mapping `0.4.0` proved no-trigger candidate authority but exposed that
+  the earlier explicit-enable fresh-edge rule made a continuously active source
+  impossible to arm. The temporary preselected explicit-enable compatibility
+  path was removed rather than retained alongside automatic enable.
+- Final focused regression root
+  `/tmp/araco_joystick_auto_final_20260816_01` reports 132 checks, zero errors,
+  zero failures, and 11 expected skips. Final joystick Gate 0 composition at
+  `/tmp/araco_joystick_auto_final_profile_v050_03` passes with behavior
+  fingerprint `683ad02b5cbc0112f3e1b674795b5f015eb89fc87c869fc07fe79594b99b8adf`.
+  A headed launch observed the automatic safety transition to
+  `MOTION_ENABLED` with source 10 and no button/action input.
+
+## 2026-08-16 — Controller-manager evidence and service-response timing
+
+Status: implemented; the latest staggered-polling revision is awaiting three
+fresh Gate 5 repetitions and replacement Gate 6 validation.
+
+Decision:
+
+- Treat controller-manager service polling as a typed, validated latest-value
+  mailbox. Do not require a new successful service response inside the
+  controller-state stream watchdog window.
+- Poll the typed controller and hardware validation services at `1 Hz` each,
+  staggered so they are never requested simultaneously. Keep the independently
+  published controller-state, joint-state, and simulation-clock liveness
+  watchdogs at their accepted `100 ms` bounds.
+- Keep a validated controller or hardware identity/state result while its typed
+  service remains available. Invalidate it on an explicit invalid reply or
+  service disappearance.
+- Use fresh controller-state, joint-state, and simulation-clock streams as the
+  bounded ongoing liveness evidence. Controller interface claims are checked as
+  controller ownership evidence, not as hardware-component identity evidence.
+
+Rationale:
+
+- The first formal Gate 6 attempt showed a healthy controller and Gazebo backend
+  while command-arbiter activation delayed a controller-manager service reply.
+  Expiring the previous reply after 110 ms conflated request scheduling latency
+  with loss of controller/backend liveness and latched a false fault.
+- The accepted architecture already describes nonblocking polling into a
+  validated mailbox and separately fresh corroborating streams. This correction
+  makes the implementation match that evidence model without weakening explicit
+  invalid-response, service-loss, stream-loss, or clock-loss handling.
+- Polling both controller-manager services every 50 ms generated 40 service
+  requests per second and coincided with a measured controller/joint-state
+  publication gap during a Gate 5 startup. Versioned safety policy `0.2.0`
+  removes that avoidable service pressure without relaxing stream liveness.
+
+Evidence boundary:
+
+- The failed attempt remains immutable at
+  `/tmp/araco_gate6_final_20260816_01/`; no automatic retry was performed.
+- The complete `araco_supervision` suite reports 73 checks, zero errors, and
+  zero failures after the correction. Three fresh unrestricted Gate 5 runs pass
+  at `/tmp/araco_phase6_gate5_mailbox_fix_unrestricted_rep{1,2,3}/`.
+- A sandbox-blocked infrastructure run is retained separately at
+  `/tmp/araco_phase6_gate5_mailbox_fix_rep1/`; it failed before spawn because
+  the managed sandbox denied DDS sockets, `getifaddrs`, and Gazebo logging. It
+  is not behavioral evidence and was not relabeled as a passing repetition.
+- Replacement Gate 6 evidence remains required before Phase 7 is complete.
+
+Gate-test harness corrections retained on 2026-08-16:
+
+- A second formal attempt is retained at
+  `/tmp/araco_gate6_final_20260816_02_runner_crash/`. All three repetitions and
+  every Gate 0–5 report passed, but the Gate 6 comparator crashed because it
+  assumed Gate 0 used the same validation-report shape as Gates 1–5. The
+  comparator now normalizes both documented schemas and has regression tests.
+- The preserved physical metrics satisfied every repeatability threshold, but
+  exact discrete paths exposed two scorer races. Isolated controller/joint/
+  clock fault cases now keep the command source fresh, so they test only the
+  named component. Duplicate injection now observes the first exact sequence
+  through typed `SelectedCommand` before sending the duplicate.
+- These are test-harness corrections, not changes to the accepted robot
+  behavior. The replacement formal Gate 6 run must use a new evidence path;
+  failed or crashed attempts remain immutable and are never relabeled.
+- Formal attempt `/tmp/araco_gate6_final_20260816_03/` stopped at preflight
+  Gate 1. The robot reached fully ready `HOLDING` with no fault and every
+  motion/contact/physics check passed, but the Gate 1 scorer had polled both
+  controller-manager services continuously before initialization and retained
+  incomplete startup replies. Gate 1 now uses fully ready `HOLDING` as its
+  typed initialization barrier and queries each evidence service only once.
+- The correction passes standalone Gate 1 at
+  `/tmp/araco_phase7_gate1_ready_barrier_20260816_01/`; its controller ownership
+  and Gazebo backend identity checks are both true.
+- Gate 6 compares the exact terminal safety epoch/state/reason path. Gate 5
+  separately proves the required fault-mask matrix and reset rules. It does not
+  compare the union of extra fault bits accumulated after a fault is already
+  latched while a controller-manager recovery operation runs, because that
+  union can vary with service scheduling without creating a new safety state or
+  reason outcome. Runtime fault detection and watchdog thresholds are unchanged.
+- Formal attempt `/tmp/araco_gate6_final_20260816_04/` passed package tests,
+  sanitizers, all preflight gates, all 18 repeated Gates 0–5, physical
+  repeatability, fingerprints, real-time factor, and wall budgets. It failed
+  only exact discrete outcomes: deactivating `joint_state_broadcaster` sometimes
+  also aged controller-state publication, legitimately changing joint-loss
+  handling between controlled-stop-then-fault and direct fault hold.
+- Use the Phase 6 plan's test-only relay for the joint-state-loss scenario.
+  Production profiles still connect safety directly to `/joint_states`; only
+  `gazebo_gate5_v0` selects versioned test wiring through
+  `/araco/system_test/joint_states`. Pausing that relay removes the joint-state
+  stream without switching controllers, so the scenario tests one boundary.
+
+## 2026-08-16 — Synchronize selection and arbitration epochs at safety boundary
+
+Status: implemented and accepted by Gate 6.
+
+Decision:
+
+- Treat `SelectedCommand` and `ArbitrationStatus` as one epoch-correlated
+  decision even though ROS transports them on separate topics.
+- If their selection epochs temporarily differ, publish HOLD rather than
+  execute, and do not commit a source-loss or handover transition until the
+  matching arbitration epoch supplies its typed reason.
+- Require the synchronized pair before publishing an executable `SafeCommand`
+  or an executing `SafetyStatus` disposition.
+
+Rationale:
+
+- Formal Gate 6 attempt `/tmp/araco_gate6_final_20260816_05/` passed every
+  criterion except exact discrete outcomes. In repetition 3, the no-selection
+  command arrived before its matching arbitration status, so safety used the
+  preceding epoch's empty reason and reported `SOURCE_RELEASED` instead of the
+  actual `SOURCE_INVALID` and `SOURCE_STALE` initiating causes.
+- The command-selection epochs and all individual Gate 5 checks were identical;
+  the defect was cross-topic arrival order at the safety boundary. Holding
+  during a mismatch remains fail-closed while epoch correlation makes the
+  transition reason deterministic and truthful.
+
+Validation:
+
+- Three corrected Gate 5 runs at
+  `/tmp/araco_phase7_gate5_epoch_sync_rep{1,2,3}/` have identical arbitration
+  and normalized safety signatures.
+- Formal Gate 6 attempt `/tmp/araco_gate6_final_20260816_06/` passes all 21
+  acceptance checks, including exact discrete outcomes across all three
+  no-retry repetitions.
+
+## 2026-08-16 — Correct joystick polarity and classify workspace saturation as limiting
+
+Status: partially superseded on 2026-08-17 by mapping `0.7.0`; workspace-
+limiting behavior remains accepted.
+
+Decision:
+
+- Preserve the user-verified forward/reverse polarity and reverse lateral,
+  walking yaw, body height, pitch, posture yaw, and dedicated roll-button
+  directions in joystick mapping/profile version `0.6.0`.
+- When a finite bounded operator request cannot advance within the IK workspace,
+  retain the last complete valid 24-joint trajectory, report shared reason 11
+  (`REASON_COMMAND_LIMITED`), and retry on later ticks.
+- Continue to report reason 16 and enter the existing latched safety path if the
+  locomotion node loses its last committed trajectory invariant. Do not relax
+  watchdogs, controller validation, or the safety latch.
+
+Rationale:
+
+- The user verified in the headed simulator that only forward/reverse had the
+  intended direction.
+- The reported Gazebo freeze was a controller stop, not a rendering hang: the
+  live log showed locomotion readiness drop for one tick with reason 16, then
+  recover, while safety correctly remained latched. A rejected candidate is an
+  ordinary workspace saturation because it is never published and the prior
+  full trajectory remains valid; classifying it as loss of kinematic integrity
+  made routine joystick saturation unnecessarily terminal.
+
+Validation:
+
+- Focused affected-package results contain 129 checks, zero errors/failures,
+  and 10 expected skips. The complete eight-package dependency set builds, and
+  profile `0.6.0` composes with behavior fingerprint
+  `854549de4a7a7fcf7a7d65aa85c17c8b2306aa0b54ea29eb8c1efc2e7f21c931`.
+- During a headed joystick run, one gait/posture and two body-pose workspace
+  rejections were limited nonfatally. The post-event safety sample remained
+  `MOTION_ENABLED`, reason 0, readiness `127/127`, fault mask 0, source 10.
+
+## 2026-08-17 — Restore height and roll polarity; separate speed-profile choice
+
+Status: polarity mapping implemented and focused validation passed. The speed
+choice was subsequently selected and is recorded below.
+
+Decision:
+
+- Restore the version `0.5.0` height-axis and dedicated roll-button polarities,
+  because the user found those two controls inverted after the broad `0.6.0`
+  reversal.
+- Retain the `0.6.0` corrections for lateral, walking yaw, pitch, and posture
+  yaw, and retain the previously correct forward/reverse direction.
+- Publish the correction as joystick mapping/profile `0.7.0`.
+- Keep walking top speed, cadence, stride, acceleration, and planted-body pose
+  rates unchanged until the user chooses among explicit speed profiles.
+
+Validation:
+
+- `araco_teleop` and `araco_bringup` report 57 checks, zero errors/failures,
+  and zero skips after the `0.7.0` correction.
+- The joystick profile composes at
+  `/tmp/araco_joystick_polarity_profile_v070_20260817_01` with behavior
+  fingerprint `cbd3bcf19d976fa6269bca75d8dd1194fb62eb93bdba13b7f3f35f2a0ed4c0e8`.
+- Live visual confirmation of height and roll remains pending until the next
+  headed launch.
+
+## 2026-08-17 — Add an opt-in Responsive joystick simulator profile
+
+Status: implemented and configuration-validated; headed operator validation
+pending.
+
+Decision:
+
+- Keep the accepted CI, Gate, and keyboard simulator profiles on the existing
+  slow gait and velocity-envelope artifacts.
+- Make `gazebo_joystick_v0` select a separate Responsive simulator gait and
+  operational policy, together with joystick mapping/profile version `0.8.0`.
+- Set maximum joystick translation to `0.100 m/s` and walking yaw to
+  `0.600 rad/s`. Use a `1.5–2.5 Hz` cadence range with `2.0 Hz/s` cadence slew.
+- Retain the `0.060 m` maximum stride and scale each leg's clearance by the
+  same normalized factor as its stride, up to `0.030 m`.
+- Use `0.200 m/s²` translation acceleration, `0.300 m/s²` stop deceleration,
+  `1.200 rad/s²` yaw acceleration, and `1.800 rad/s²` yaw stop deceleration.
+  Keep planted-body pose rates at `0.030 m/s` and `0.300 rad/s`.
+- Treat this as simulator-only tuning. It is not evidence for safe physical
+  servo speed, acceleration, contact behavior, or stability.
+
+Rationale:
+
+- The user selected the Responsive option after reviewing explicit speed
+  choices and asked for faster interactive movement.
+- Versioned profile-specific artifacts prevent presentation tuning from
+  silently changing the established automated regression baseline.
+- Scaling mapping limits, safety envelopes, cadence, and shaping together
+  avoids hidden clipping or a partially applied speed profile.
+
+Validation:
+
+- The clean eight-package dependency graph builds at
+  `/tmp/araco_joystick_responsive_build_20260817_01`.
+- Affected-package tests report 205 checks, zero errors/failures, and 21
+  expected static-analysis skips.
+- Profile `gazebo_joystick_v0` composes at
+  `/tmp/araco_joystick_responsive_profile_v080_20260817_01` with behavior
+  fingerprint
+  `07d0049377d65cd61a2a4d1784bdc59c5c280fe2d9bea4009d88754173f1d564`.
+- Generated teleop, safety, and locomotion parameters contain the complete
+  Responsive values. All five non-joystick profiles still compose; their
+  established behavior fingerprints remain unchanged.
+
+## 2026-08-17 — Double Responsive speed and make workspace saturation recoverable
+
+Status: implemented and validated in source, unit tests, configuration
+composition, and an isolated ROS integration exercise; headed operator
+validation remains pending.
+
+Decision:
+
+- Supersede the `0.8.0` Responsive speed values above for the joystick profile.
+  The user's intent is approximately twice the robot speed by doubling stride
+  at the same cadence, not twice the visible stride at unchanged body speed.
+- Keep the Responsive cadence at `1.5–2.5 Hz`, raise maximum stride from
+  `0.060 m` to `0.120 m`, translation from `0.100 m/s` to `0.200 m/s`, and
+  walking yaw from `0.600 rad/s` to `1.200 rad/s`. Double the corresponding
+  acceleration and stop-deceleration values so the response time does not
+  become twice as slow.
+- For this simulator-only Responsive profile, use the complete existing
+  provisional simulator joint ranges and their model velocity of `2.0 rad/s`:
+  coxa `[-0.70,+0.70]`, femur `[+0.15,+1.35]`, tibia
+  `[-2.65,-0.75]`, and foot `[-1.25,+0.35]`. Do not widen the underlying
+  model limits, and do not apply these values to physical hardware.
+- On a gait workspace rejection, freeze the phase that was moving outward and
+  decelerate the current curve amplitude toward the nominal six-foot stance.
+  Keep reason 11 while recovering. Require centered planar controls before
+  re-arming the gait, so a held saturated command cannot immediately drive the
+  controller back into the same boundary.
+- Continue using the previous complete 24-joint trajectory transaction while
+  evaluating recovery. A lost committed trajectory remains reason 16 and a
+  safety fault; workspace saturation does not.
+
+Rationale:
+
+- The former narrow operational ranges, not the provisional model limits,
+  rejected several otherwise reachable gait-plus-posture combinations.
+- The indefinite lock had a separate state-machine cause: normal stopping
+  advanced gait phase. At an exact boundary every positive step could continue
+  outward, so retrying with smaller time steps could never begin the retreat.
+- A `0.120 m` stride cap with half cadence would preserve body speed and would
+  contradict the user's clarified objective. Retaining cadence and doubling
+  velocity/stride produces the intended speed increase.
+
+Validation:
+
+- Clean build root:
+  `/tmp/araco_joystick_stride_recovery_build_20260817_02`; affected-package
+  results contain 208 checks, zero errors/failures, and 21 expected static-
+  analysis skips.
+- The exact kinematic regression sweeps forward/reverse, lateral both ways,
+  walking yaw both ways, and maximum diagonal translation plus maximum yaw
+  through multiple gait cycles at the doubled-speed profile; all six-leg
+  transactions remain reachable at a neutral body pose.
+- The recovery regression proves phase freeze, monotonic amplitude reduction,
+  nominal foot placement, and stable-hold completion. An isolated ROS exercise
+  forced reason 11, observed a valid complete neutral trajectory during
+  recovery, then centered the command and observed reason 0 with all six legs
+  valid.
+- Profile `0.9.0` composes at
+  `/tmp/araco_joystick_double_speed_profile_v090_20260817_01` with behavior
+  fingerprint
+  `15277c3a7fbc20e7315dc665bfab482bf0d8f9380059c5cdf55a694bdf9ab1bd`.
+  All five non-joystick behavior fingerprints remain unchanged.

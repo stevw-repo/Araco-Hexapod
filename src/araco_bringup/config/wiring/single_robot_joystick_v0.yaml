@@ -1,0 +1,42 @@
+{
+  "schema_id": "araco://schemas/bringup/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.bringup.wiring",
+  "artifact_version": "0.3.0",
+  "owner_package": "araco_bringup",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/REPOSITORY_ARCHITECTURE.md",
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [],
+  "data": {
+    "kind": "wiring",
+    "namespace_policy": "single_relative_token",
+    "nodes": [
+      "joy_node",
+      "joystick_adapter",
+      "command_arbiter",
+      "safety_supervisor",
+      "locomotion"
+    ],
+    "node_rates_hz": {
+      "teleop_adapter": 50,
+      "command_arbiter": 100,
+      "safety_supervisor": 100,
+      "locomotion": 100
+    },
+    "topics": {
+      "candidate": "command/candidates/teleop",
+      "selected": "command/selected",
+      "safe": "command/safe",
+      "joint_states": "/joint_states",
+      "locomotion_status": "locomotion/status",
+      "safety_status": "safety/status"
+    },
+    "use_sim_time": true
+  }
+}

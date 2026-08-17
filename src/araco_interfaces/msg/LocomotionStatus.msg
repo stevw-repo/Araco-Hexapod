@@ -23,6 +23,10 @@ uint8 mode
 uint8 gait
 float64 gait_phase
 uint64 gait_cycle
+float64 gait_cadence_hz
+float64 gait_maximum_stride_scale
+float64 gait_maximum_clearance_m
+float64 gait_applied_velocity_scale
 uint8[6] leg_kinematic_status
 bool trajectory_valid
 uint16 reason_code

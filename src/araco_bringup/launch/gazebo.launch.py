@@ -109,6 +109,22 @@ def _runtime_actions(context):
         package='araco_teleop', executable='teleop_adapter_node', output='screen',
         parameters=[str(bundle / 'node_params/teleop_adapter.yaml')],
     )
+    keyboard_ui = Node(
+        package='araco_teleop', executable='keyboard_teleop_ui', output='screen',
+    )
+    joy = Node(
+        package='joy', executable='joy_node', name='joy_node', namespace='araco',
+        output='screen', parameters=[{
+            'device_name': 'LiteStar PXN-2113 Pro',
+            'deadzone': 0.0,
+            'autorepeat_rate': 50.0,
+            'coalesce_interval_ms': 1,
+        }],
+    )
+    joystick = Node(
+        package='araco_teleop', executable='joystick_adapter_node', output='screen',
+        parameters=[str(bundle / 'node_params/joystick_adapter.yaml')],
+    )
     spawn = Node(
         package='ros_gz_sim', executable='create', output='screen',
         arguments=['-world', 'araco_flat_ground', '-topic', 'robot_description',
@@ -139,6 +155,8 @@ def _runtime_actions(context):
     activate_arbiter = _lifecycle('/araco/command_arbiter', 'activate')
     configure_teleop = _lifecycle('/araco/teleop_adapter', 'configure')
     activate_teleop = _lifecycle('/araco/teleop_adapter', 'activate')
+    configure_joystick = _lifecycle('/araco/joystick_adapter', 'configure')
+    activate_joystick = _lifecycle('/araco/joystick_adapter', 'activate')
 
     chain = [
         _continue_on_success(spawn, [state_spawner], 'robot spawn'),
@@ -157,9 +175,22 @@ def _runtime_actions(context):
         chain.extend([
             _continue_on_success(activate_arbiter, [configure_teleop], 'arbiter activate'),
             _continue_on_success(configure_teleop, [activate_teleop], 'teleop configure'),
+            _continue_on_success(
+                activate_teleop, [keyboard_ui], 'teleop activate'),
+        ])
+    elif profile == 'gazebo_joystick_v0':
+        chain.extend([
+            _continue_on_success(
+                activate_arbiter, [configure_joystick], 'arbiter activate'),
+            _continue_on_success(
+                configure_joystick, [activate_joystick], 'joystick configure'),
         ])
 
-    optional_nodes = [teleop] if profile == 'gazebo_dev_v0' else []
+    optional_nodes = []
+    if profile == 'gazebo_dev_v0':
+        optional_nodes = [teleop]
+    elif profile == 'gazebo_joystick_v0':
+        optional_nodes = [joy, joystick]
     return [
         gazebo_resource_path, gazebo, bridge, robot_state_publisher, contact_filter,
         locomotion, safety, arbiter, *optional_nodes, spawn,
@@ -171,7 +202,10 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'profile', default_value='gazebo_dev_v0',
-            choices=['gazebo_dev_v0', 'gazebo_ci_v0']),
+            choices=[
+                'gazebo_dev_v0', 'gazebo_ci_v0',
+                'gazebo_joystick_v0', 'gazebo_gate3_v0', 'gazebo_gate4_v0',
+                'gazebo_gate5_v0']),
         DeclareLaunchArgument(
             'runtime_bundle', default_value='',
             description='Fresh absent path for the immutable effective configuration.'),

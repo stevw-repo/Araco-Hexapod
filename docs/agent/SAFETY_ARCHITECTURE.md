@@ -100,8 +100,17 @@ the configured `ros2_control` hardware-component identity/state obtained through
 typed controller-manager APIs and corroborated by fresh clock, joint-state, and
 controller-state streams. Service polling runs outside the deterministic safety
 loop and updates a validated latest-value mailbox; the safety loop never blocks
-on it. Loss is classified by the first concrete failed evidence and may also set
-`FAULT_BACKEND` when the composite backend identity/state is no longer valid.
+on it. A previously validated reply remains current while the typed service is
+present; the service reply cadence is not itself a liveness watchdog. Fresh
+controller, joint-state, and clock streams provide the bounded liveness evidence.
+An explicit invalid reply or unavailable service invalidates the mailbox and
+fails closed. Controller interface claims belong to controller validation, not
+hardware-component identity validation. In the simulator profile, controller
+and hardware validation requests are staggered and each occurs at `1 Hz`; the
+fresh high-rate state streams retain the separate `0.100 s` liveness watchdogs.
+Loss is classified by the first concrete
+failed evidence and may also set `FAULT_BACKEND` when the composite backend
+identity/state is no longer valid.
 
 The simulator profile must not assert physical calibration, power, or stop-input
 readiness. Those become required only in a future physical profile after the
@@ -268,11 +277,20 @@ boundary, not silently ignored.
   invalidate prior motion permission.
 - A candidate already `active=true` when `ENABLE_MOTION` begins cannot start the
   robot. A release followed by a fresh activation edge is required.
+- The simulator-only joystick profile is the explicit exception: because its
+  accepted no-deadman mapping is continuously active, safety may automatically
+  enable it exactly once per lifecycle activation after all readiness gates pass
+  and the selected command is fresh, valid, neutral, and `GAIT_STAND`.
+  Translation, walking yaw, body roll/pitch, and posture yaw must be neutral;
+  body-height trim is permitted. A non-neutral command at startup cannot
+  auto-enable. Once consumed, Controlled Hold, source loss, fault/reset, or
+  return to `HOLDING` cannot auto-resume it.
 - Loss, staleness, or release of the selected source enters `STOPPING` and then
   `HOLDING`. The arbiter may report a lower-priority eligible candidate, but
   safety never executes it automatically.
-- After loss to `HOLDING`, both a new enable request and a fresh source edge are
-  required.
+- After loss to `HOLDING`, the one-shot joystick exception is already consumed;
+  normal explicit enable and fresh-edge rules remain for profiles that expose
+  them.
 
 ### Deliberate higher-priority preemption
 

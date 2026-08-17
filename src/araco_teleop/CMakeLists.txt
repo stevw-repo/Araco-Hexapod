@@ -14,11 +14,18 @@ generate_parameter_module(
   teleop_adapter_parameters
   parameters/teleop_adapter.yaml
 )
+generate_parameter_module(
+  joystick_adapter_parameters
+  parameters/joystick_adapter.yaml
+)
 
 install(FILES LICENSE DESTINATION "share/${PROJECT_NAME}")
 
 install(
-  PROGRAMS scripts/teleop_adapter_node
+  PROGRAMS
+    scripts/keyboard_teleop_ui
+    scripts/joystick_adapter_node
+    scripts/teleop_adapter_node
   DESTINATION "lib/${PROJECT_NAME}"
 )
 
@@ -56,6 +63,10 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_keyboard
     test/test_keyboard.py
+  )
+  ament_add_pytest_test(
+    test_joystick
+    test/test_joystick.py
   )
 endif()
 

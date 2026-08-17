@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Run the complete local Gate 6 baseline and preserve immutable evidence."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import platform
+import shutil
+import subprocess
+import tempfile
+import time
+import xml.etree.ElementTree as ET
+
+from ament_index_python.packages import get_package_share_directory
+from araco_system_tests.gate6 import classify_logs
+from araco_system_tests.gate6 import compare_repetitions
+import jsonschema
+
+
+PACKAGES = (
+    'araco_interfaces', 'araco_description', 'araco_kinematics',
+    'araco_locomotion', 'araco_supervision', 'araco_teleop',
+    'araco_gazebo', 'araco_bringup', 'araco_system_tests')
+CPP_PACKAGES = ('araco_kinematics', 'araco_locomotion', 'araco_supervision')
+
+
+def write_json(path, value):
+    """Write deterministic strict JSON."""
+    path.write_text(
+        json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + '\n',
+        encoding='utf-8')
+
+
+def sha256(path):
+    """Hash one file."""
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def run(command, environment, log, timeout):
+    """Run one command once; timeout and nonzero are failures, never retries."""
+    started = time.monotonic()
+    try:
+        completed = subprocess.run(
+            command, env=environment, text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, timeout=timeout, check=False)
+        output = completed.stdout
+        outcome = {
+            'command': command, 'return_code': completed.returncode,
+            'timed_out': False, 'wall_s': time.monotonic() - started}
+    except subprocess.TimeoutExpired as error:
+        output = error.stdout or ''
+        if isinstance(output, bytes):
+            output = output.decode('utf-8', errors='replace')
+        outcome = {
+            'command': command, 'return_code': None,
+            'timed_out': True, 'wall_s': time.monotonic() - started}
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text(output, encoding='utf-8')
+    return outcome
+
+
+def junit(path, checks, failures):
+    """Write one compact JUnit report."""
+    suite = ET.Element('testsuite', {
+        'name': 'araco_gate6', 'tests': str(len(checks)),
+        'failures': str(sum(not value for value in checks.values())),
+        'errors': '0'})
+    message = '; '.join(failures) or 'Gate 6 check failed'
+    for name, passed in checks.items():
+        case = ET.SubElement(suite, 'testcase', {
+            'classname': 'araco_system_tests.gate6', 'name': name})
+        if not passed:
+            failure = ET.SubElement(case, 'failure', {'message': message})
+            failure.text = message
+    ET.ElementTree(suite).write(path, encoding='unicode', xml_declaration=True)
+
+
+def command_output(command):
+    """Capture a best-effort environment identity command."""
+    return subprocess.run(
+        command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        check=False).stdout.strip()
+
+
+def environment_identity(root):
+    """Capture host, toolchain, dependency, and source identities."""
+    packages = (
+        'ros-jazzy-ros-base', 'ros-jazzy-ros-gz',
+        'ros-jazzy-gz-ros2-control', 'ros-jazzy-ros2-control',
+        'ros-jazzy-ros2-controllers')
+    return {
+        'captured_wall_time': time.strftime('%Y-%m-%dT%H:%M:%S%z'),
+        'platform': platform.platform(),
+        'python': platform.python_version(),
+        'ros_distro': os.environ.get('ROS_DISTRO'),
+        'rmw_implementation': os.environ.get(
+            'RMW_IMPLEMENTATION', 'rmw_fastrtps_cpp (ROS default)'),
+        'ros2': command_output(['ros2', '--help']).splitlines()[0],
+        'gazebo': command_output(['gz', 'sim', '--versions']),
+        'compiler': command_output(['c++', '--version']).splitlines()[0],
+        'cmake': command_output(['cmake', '--version']).splitlines()[0],
+        'package_versions': command_output([
+            'dpkg-query', '-W', '-f=${Package}=${Version}\\n', *packages
+        ]).splitlines(),
+        'git_revision': command_output(['git', '-C', str(root), 'rev-parse', 'HEAD']),
+        'worktree_changes': command_output([
+            'git', '-C', str(root), 'status', '--short']).splitlines(),
+    }
+
+
+def suite(stage, label, gates, registry, environment):
+    """Run each named gate once in a new child process."""
+    root = stage / label
+    root.mkdir(parents=True)
+    outcomes = {}
+    started = time.monotonic()
+    passed = True
+    for gate in gates:
+        executable = registry['evidence_executables'][str(gate)]
+        destination = root / f'gate{gate}'
+        outcome = run(
+            ['ros2', 'run', 'araco_system_tests', executable, str(destination)],
+            environment, root / f'gate{gate}_runner.log',
+            300 if gate in (4, 5) else 180)
+        outcomes[str(gate)] = outcome
+        passed &= outcome['return_code'] == 0 and not outcome['timed_out']
+        if not passed:
+            break
+    return passed, outcomes, time.monotonic() - started
+
+
+def main():
+    """Execute one Gate 6 attempt."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('output_directory')
+    parser.add_argument('--build-base', required=True)
+    parser.add_argument('--install-base', required=True)
+    arguments = parser.parse_args()
+    destination = Path(arguments.output_directory).expanduser().resolve()
+    if destination.exists():
+        parser.error(f'output directory already exists: {destination}')
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(
+        prefix=f'.{destination.name}.tmp.', dir=destination.parent))
+    logs = stage / 'logs'
+    logs.mkdir()
+    share = Path(get_package_share_directory('araco_system_tests'))
+    scenario_path = share / 'config/scenarios/gate6_v0.yaml'
+    threshold_path = share / 'config/thresholds/gazebo_baseline_v0.yaml'
+    scenario = json.loads(scenario_path.read_text(encoding='utf-8'))
+    thresholds_artifact = json.loads(threshold_path.read_text(encoding='utf-8'))
+    scenario_schema = json.loads(
+        (share / 'schema/scenario_registry_v1.schema.json').read_text(
+            encoding='utf-8'))
+    threshold_schema = json.loads(
+        (share / 'schema/config_v1.schema.json').read_text(encoding='utf-8'))
+    jsonschema.validate(scenario['data'], scenario_schema)
+    jsonschema.validate(thresholds_artifact['data'], threshold_schema)
+    registry = scenario['data']
+    thresholds = thresholds_artifact['data']['gate6']
+    shutil.copyfile(scenario_path, stage / 'scenario_registry.json')
+    shutil.copyfile(threshold_path, stage / 'thresholds.json')
+    root = Path(command_output(['git', 'rev-parse', '--show-toplevel'])).resolve()
+    environment = os.environ.copy()
+    environment['ARACO_RANDOM_SEED'] = str(registry['seed'])
+    outcomes = {}
+    failures = []
+    checks = {}
+
+    package_test = run([
+        'colcon', '--log-base', str(stage / 'colcon_log'), 'test',
+        '--base-paths', str(root / 'src'), '--build-base', arguments.build_base,
+        '--install-base', arguments.install_base, '--packages-select', *PACKAGES,
+        '--event-handlers', 'console_cohesion+',
+    ], environment, logs / 'package_tests.log', 300)
+    outcomes['package_tests'] = package_test
+    checks['package_tests'] = package_test['return_code'] == 0
+    test_result = run([
+        'colcon', 'test-result', '--test-result-base', arguments.build_base,
+        '--all'], environment, logs / 'package_test_results.log', 30)
+    outcomes['package_test_results'] = test_result
+    checks['package_test_results'] = test_result['return_code'] == 0
+
+    sanitizer_root = stage / 'sanitizer'
+    sanitizer_build = run([
+        'colcon', '--log-base', str(sanitizer_root / 'log'), 'build',
+        '--base-paths', str(root / 'src'),
+        '--build-base', str(sanitizer_root / 'build'),
+        '--install-base', str(sanitizer_root / 'install'),
+        '--packages-up-to', *CPP_PACKAGES,
+        '--cmake-args',
+        '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
+        '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer',
+        '-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined',
+        '-DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address,undefined',
+    ], environment, logs / 'sanitizer_build.log', 300)
+    outcomes['sanitizer_build'] = sanitizer_build
+    sanitizer_environment = environment.copy()
+    sanitizer_environment['ASAN_OPTIONS'] = 'detect_leaks=0:halt_on_error=1'
+    sanitizer_environment['UBSAN_OPTIONS'] = 'halt_on_error=1:print_stacktrace=1'
+    sanitizer_test = {'return_code': None, 'not_started': True}
+    sanitizer_result = {'return_code': None, 'not_started': True}
+    if sanitizer_build['return_code'] == 0:
+        sanitizer_test = run([
+            'colcon', 'test', '--base-paths', str(root / 'src'),
+            '--build-base', str(sanitizer_root / 'build'),
+            '--install-base', str(sanitizer_root / 'install'),
+            '--packages-select', *CPP_PACKAGES,
+            '--event-handlers', 'console_cohesion+',
+        ], sanitizer_environment, logs / 'sanitizer_tests.log', 180)
+        sanitizer_result = run([
+            'colcon', 'test-result', '--test-result-base',
+            str(sanitizer_root / 'build'), '--all'], sanitizer_environment,
+            logs / 'sanitizer_test_results.log', 30)
+    outcomes['sanitizer_test'] = sanitizer_test
+    outcomes['sanitizer_test_results'] = sanitizer_result
+    checks['sanitizers'] = (
+        sanitizer_build['return_code'] == 0 and
+        sanitizer_test.get('return_code') == 0 and
+        sanitizer_result.get('return_code') == 0)
+
+    preflight_ok = all(checks.values())
+    preflight_outcomes = {}
+    if preflight_ok:
+        preflight_ok, preflight_outcomes, preflight_wall = suite(
+            stage, 'preflight', registry['preflight_gates'], registry, environment)
+        outcomes['preflight_wall_s'] = preflight_wall
+    outcomes['preflight_gates'] = preflight_outcomes
+    checks['gates_0_through_5_preflight'] = preflight_ok
+
+    repetition_paths = []
+    repetition_outcomes = []
+    repetition_wall = []
+    if preflight_ok:
+        for index in range(1, registry['repetitions'] + 1):
+            label = f'repetitions/repetition_{index}'
+            passed, run_outcomes, wall_s = suite(
+                stage, label, registry['repeated_gates'], registry, environment)
+            repetition_paths.append(stage / label)
+            repetition_outcomes.append(run_outcomes)
+            repetition_wall.append(wall_s)
+            if not passed:
+                break
+    outcomes['repetitions'] = repetition_outcomes
+    checks['three_complete_no_retry_repetitions'] = (
+        len(repetition_paths) == registry['repetitions'] and
+        all(len(value) == len(registry['repeated_gates'])
+            for value in repetition_outcomes) and
+        all(item['return_code'] == 0
+            for value in repetition_outcomes for item in value.values()))
+
+    comparison_metrics = {}
+    if checks['three_complete_no_retry_repetitions']:
+        repeat_checks, comparison_metrics, repeat_failures = compare_repetitions(
+            repetition_paths, thresholds)
+        checks.update(repeat_checks)
+        failures.extend(repeat_failures)
+    suite_wall_limit = (
+        2.0 * thresholds['planned_complete_suite_sim_s'] +
+        thresholds['startup_artifact_allowance_s'])
+    checks['suite_wall_budget'] = (
+        len(repetition_wall) == registry['repetitions'] and
+        all(value <= suite_wall_limit for value in repetition_wall))
+
+    log_classification = classify_logs(stage)
+    checks['no_unclassified_error_or_fatal'] = not log_classification['errors']
+    checks['no_sanitizer_diagnostic'] = not log_classification['sanitizer_failures']
+    gate_processes = list(preflight_outcomes.values())
+    gate_processes.extend(
+        item for repetition in repetition_outcomes
+        for item in repetition.values())
+    checks['no_lifecycle_deadlock'] = not any(
+        item.get('timed_out', False)
+        for item in [package_test, test_result, sanitizer_build,
+                     sanitizer_test, sanitizer_result, *gate_processes]
+        if isinstance(item, dict))
+
+    environment_data = environment_identity(root)
+    environment_data.update({
+        'scenario_sha256': sha256(stage / 'scenario_registry.json'),
+        'threshold_sha256': sha256(stage / 'thresholds.json'),
+    })
+    for name, passed in checks.items():
+        if not passed and name not in failures:
+            failures.append(name)
+    result = {
+        'schema_id': 'araco://schemas/system_tests/gate6_result/v1',
+        'gate': 6, 'status': 'PASS' if all(checks.values()) else 'FAIL',
+        'seed': registry['seed'], 'repetitions': registry['repetitions'],
+        'checks': checks,
+        'metrics': {
+            'comparison': comparison_metrics,
+            'repetition_wall_s': repetition_wall,
+            'suite_wall_limit_s': suite_wall_limit,
+            'log_classification': log_classification,
+        },
+        'environment': environment_data,
+        'failures': failures,
+        'fidelity_limitations': [
+            'simulation supervision is not a physical emergency stop',
+            'passing does not establish sim-to-real fidelity or authorize hardware'],
+    }
+    schema = json.loads((share / 'schema/gate6_result_v1.schema.json').read_text(
+        encoding='utf-8'))
+    jsonschema.validate(result, schema)
+    write_json(stage / 'gate_result.json', result)
+    write_json(stage / 'metrics.json', result['metrics'])
+    write_json(stage / 'environment.json', environment_data)
+    write_json(stage / 'process_outcomes.json', outcomes)
+    write_json(stage / 'validation_report.json', {
+        'status': result['status'], 'checks': checks, 'failures': failures})
+    junit(stage / 'junit.xml', checks, failures)
+    if result['status'] == 'FAIL':
+        failure = stage / 'failure'
+        failure.mkdir()
+        write_json(failure / 'failure_summary.json', {
+            'failures': failures,
+            'automatic_retry_performed': False,
+            'retained_logs': True,
+            'focused_bag_topics': registry['failure_evidence']['focused_bag_topics'],
+            'bag_policy': (
+                'Run one explicitly authorized diagnostic reproduction with these '
+                'topics; a required Gate 6 attempt is never retried automatically.'),
+        })
+    os.replace(stage, destination)
+    print(f"Gate 6 {result['status']}: {destination}")
+    raise SystemExit(0 if result['status'] == 'PASS' else 1)
+
+
+if __name__ == '__main__':
+    main()

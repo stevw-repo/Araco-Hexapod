@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_id", "gate", "status", "seed", "repetitions", "checks", "metrics", "environment", "failures"],
+  "properties": {
+    "schema_id": {"const": "araco://schemas/system_tests/gate6_result/v1"},
+    "gate": {"const": 6},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "seed": {"const": 42},
+    "repetitions": {"const": 3},
+    "checks": {"type": "object", "additionalProperties": {"type": "boolean"}},
+    "metrics": {"type": "object"},
+    "environment": {"type": "object"},
+    "failures": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

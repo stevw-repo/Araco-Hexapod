@@ -1,0 +1,47 @@
+{
+  "schema_id": "araco://schemas/system_tests/scenario_registry/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.system-tests.gate6-scenarios",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_system_tests",
+  "deployment_scope": "test_only",
+  "evidence": {
+    "class": "test_contract",
+    "sources": [
+      "docs/agent/PHASED_DELIVERY_PLAN.md"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.system-tests.gazebo-baseline",
+      "artifact_version": "0.2.0"
+    }
+  ],
+  "data": {
+    "kind": "gate6_scenario_registry",
+    "seed": 42,
+    "repetitions": 3,
+    "preflight_gates": [0, 1, 2, 3, 4, 5],
+    "repeated_gates": [0, 1, 2, 3, 4, 5],
+    "evidence_executables": {
+      "0": "araco_gate0_evidence",
+      "1": "araco_gate1_evidence",
+      "2": "araco_gate2_evidence",
+      "3": "araco_gate3_evidence",
+      "4": "araco_gate4_evidence",
+      "5": "araco_gate5_evidence"
+    },
+    "failure_evidence": {
+      "automatic_retry": false,
+      "retain_complete_logs": true,
+      "focused_bag_topics": [
+        "/clock",
+        "/joint_states",
+        "/araco/command/arbitration_status",
+        "/araco/command/safe",
+        "/araco/locomotion/status",
+        "/araco/safety/status"
+      ]
+    }
+  }
+}

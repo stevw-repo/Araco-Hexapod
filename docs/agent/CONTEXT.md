@@ -58,6 +58,11 @@ The complete presentation model has 49 exact mesh visuals and 2,066,740
 triangles. This visual upgrade does not calibrate or change simulated optical
 frames, collision, dynamics, or sensor behavior.
 
+For planted-foot simulation, the detailed foot visuals remain unchanged while
+each `foot_link` uses a separate 4 mm-radius spherical collision at the
+kinematic tip. This orientation-independent point-contact approximation is a
+simulator policy, not measured physical foot geometry.
+
 The physical robot is confirmed unchanged from the hardware used with the legacy code and March 2026 documentation. Total mass is not measured; the user's estimate is 2–4 kg.
 
 The raw Fusion version 2 physical-property export remains unsuitable as direct
@@ -227,6 +232,8 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   or estimator produced. Missing velocity/effort stays absent rather than being
   published as misleading zeros.
 - The accepted `LocomotionStatus` reports locomotion mode, gait phase/cycle,
+  applied cadence, maximum stride scale, proportional maximum clearance,
+  uniform velocity saturation scale,
   processed safety/selection epochs, per-leg kinematic validity, and whole-
   trajectory validity without claiming controller acceptance or tracking.
 - The accepted controller set is `joint_state_broadcaster`, a 24-joint
@@ -276,9 +283,17 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 - Source candidates are best-effort latest-value streams. Trusted selected and
   safe commands are reliable latest-value streams. Concrete project topics,
   source IDs/priorities/timeouts, and status QoS are accepted.
-- Initial simulator motion is deliberately slow: planar speed is limited to
-  `0.050 m/s`, yaw rate to `0.300 rad/s`, the tripod cycle is `1.200 s`, and a
-  healthy controlled stop must reach stable hold within `1.500 s`.
+- The accepted CI/Gate simulator motion remains deliberately slow: planar speed is limited to
+  `0.050 m/s`, yaw rate to `0.300 rad/s`, and a healthy controlled stop must
+  reach stable hold within `1.500 s`. The fixed 100 Hz locomotion loop advances
+  a continuous `1.0–1.5 Hz` gait phase; stride is the primary speed variable
+  and cadence rises only above the preferred `0.5` stride scale.
+- The interactive `gazebo_joystick_v0` profile separately selects Responsive
+  simulator tuning: `0.200 m/s` translation, `1.200 rad/s` walking yaw,
+  `1.5–2.5 Hz` cadence, and matched translation/yaw shaping rates. Its stride
+  and clearance maxima are `0.120 m` and `0.030 m`; clearance continues to
+  scale by the same factor as stride. This does not alter Gate baselines or
+  authorize equivalent physical-hardware tuning.
 - Provisional joint ranges, command-rate/effort caps, damping, friction, DART
   physics settings, and quantitative Gate 0–6 thresholds are simulator-only and
   forbidden as physical calibration or safety evidence.
@@ -444,13 +459,13 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   `87eef7bca155569674450e9342856ed89fb7e9f74e3e3df2c11311d8c9a937d7`.
   Gate 1 physics metrics match the proxy-visual baseline within numerical
   precision. The exact-visual configuration builds all nine packages and passes
-  182 tests with 0 errors, 0 failures, and 3 expected skips. Fresh formal Gate
-  0 / Gate 1 evidence is deferred until user visual acceptance.
+  182 tests with 0 errors, 0 failures, and 3 expected skips. These runs remain
+  the post-Phase-2 visual baseline; Phase 3 has newer full regression evidence.
 - The rejected flat-blue/proxy preview has been replaced by exact Fusion/vendor
   solids, six material roles, directional lighting, ambient light, and
   shadows. The current generated URDF contains 49 meshes and zero visual
-  primitives. A headed preview has reached `HOLDING`; final visual acceptance
-  is pending.
+  primitives. A headed preview reached `HOLDING`, after which the user
+  authorized Phase 3.
 - The tibia proxy offset seen by the user is real rather than a lighting
   illusion. The Fusion tibia occurrence and canonical kinematic tibia frame
   differ by about `9.7567 mm` transversely and `90 deg` about the longitudinal
@@ -458,6 +473,84 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   Fusion normalization would preserve the assembly offset. This currently
   limits visual and collision fidelity, but does not alone disprove the
   accepted joint origins or Gate 1 hold behavior.
+
+## Completed Phase 3 computed-standing baseline
+
+- Phase 3 / Gate 2 passes as of 2026-08-16. The simulator remains
+  standing-only and cannot enter `MOTION_ENABLED`.
+- `araco_kinematics` is a pure C++ analytic four-DOF leg FK/IK library with
+  typed geometry and explicit branch, reachability, singularity, finite,
+  near-limit, and limit results. Description ownership stays outside the pure
+  solver.
+- Bringup derives typed geometry, mount transforms, base-frame standing foot
+  targets, limits, branch policy, and tolerances from canonical artifacts.
+  Locomotion solves all six legs and atomically commits the ordered 24-joint
+  candidate only if every leg and the standing oracle check pass.
+- The nominal standing artifact remains the sole accepted reference and is now
+  a branch/regression oracle rather than the production trajectory source.
+- The deterministic property suite covers 40,000 reachable round trips: 10,000
+  per canonical leg class across both mirror signs. Whole-body component tests
+  include a one-leg failure that proves the previous complete commit is
+  preserved.
+- A fresh installed-space build in `/tmp/araco_gate2_final.n0smqm/` built all
+  nine packages and passed 213 tests with no failures or errors and nine
+  expected `cppcheck` skips.
+- Gate 0 regression, Gate 1 live regression, and Gate 2 live computed-standing
+  evidence pass in `log/gate_0_20260816_phase3_regression/`,
+  `log/gate_1_20260816_phase3_regression/`, and
+  `log/gate_2_20260816_computed_standing/`. Their behavior fingerprint is
+  `f656ab6f81655d32e3d386d856c56baed64d5d0dfaf3af2c6cc9e7290c0f653c`.
+- Gate 2's computed target differs from the rounded standing oracle by at most
+  `3.27e-7 rad`. The live run retained all six foot contacts, observed no fault
+  or forbidden motion/execute state, and passed the reused Gate 1 physics
+  scorer plus Gate 2 analytic-contract checks.
+
+## Phase 3–5 algorithm provenance
+
+- The rebuild remains greenfield. The legacy `Araco/Araco/algo.py` is a
+  behavioral and robot-data reference, not copied source or the architectural
+  base of the current locomotion implementation.
+- Phase 3 reused robot-specific facts established from Fusion plus legacy
+  evidence: four joints per leg, link dimensions, leg/mount ordering, the
+  intended foot orientation, and the known standing pose. Its C++ FK/IK was
+  newly implemented from conventional serial-chain analytic kinematics, with
+  explicit knee branch, frames, limits, singularity/reachability results, and
+  forward-solution validation. The legacy standing output is only a regression
+  oracle.
+- Phase 4 reused the required behavior that the body must translate and rotate
+  over planted feet. Its implementation is new: fixed world foot targets are
+  expressed in the moved body using the full rigid transform
+  `R^T * (p_world - body_translation)` for X/Y/Z and roll/pitch/yaw, followed by
+  transactional six-leg IK. For roll/pitch, world-down is projected into each
+  leg's instantaneous sagittal plane and the resulting separate pitch target
+  is supplied to the analytic IK; the rejected lateral component is reported
+  as the unavoidable orientation residual. This is a new checked
+  implementation rather than reuse of the legacy orientation code.
+- Phase 5 retained the robot's proven alternating tripod membership
+  `(L1, L3, R2)` / `(L2, R1, R3)` and the behavioral requirements for planar
+  translation, turning, and an orderly stop. The normalized continuous phase
+  machine, velocity-derived stride/cadence scheduling, acceleration/
+  deceleration, boundary stop, stable-hold dwell, and no-surprise-resume
+  behavior are new.
+  On 2026-08-16 the user selected the legacy function-defined horizontal and
+  vertical foot-path shapes in place of the initial smoothstep/piecewise-linear
+  shapes. They are independently rewritten in C++, normalized to the accepted
+  60 mm stride and 30 mm clearance, and phase-shifted onto the new state
+  machine without changing tripod handover timing. The final horizontal branch
+  is intentionally corrected: at legacy phase `0.75` it changes continuously
+  from the `+0.5` plateau into a linear decrease to zero at phase `1.0`, with
+  supporting-foot velocity continuous across the cycle boundary. The legacy
+  counter state machine itself was not ported.
+- The arbiter, independent safety state machine, lifecycle/readiness handling,
+  watchdog behavior, atomic 24-joint transaction, `ros2_control` path, and
+  Gates 2–4 scorers are new and have no equivalent implementation in the
+  legacy single-node package.
+- The legacy package is Apache-2.0 licensed. The current Phase 3–5 source is an
+  independent MIT-licensed implementation and contains no copied legacy source
+  lines. The gait source documents that its mathematical behavior is derived
+  from the Apache-2.0 legacy trajectory and records the user-approved change.
+  Any future direct port of legacy implementation code must preserve the
+  applicable Apache-2.0 notices and redistribution obligations.
 
 ## Cloud simulation evidence (2026-08-14)
 
@@ -603,9 +696,85 @@ physical measurements:
 - The rebuild targets the current supported Isaac Sim/Isaac Lab generation at implementation time. Legacy Isaac Sim 4.5 assets are migration references, not a compatibility target.
 - Simulator acceptance criteria are required before implementation; the user approved defining explicit model, control, determinism, real-time-factor, sensor, and regression gates.
 - Reinforcement learning is explicitly deferred. Initial milestones must use deterministic, conventional algorithms for kinematics, tripod gait generation, body control, teleoperation, state estimation, SLAM, and Nav2. RL may later adapt or improve a proven algorithmic baseline.
-- Phase 0 repository/package scaffolding, Phase 1 / static Gate 0, and Phase 2 /
-  live Gate 1 are complete. Phase 3 / Gate 2 and every later phase require
-  separate authorization.
+- Phase 0 repository/package scaffolding and simulator Phases 1–7 are complete.
+  Gates 0–6 pass as of 2026-08-16. Formal Gate 6 evidence is retained at
+  `/tmp/araco_gate6_final_20260816_06`; all 21 acceptance checks passed across
+  package tests, sanitizers, preflight Gates 0–5, three no-retry Gate 0–5
+  repetitions, exact discrete safety outcomes, physical repeatability, timing,
+  logs, and identical behavior fingerprints. Physical actuation and Pi
+  deployment remain unauthorized. Final physical-label observation and headed
+  validation of the connected joystick profile remain an operator-in-the-loop
+  teleoperation task rather than a Phase 7 acceptance blocker.
+- The current simulator locomotion baseline supports bounded forward, reverse,
+  lateral, yaw, and combined slow tripod motion through the production command
+  and safety path. Source loss, keyboard deadman expiry, manual hold, and
+  active `GAIT_STAND` result in controlled return to a planned six-foot hold.
+- A 2026-08-16 headed check proved the original terminal-child keyboard reader
+  unusable through `ros2 launch`. It is replaced by a development-only focused
+  Tk control window and complete pressed-key-state heartbeat. With fresh focus
+  and `Space` held, direction-key changes retain the accepted source; no net
+  direction produces active `GAIT_STAND` with zero velocity. Releasing `Space`,
+  losing focus/heartbeat, or closing the window releases fail-closed. A headed
+  `Space + W + A` test validated partial direction releases, neutral stand, and
+  final deadman release. Keyboard mapping v1 is `0.3.0`.
+- The connected PXN-2113 Pro is USB `11ff:0837`, SDL GUID
+  `0300b14bff1100003708000010010000`, and produces six ROS Joy axes plus 12
+  buttons. Live axis calibration preserves the legacy axis roles. Joystick
+  mapping/profile `0.9.0` retains an 8% deadzone and 120 ms input timeout but no
+  deadman button or manual Enable Motion step. The joystick profile auto-enables
+  once after readiness and a fresh valid neutral-standing selection;
+  translation, walking yaw, roll, pitch, and posture yaw must be neutral while
+  body-height trim is permitted. The adapter emits one internal inactive startup
+  sample to establish a new arbiter session. The one-shot is consumed so hold,
+  source loss, or fault cannot auto-resume. Timeout/disconnect or malformed
+  input releases authority. Physical button 1 is
+  live-verified as ROS index 0 and physical button 2 as index 1; both are
+  intentionally unassigned. This does not change the keyboard UI's `Space`
+  deadman.
+- 2026-08-16 joystick UX correction: roll is the least useful posture control,
+  and the user rejected a roll/pitch modifier chord. Mapping artifact `0.6.0`
+  therefore makes inverted axis 5 direct pitch and axis 4 posture yaw,
+  and assigns physical buttons 3/4 to sequential ROS indices 2/3 for dedicated
+  roll-left/right commands. Simultaneous roll buttons cancel to zero. Buttons
+  3/4 are not yet live-indexed and may receive a later non-blocking spot-check.
+  The earlier `0.3.0` deadman-gated and `0.4.0` manual-enable results are
+  superseded. The earlier focused `0.5.0` tests report 132 checks with no failures;
+  joystick Gate 0 passes with behavior fingerprint
+  `683ad02b5cbc0112f3e1b674795b5f015eb89fc87c869fc07fe79594b99b8adf`,
+  and headed launch verified the automatic transition to `MOTION_ENABLED`.
+- A later live direction check found only forward/reverse initially correct.
+  Version `0.6.0` reversed the other controls, but the subsequent live check
+  showed height and roll had been correct before that broad reversal. Version
+  `0.9.0` retains the `0.7.0` height/roll restoration and corrected lateral,
+  walking yaw, pitch, and posture yaw while adding the doubled-speed scales.
+  The same live run
+  showed the reported freeze was a latched reason-16 safety response to an IK
+  workspace-boundary rejection, not a Gazebo renderer hang. A bounded finite
+  request at that boundary now holds the last complete valid trajectory and
+  reports `REASON_COMMAND_LIMITED`; only loss of the valid-commit invariant
+  remains a kinematics fault.
+- The approved legacy-curve regression uses clean build/test root
+  `/tmp/araco_legacy_curve_final_20260816_01/` and Gate 4 evidence
+  `/tmp/araco_legacy_curve_gate4_final_20260816_01/`. Its behavior fingerprint
+  is `fa45b732e967a4f780e297c56b2c736b09d518dc3a10001dbe45160ae1664de9`.
+- The subsequent ground-relative foot-orientation regression uses clean root
+  `/tmp/araco_foot_orientation_final_20260816_01/` and Gate 0–4 evidence under
+  `/tmp/araco_foot_orientation_gate{0..4}_20260816_*`. All 251 tests and all
+  gates pass with behavior fingerprint
+  `14cc9acbea9d31ca7c5feb4ab7aa0ab13d84f9dd615227099808d001fc0d2cdd`.
+  Gate 3 now validates actual foot-link orientation and six-foot contact for
+  roll/pitch instead of relying on point-contact success alone.
+- The responsive scheduler regression uses clean root
+  `/tmp/araco_scheduler_final_20260816_02/` and final Gate 0–4 evidence under
+  `/tmp/araco_scheduler_gate0_20260816_02/`,
+  `/tmp/araco_scheduler_gate1_20260816_02/`,
+  `/tmp/araco_scheduler_gate2_20260816_02/`,
+  `/tmp/araco_scheduler_gate3_20260816_02/`, and
+  `/tmp/araco_scheduler_gate4_20260816_04/`. All 255 tests and all gates pass
+  with behavior fingerprint
+  `6f9678fd5aae3b832b2afede9710d187c3252a326a46a382d5cc74b937b58bda`.
+  Gate 4 covers one precision command plus the seven prior movement cases;
+  every case retains at least three intended support contacts.
 
 ## Evidence boundary
 

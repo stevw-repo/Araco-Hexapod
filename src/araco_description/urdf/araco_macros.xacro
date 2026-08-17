@@ -19,6 +19,23 @@
     </link>
   </xacro:macro>
 
+  <xacro:macro name="araco_dynamic_sphere_link" params="name mass com_xyz ixx ixy ixz iyy iyz izz collision_xyz collision_radius **visuals">
+    <link name="${name}">
+      <inertial>
+        <origin xyz="${com_xyz}" rpy="0 0 0"/>
+        <mass value="${mass}"/>
+        <inertia ixx="${ixx}" ixy="${ixy}" ixz="${ixz}" iyy="${iyy}" iyz="${iyz}" izz="${izz}"/>
+      </inertial>
+      <xacro:insert_block name="visuals"/>
+      <collision name="${name}_collision">
+        <origin xyz="${collision_xyz}" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="${collision_radius}"/>
+        </geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
   <xacro:macro name="araco_frame_link" params="name">
     <link name="${name}"/>
   </xacro:macro>

@@ -1,0 +1,669 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Drive and score Gate 4 tripod locomotion and controlled-stop behavior."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from pathlib import Path
+import time
+
+from araco_interfaces.action import SafetyTransition
+from araco_interfaces.msg import CommandCandidate
+from araco_interfaces.msg import LocomotionStatus
+from araco_interfaces.msg import SafeCommand
+from araco_interfaces.msg import SafetyStatus
+from araco_interfaces.msg import SelectedCommand
+from control_msgs.msg import JointTrajectoryControllerState
+from nav_msgs.msg import Odometry
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
+from ros_gz_interfaces.msg import Contacts
+from rosgraph_msgs.msg import Clock
+from sensor_msgs.msg import JointState
+from trajectory_msgs.msg import JointTrajectory
+
+
+FEET = (
+    'left_front', 'left_middle', 'left_rear',
+    'right_front', 'right_middle', 'right_rear',
+)
+GROUP_A = frozenset((FEET[0], FEET[2], FEET[4]))
+GROUP_B = frozenset(FEET) - GROUP_A
+
+
+def _seconds(stamp):
+    return float(stamp.sec) + float(stamp.nanosec) * 1e-9
+
+
+def _rpy(quaternion):
+    x, y, z, w = quaternion
+    roll = math.atan2(2.0 * (w * x + y * z), 1.0 - 2.0 * (x * x + y * y))
+    sine = 2.0 * (w * y - z * x)
+    pitch = math.asin(max(-1.0, min(1.0, sine)))
+    yaw = math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
+    return roll, pitch, yaw
+
+
+def _angle_error(left, right):
+    return abs(math.atan2(math.sin(left - right), math.cos(left - right)))
+
+
+def _json_safe(value):
+    """Replace non-finite diagnostic numbers without hiding a failed check."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    return value
+
+
+class Gate4Scorer(Node):
+    """Command only the registered system-test source and observe plant truth."""
+
+    def __init__(self, bundle, thresholds, started_monotonic):
+        super().__init__('gate4_scorer', namespace='araco/system_tests')
+        self.thresholds = thresholds
+        self.started_monotonic = started_monotonic
+        pose = json.loads((
+            bundle / 'normalized_artifacts/'
+            'araco_description_nominal-standing-reference.json'
+        ).read_text(encoding='utf-8'))['data']['base_pose']
+        self.gait_policy = json.loads((
+            bundle / 'normalized_artifacts/'
+            'araco_locomotion_gait-tripod-slow.json'
+        ).read_text(encoding='utf-8'))['data']
+        self.nominal_height = pose['position_xyz_m'][2]
+        self.sim_time = None
+        self.safety = None
+        self.safe = None
+        self.selected = None
+        self.locomotion = None
+        self.odom = None
+        self.contacts = set()
+        self.joint_speed = math.inf
+        self.joint_error = math.inf
+        self.sequence = time.time_ns()
+        self.active = False
+        self.gait = CommandCandidate().intent.GAIT_TRIPOD
+        self.command = (0.0, 0.0, 0.0)
+        self.case_start = None
+        self.samples = []
+        self.contact_samples = []
+        self.phase_path = []
+        self.scheduler_samples = []
+        self.invalid_status = False
+        self.nonfoot_contact = False
+        self.controlled_stop_seen = False
+        self.trajectory_times = []
+        self.controller_times = []
+        self.locomotion_times = []
+        reliable = QoSProfile(depth=100, reliability=ReliabilityPolicy.RELIABLE)
+        sensor = QoSProfile(depth=100, reliability=ReliabilityPolicy.BEST_EFFORT)
+        self.publisher = self.create_publisher(
+            CommandCandidate, '/araco/command/candidates/system_test', sensor)
+        self.create_subscription(Clock, '/clock', self._on_clock, 10)
+        self.create_subscription(
+            SafetyStatus, '/araco/safety/status', self._on_safety, reliable)
+        self.create_subscription(
+            SafeCommand, '/araco/command/safe', self._on_safe, reliable)
+        self.create_subscription(
+            SelectedCommand, '/araco/command/selected',
+            self._on_selected, reliable)
+        self.create_subscription(
+            LocomotionStatus, '/araco/locomotion/status',
+            self._on_locomotion, reliable)
+        self.create_subscription(
+            Odometry, '/araco/simulation/ground_truth/odom', self._on_odom, sensor)
+        self.create_subscription(
+            Contacts, '/araco/simulation/contacts/all', self._on_contacts, sensor)
+        self.create_subscription(
+            JointState, '/joint_states', self._on_joints, sensor)
+        self.create_subscription(
+            JointTrajectoryControllerState,
+            '/leg_trajectory_controller/controller_state',
+            self._on_controller, sensor)
+        self.create_subscription(
+            JointTrajectory, '/leg_trajectory_controller/joint_trajectory',
+            self._on_trajectory, reliable)
+        self.action = ActionClient(self, SafetyTransition, '/araco/safety/transition')
+
+    def _on_clock(self, message):
+        self.sim_time = _seconds(message.clock)
+
+    def _on_safety(self, message):
+        self.safety = message
+        if message.state == message.STATE_STOPPING and self.safe is not None:
+            self.controlled_stop_seen |= (
+                self.safe.disposition == self.safe.DISPOSITION_CONTROLLED_STOP)
+
+    def _on_safe(self, message):
+        self.safe = message
+        self.controlled_stop_seen |= (
+            message.disposition == message.DISPOSITION_CONTROLLED_STOP)
+
+    def _on_selected(self, message):
+        self.selected = message
+
+    def _on_locomotion(self, message):
+        self.locomotion = message
+        if self.sim_time is not None:
+            self.locomotion_times.append(self.sim_time)
+        if self._scoring():
+            self.phase_path.append((message.gait_cycle, message.gait_phase))
+            self.scheduler_samples.append({
+                'cadence_hz': message.gait_cadence_hz,
+                'stride_scale': message.gait_maximum_stride_scale,
+                'clearance_m': message.gait_maximum_clearance_m,
+                'velocity_scale': message.gait_applied_velocity_scale,
+            })
+            scheduler_values = (
+                message.gait_cadence_hz,
+                message.gait_maximum_stride_scale,
+                message.gait_maximum_clearance_m,
+                message.gait_applied_velocity_scale,
+            )
+            self.invalid_status |= (
+                not message.trajectory_valid or
+                message.mode not in (message.MODE_STARTING, message.MODE_WALKING) or
+                message.gait != 1 or
+                not all(math.isfinite(value) for value in scheduler_values))
+
+    def _on_odom(self, message):
+        self.odom = message
+        if not self._scoring():
+            return
+        pose = message.pose.pose
+        twist = message.twist.twist
+        roll, pitch, yaw = _rpy((
+            pose.orientation.x, pose.orientation.y,
+            pose.orientation.z, pose.orientation.w))
+        x_command, y_command, yaw_command = self.command
+        desired_x = math.cos(yaw) * x_command - math.sin(yaw) * y_command
+        desired_y = math.sin(yaw) * x_command + math.cos(yaw) * y_command
+        self.samples.append({
+            'planar_error': math.hypot(
+                twist.linear.x - desired_x, twist.linear.y - desired_y),
+            'yaw_error': abs(twist.angular.z - yaw_command),
+            'roll': roll,
+            'pitch': pitch,
+            'height_error': pose.position.z - self.nominal_height,
+            'joint_error': self.joint_error,
+        })
+
+    @staticmethod
+    def _ground(name):
+        return 'ground_plane' in name or 'ground::' in name
+
+    def _on_contacts(self, message):
+        touching = set()
+        for contact in message.contacts:
+            names = (contact.collision1.name, contact.collision2.name)
+            ground_index = next(
+                (index for index, name in enumerate(names) if self._ground(name)), None)
+            if ground_index is None:
+                continue
+            robot = names[1 - ground_index]
+            foot = next((name for name in FEET if f'{name}_foot_link' in robot), None)
+            if foot is None:
+                self.nonfoot_contact = True
+            else:
+                touching.add(foot)
+        self.contacts = touching
+        if self._scoring() and self.locomotion is not None:
+            phase = self.locomotion.gait_phase
+            cadence = self.locomotion.gait_cadence_hz
+            transition_time = min(
+                phase, abs(phase - 0.5), 1.0 - phase) / max(cadence, 1e-12)
+            # The contract excludes the first 50 ms, including its boundary.
+            # Keep a tiny tolerance so binary floating point cannot admit a
+            # mathematically exact 0.050 s sample as 0.050000000000001 s.
+            if transition_time > 0.05 + 1.0e-9:
+                support = GROUP_B if phase >= 0.5 else GROUP_A
+                swing = GROUP_A if phase >= 0.5 else GROUP_B
+                self.contact_samples.append({
+                    'phase': phase,
+                    'touching': sorted(touching),
+                    'support_contacts': len(support & touching),
+                    'swing_contacts': len(swing & touching),
+                })
+
+    def _on_joints(self, message):
+        if len(message.velocity) >= 24:
+            self.joint_speed = max(abs(value) for value in message.velocity[:24])
+
+    def _on_controller(self, message):
+        if self.sim_time is not None:
+            self.controller_times.append(self.sim_time)
+        if len(message.error.positions) == 24:
+            self.joint_error = max(abs(value) for value in message.error.positions)
+
+    def _on_trajectory(self, _message):
+        if self.sim_time is not None:
+            self.trajectory_times.append(self.sim_time)
+
+    def _scoring(self):
+        if self.case_start is None or self.sim_time is None:
+            return False
+        elapsed = self.sim_time - self.case_start
+        return (self.thresholds['score_start_sim_s'] <= elapsed <=
+                self.thresholds['score_end_sim_s'])
+
+    def publish(self):
+        self.sequence += 1
+        message = CommandCandidate()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = 'base_link'
+        message.sequence = self.sequence
+        message.active = self.active
+        message.intent.gait = self.gait
+        message.intent.planar_velocity.linear.x = self.command[0]
+        message.intent.planar_velocity.linear.y = self.command[1]
+        message.intent.planar_velocity.angular.z = self.command[2]
+        message.intent.body_pose_offset.orientation.w = 1.0
+        self.publisher.publish(message)
+
+    def spin_for(self, seconds, publish=True):
+        start = self.sim_time
+        deadline = time.monotonic() + seconds * 2.0 + 2.0
+        while time.monotonic() < deadline:
+            if publish:
+                self.publish()
+            rclpy.spin_once(self, timeout_sec=0.02)
+            if (start is not None and self.sim_time is not None and
+                    self.sim_time - start >= seconds):
+                return True
+        return False
+
+    def wait(self, predicate, wall_seconds, publish=True):
+        deadline = time.monotonic() + wall_seconds
+        while time.monotonic() < deadline:
+            if publish:
+                self.publish()
+            rclpy.spin_once(self, timeout_sec=0.02)
+            if predicate():
+                return True
+        return False
+
+    def transition(self, request):
+        if not self.action.wait_for_server(timeout_sec=3.0):
+            return False
+        goal = SafetyTransition.Goal()
+        goal.request = request
+        future = self.action.send_goal_async(goal)
+        if not self.wait(future.done, 3.0):
+            return False
+        handle = future.result()
+        if handle is None or not handle.accepted:
+            return False
+        if request == SafetyTransition.Goal.REQUEST_ENABLE_MOTION:
+            # The action completes only after the required fresh activation
+            # edge takes safety all the way to MOTION_ENABLED.
+            self.active = True
+        result = handle.get_result_async()
+        if not self.wait(result.done, 3.0):
+            return False
+        return result.result().result.accepted
+
+    def acquire(self, command):
+        self.active = False
+        self.gait = CommandCandidate().intent.GAIT_TRIPOD
+        self.command = command
+        self.spin_for(0.25)
+        if not self.wait(lambda: self.safety is not None and self.safety.state == 2, 3.0):
+            return False
+        if not self.transition(SafetyTransition.Goal.REQUEST_ENABLE_MOTION):
+            return False
+        return self.wait(lambda: self.safety is not None and self.safety.state == 4, 3.0)
+
+    def release_and_hold(self):
+        start_pose = None
+        if self.odom is not None:
+            pose = self.odom.pose.pose
+            start_pose = (
+                pose.position.x, pose.position.y,
+                pose.orientation.x, pose.orientation.y,
+                pose.orientation.z, pose.orientation.w)
+        detected_at = self.sim_time
+        self.controlled_stop_seen = False
+        self.active = False
+        held = self.wait(lambda: self.safety is not None and self.safety.state == 2, 3.0)
+        if held:
+            self.wait(
+                lambda: len(self.contacts) == 6 and
+                self.joint_speed <=
+                self.thresholds['maximum_held_joint_speed_rad_s'] and
+                self.odom is not None and math.hypot(
+                    self.odom.twist.twist.linear.x,
+                    self.odom.twist.twist.linear.y) <=
+                self.thresholds['maximum_held_base_speed_m_s'],
+                self.thresholds['controlled_stop_max_s'])
+        elapsed = (
+            self.sim_time - detected_at
+            if held and self.sim_time is not None else math.inf)
+        drift = math.inf
+        yaw_drift = math.inf
+        if held and start_pose is not None and self.odom is not None:
+            end = self.odom.pose.pose
+            drift = math.hypot(
+                end.position.x - start_pose[0], end.position.y - start_pose[1])
+            start_yaw = _rpy(start_pose[2:])[2]
+            end_yaw = _rpy((end.orientation.x, end.orientation.y,
+                            end.orientation.z, end.orientation.w))[2]
+            yaw_drift = _angle_error(end_yaw, start_yaw)
+        return {
+            'held': held,
+            'controlled_stop_seen': self.controlled_stop_seen,
+            'stop_sim_s': elapsed,
+            'drift_m': drift,
+            'yaw_drift_rad': yaw_drift,
+            'six_feet': len(self.contacts) == 6,
+            'held_joint_speed_rad_s': self.joint_speed,
+            'held_base_speed_m_s': (math.hypot(
+                self.odom.twist.twist.linear.x, self.odom.twist.twist.linear.y)
+                if self.odom is not None else math.inf),
+        }
+
+    def run_case(self, name, command):
+        if not self.acquire(command):
+            return {'name': name, 'status': 'FAIL', 'reason': 'authority acquisition failed'}
+        start_pose = None
+        if self.odom is not None:
+            pose = self.odom.pose.pose
+            start_pose = (
+                pose.position.x, pose.position.y,
+                pose.orientation.x, pose.orientation.y,
+                pose.orientation.z, pose.orientation.w)
+        start_cycle = self.locomotion.gait_cycle if self.locomotion is not None else None
+        self.case_start = self.sim_time
+        self.samples = []
+        self.contact_samples = []
+        self.phase_path = []
+        self.scheduler_samples = []
+        self.invalid_status = False
+        completed = self.spin_for(self.thresholds['case_duration_sim_s'])
+        self.case_start = None
+        final_displacement = math.inf
+        final_yaw = math.inf
+        if start_pose is not None and self.odom is not None:
+            end = self.odom.pose.pose
+            final_displacement = math.hypot(
+                end.position.x - start_pose[0], end.position.y - start_pose[1])
+            start_yaw = _rpy(start_pose[2:])[2]
+            end_yaw = _rpy((end.orientation.x, end.orientation.y,
+                            end.orientation.z, end.orientation.w))[2]
+            final_yaw = math.atan2(
+                math.sin(end_yaw - start_yaw), math.cos(end_yaw - start_yaw))
+        cycles_completed = (
+            self.locomotion.gait_cycle - start_cycle
+            if self.locomotion is not None and start_cycle is not None else 0)
+        stop = self.release_and_hold()
+        sample_count = len(self.samples)
+        planar_mean = sum(item['planar_error'] for item in self.samples) / max(1, sample_count)
+        yaw_mean = sum(item['yaw_error'] for item in self.samples) / max(1, sample_count)
+        roll_pitch_rms = math.sqrt(sum(
+            item['roll'] ** 2 + item['pitch'] ** 2 for item in self.samples) /
+            max(1, 2 * sample_count))
+        height_rms = math.sqrt(sum(
+            item['height_error'] ** 2 for item in self.samples) / max(1, sample_count))
+        joint_max = max((item['joint_error'] for item in self.samples), default=math.inf)
+        support_duty = (sum(item['support_contacts'] >= 2 for item in self.contact_samples) /
+                        max(1, len(self.contact_samples)))
+        support_minimum = min(
+            (item['support_contacts'] for item in self.contact_samples), default=0)
+        swing_duty = (sum(item['swing_contacts'] > 0 for item in self.contact_samples) /
+                      max(1, len(self.contact_samples)))
+        support_failures = [
+            item for item in self.contact_samples if item['support_contacts'] < 2]
+        phase_monotonic = all(
+            right[0] > left[0] or
+            (right[0] == left[0] and right[1] + 1e-12 >= left[1])
+            for left, right in zip(self.phase_path, self.phase_path[1:]))
+        cadence_min = min(
+            (item['cadence_hz'] for item in self.scheduler_samples),
+            default=-math.inf)
+        cadence_max = max(
+            (item['cadence_hz'] for item in self.scheduler_samples),
+            default=math.inf)
+        stride_min = min(
+            (item['stride_scale'] for item in self.scheduler_samples),
+            default=-math.inf)
+        stride_max = max(
+            (item['stride_scale'] for item in self.scheduler_samples),
+            default=math.inf)
+        clearance_min = min(
+            (item['clearance_m'] for item in self.scheduler_samples),
+            default=-math.inf)
+        clearance_max = max(
+            (item['clearance_m'] for item in self.scheduler_samples),
+            default=math.inf)
+        velocity_scale_min = min(
+            (item['velocity_scale'] for item in self.scheduler_samples),
+            default=-math.inf)
+        velocity_scale_max = max(
+            (item['velocity_scale'] for item in self.scheduler_samples),
+            default=math.inf)
+        clearance_consistency_error = max((abs(
+            item['clearance_m'] -
+            self.gait_policy['swing_clearance_m'] * item['stride_scale'])
+            for item in self.scheduler_samples), default=math.inf)
+        scheduler_valid = (
+            len(self.scheduler_samples) >= self.thresholds['minimum_window_samples'] and
+            cadence_min >= self.gait_policy['base_cadence_hz'] - 1e-12 and
+            cadence_max <= self.gait_policy['maximum_cadence_hz'] + 1e-12 and
+            stride_min > 0.0 and stride_max <= 1.0 + 1e-12 and
+            clearance_min > 0.0 and
+            clearance_max <= self.gait_policy['swing_clearance_m'] + 1e-12 and
+            0.0 < velocity_scale_min <= velocity_scale_max <= 1.0 + 1e-12 and
+            clearance_consistency_error <= 1e-12)
+        precision_expected_clearance = (
+            self.gait_policy['swing_clearance_m'] *
+            self.gait_policy['duty_factor'] * abs(command[0]) /
+            self.gait_policy['base_cadence_hz'] /
+            self.gait_policy['maximum_stride_m'])
+        case_scheduler_valid = scheduler_valid
+        if name == 'precision_forward':
+            case_scheduler_valid &= (
+                abs(clearance_min - precision_expected_clearance) <= 1e-12 and
+                abs(clearance_max - precision_expected_clearance) <= 1e-12 and
+                abs(cadence_min - self.gait_policy['base_cadence_hz']) <= 1e-12 and
+                abs(cadence_max - self.gait_policy['base_cadence_hz']) <= 1e-12)
+        if name == 'combined':
+            case_scheduler_valid &= (
+                cadence_max > self.gait_policy['base_cadence_hz'] + 0.01)
+        passed = (
+            completed and sample_count >= self.thresholds['minimum_window_samples'] and
+            planar_mean <= self.thresholds['maximum_planar_velocity_mean_error_m_s'] and
+            yaw_mean <= self.thresholds['maximum_yaw_rate_mean_error_rad_s'] and
+            roll_pitch_rms <= self.thresholds['maximum_roll_pitch_rms_rad'] and
+            height_rms <= self.thresholds['maximum_height_rms_error_m'] and
+            cycles_completed >= 5 and
+            support_minimum >= 2 and
+            support_duty >= self.thresholds['minimum_support_contact_duty'] and
+            swing_duty <= self.thresholds['maximum_swing_contact_duty'] and
+            joint_max <= self.thresholds['maximum_joint_tracking_error_rad'] and
+            phase_monotonic and case_scheduler_valid and
+            not self.invalid_status and not self.nonfoot_contact and
+            self.stop_passes(stop))
+        return {
+            'name': name, 'command_xy_yaw': command, 'samples': sample_count,
+            'planar_velocity_mean_error_m_s': planar_mean,
+            'yaw_rate_mean_error_rad_s': yaw_mean,
+            'roll_pitch_rms_rad': roll_pitch_rms,
+            'height_rms_error_m': height_rms,
+            'gait_cycles_completed': cycles_completed,
+            'minimum_support_contacts': support_minimum,
+            'support_contact_duty': support_duty,
+            'support_failure_samples': support_failures[:24],
+            'swing_contact_duty': swing_duty,
+            'joint_tracking_error_max_rad': joint_max,
+            'final_displacement_m': final_displacement,
+            'final_yaw_rad': final_yaw,
+            'scheduler': {
+                'samples': len(self.scheduler_samples),
+                'cadence_hz_min': cadence_min,
+                'cadence_hz_max': cadence_max,
+                'stride_scale_min': stride_min,
+                'stride_scale_max': stride_max,
+                'clearance_m_min': clearance_min,
+                'clearance_m_max': clearance_max,
+                'velocity_scale_min': velocity_scale_min,
+                'velocity_scale_max': velocity_scale_max,
+                'clearance_consistency_error_m': clearance_consistency_error,
+                'policy_valid': case_scheduler_valid,
+            },
+            'phase_monotonic': phase_monotonic, 'stop': stop,
+            'status': 'PASS' if passed else 'FAIL',
+        }
+
+    def stop_passes(self, stop):
+        return (
+            stop['held'] and stop['controlled_stop_seen'] and
+            stop['stop_sim_s'] <= self.thresholds['controlled_stop_max_s'] and
+            stop['drift_m'] <= self.thresholds['maximum_stop_drift_m'] and
+            stop['yaw_drift_rad'] <= self.thresholds['maximum_stop_drift_yaw_rad'] and
+            stop['six_feet'] and
+            stop['held_joint_speed_rad_s'] <=
+            self.thresholds['maximum_held_joint_speed_rad_s'] and
+            stop['held_base_speed_m_s'] <=
+            self.thresholds['maximum_held_base_speed_m_s'])
+
+    @staticmethod
+    def timing(times, expected_hz):
+        if len(times) < 2 or times[-1] <= times[0]:
+            return {'samples': len(times), 'measured_hz': 0.0, 'missed_cycles': 0}
+        period = 1.0 / expected_hz
+        return {
+            'samples': len(times),
+            'measured_hz': (len(times) - 1) / (times[-1] - times[0]),
+            'missed_cycles': sum(
+                max(0, round((right - left) / period) - 1)
+                for left, right in zip(times, times[1:])
+                if right - left > period * 1.5),
+        }
+
+
+def main():
+    """Execute the Gate 4 matrix and write one deterministic JSON result."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bundle', required=True)
+    parser.add_argument('--thresholds', required=True)
+    parser.add_argument('--output', required=True)
+    parser.add_argument('--started-monotonic', type=float, required=True)
+    parser.add_argument('--case-name', action='append')
+    arguments, ros_arguments = parser.parse_known_args()
+    thresholds = json.loads(Path(arguments.thresholds).read_text(
+        encoding='utf-8'))['data']['gate4']
+    rclpy.init(args=[parser.prog, *ros_arguments])
+    node = Gate4Scorer(
+        Path(arguments.bundle).resolve(), thresholds, arguments.started_monotonic)
+    try:
+        ready = node.wait(
+            lambda: node.safety is not None and node.safety.state == 2 and
+            node.safety.readiness_mask == node.safety.required_readiness_mask == 127 and
+            node.selected is not None and not node.selected.has_selection,
+            thresholds['startup_wall_max_s'])
+        measurement_wall_start = time.monotonic()
+        measurement_sim_start = node.sim_time
+        node.trajectory_times = []
+        node.controller_times = []
+        node.locomotion_times = []
+        cases = [
+            ('precision_forward', (0.006, 0.0, 0.0)),
+            ('forward', (0.04, 0.0, 0.0)), ('reverse', (-0.04, 0.0, 0.0)),
+            ('left', (0.0, 0.03, 0.0)), ('right', (0.0, -0.03, 0.0)),
+            ('yaw_left', (0.0, 0.0, 0.2)), ('yaw_right', (0.0, 0.0, -0.2)),
+            ('combined', (0.03, 0.02, 0.15)),
+        ]
+        if arguments.case_name:
+            requested = set(arguments.case_name)
+            cases = [case for case in cases if case[0] in requested]
+            if len(cases) != len(requested):
+                raise ValueError('unknown Gate 4 case name')
+        results = [node.run_case(name, command) for name, command in cases] if ready else []
+
+        manual = {'status': 'FAIL'}
+        if node.acquire((0.03, 0.0, 0.0)):
+            node.spin_for(2.4)
+            node.controlled_stop_seen = False
+            accepted = node.transition(SafetyTransition.Goal.REQUEST_HOLD)
+            held = node.wait(lambda: node.safety is not None and node.safety.state == 2, 3.0)
+            manual_passed = accepted and held and node.controlled_stop_seen
+            manual = {
+                'accepted': accepted, 'held': held,
+                'controlled_stop_seen': node.controlled_stop_seen,
+                'status': 'PASS' if manual_passed else 'FAIL',
+            }
+            node.active = False
+            node.spin_for(0.25)
+
+        stand = {'status': 'FAIL'}
+        if node.acquire((0.03, 0.0, 0.0)):
+            node.spin_for(2.4)
+            start = node.sim_time
+            node.gait = CommandCandidate().intent.GAIT_STAND
+            node.command = (0.0, 0.0, 0.0)
+            standing = node.wait(
+                lambda: node.locomotion is not None and
+                node.locomotion.mode == node.locomotion.MODE_STANDING and
+                node.locomotion.gait_phase == 0.0, 3.0)
+            elapsed = node.sim_time - start if standing else math.inf
+            motion_enabled = node.safety is not None and node.safety.state == 4
+            stand_passed = standing and motion_enabled and elapsed <= 1.5
+            stand = {
+                'standing': standing, 'motion_enabled': motion_enabled,
+                'stop_sim_s': elapsed,
+                'status': 'PASS' if stand_passed else 'FAIL',
+            }
+            node.active = False
+            node.wait(lambda: node.safety is not None and node.safety.state == 2, 3.0)
+
+        checks = {
+            'startup_ready': ready,
+            'all_direction_cases': len(results) == len(cases) and
+            all(item['status'] == 'PASS' for item in results),
+            'manual_hold': manual['status'] == 'PASS',
+            'active_stand': stand['status'] == 'PASS',
+            'no_nonfoot_ground_contact': not node.nonfoot_contact,
+        }
+        measurement_wall_s = time.monotonic() - measurement_wall_start
+        measurement_sim_s = (
+            node.sim_time - measurement_sim_start
+            if node.sim_time is not None and measurement_sim_start is not None else 0.0)
+        timing = {
+            'simulated_s': measurement_sim_s,
+            'wall_s': measurement_wall_s,
+            'real_time_factor': measurement_sim_s / max(measurement_wall_s, 1e-12),
+            'locomotion_command_loop': node.timing(node.trajectory_times, 100.0),
+            'controller_manager_loop': node.timing(node.controller_times, 250.0),
+            'locomotion_status_loop': node.timing(node.locomotion_times, 50.0),
+        }
+        output = {
+            'status': 'PASS' if all(checks.values()) else 'FAIL',
+            'checks': checks,
+            'metrics': {
+                'cases': results, 'manual_hold': manual,
+                'active_stand': stand, 'timing': timing},
+        }
+        output = _json_safe(output)
+        Path(arguments.output).write_text(
+            json.dumps(output, indent=2, sort_keys=True, allow_nan=False) + '\n',
+            encoding='utf-8')
+        print(json.dumps(output, sort_keys=True, allow_nan=False))
+        raise SystemExit(0 if output['status'] == 'PASS' else 1)
+    finally:
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

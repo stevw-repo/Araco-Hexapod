@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Lifecycle adapter for the explicitly calibrated PXN joystick."""
+
+from __future__ import annotations
+
+import json
+import math
+
+from araco_interfaces.msg import CommandCandidate
+from araco_teleop.joystick import JoystickIntent, JoystickState
+from araco_teleop.joystick_adapter_parameters import joystick_adapter
+import rclpy
+from rclpy.lifecycle import LifecycleNode
+from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.qos import QoSProfile, ReliabilityPolicy
+from sensor_msgs.msg import Joy
+
+
+class JoystickAdapter(LifecycleNode):
+    """Translate raw reports into the registered teleop candidate stream."""
+
+    def __init__(self) -> None:
+        super().__init__('joystick_adapter', namespace='araco')
+        self._listener = None
+        self._params = None
+        self._mapping = None
+        self._state = None
+        self._publisher = None
+        self._subscription = None
+        self._timer = None
+        self._sequence = 0
+        self._startup_release_pending = True
+
+    def on_configure(self, _state):
+        try:
+            self._listener = joystick_adapter.ParamListener(self)
+            self._params = self._listener.get_params()
+            with open(self._params.mapping_path, encoding='utf-8') as stream:
+                document = json.load(stream)
+            self._mapping = document['data']
+            if (
+                self._mapping['adapter'] != 'joystick'
+                or self._mapping['source_id'] != 10
+                or self._mapping['frame_id'] != 'base_link'
+                or self._mapping['device_name'] != 'LiteStar PXN-2113 Pro'
+            ):
+                raise ValueError('unexpected joystick identity, authority, or frame')
+            self._state = JoystickState(self._mapping)
+            candidate_qos = QoSProfile(
+                depth=1, reliability=ReliabilityPolicy.BEST_EFFORT)
+            self._publisher = self.create_lifecycle_publisher(
+                CommandCandidate, 'command/candidates/teleop', candidate_qos)
+            self._subscription = self.create_subscription(
+                Joy, self._mapping['joy_topic'], self._accept_joy, 10)
+        except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+            self.get_logger().error(f'joystick mapping validation failed: {error}')
+            return TransitionCallbackReturn.FAILURE
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_activate(self, state):
+        result = super().on_activate(state)
+        if result != TransitionCallbackReturn.SUCCESS:
+            return result
+        self._sequence = 0
+        self._startup_release_pending = True
+        self._timer = self.create_timer(
+            1.0 / self._params.loop_rate_hz, self._tick)
+        return TransitionCallbackReturn.SUCCESS
+
+    def on_deactivate(self, state):
+        if self._timer is not None:
+            self.destroy_timer(self._timer)
+            self._timer = None
+        if self._state is not None:
+            self._state.invalidate()
+        return super().on_deactivate(state)
+
+    def _accept_joy(self, message: Joy) -> None:
+        try:
+            self._state.accept(message.axes, message.buttons)
+        except ValueError as error:
+            self.get_logger().warning(f'rejected joystick report: {error}')
+
+    def _tick(self) -> None:
+        intent = self._state.sample()
+        if self._startup_release_pending:
+            intent = JoystickIntent()
+            self._startup_release_pending = False
+        output = CommandCandidate()
+        output.header.stamp = self.get_clock().now().to_msg()
+        output.header.frame_id = 'base_link'
+        self._sequence += 1
+        output.sequence = self._sequence
+        output.active = intent.active
+        moving = any(abs(value) > 1.0e-12 for value in (
+            intent.vx, intent.vy, intent.wz))
+        output.intent.gait = (
+            output.intent.GAIT_TRIPOD if moving else output.intent.GAIT_STAND)
+        output.intent.planar_velocity.linear.x = intent.vx
+        output.intent.planar_velocity.linear.y = intent.vy
+        output.intent.planar_velocity.angular.z = intent.wz
+        output.intent.body_pose_offset.position.z = intent.body_z
+        half_roll = 0.5 * intent.body_roll
+        half_pitch = 0.5 * intent.body_pitch
+        half_yaw = 0.5 * intent.body_yaw
+        cr, sr = math.cos(half_roll), math.sin(half_roll)
+        cp, sp = math.cos(half_pitch), math.sin(half_pitch)
+        cy, sy = math.cos(half_yaw), math.sin(half_yaw)
+        output.intent.body_pose_offset.orientation.w = cr * cp * cy + sr * sp * sy
+        output.intent.body_pose_offset.orientation.x = sr * cp * cy - cr * sp * sy
+        output.intent.body_pose_offset.orientation.y = cr * sp * cy + sr * cp * sy
+        output.intent.body_pose_offset.orientation.z = cr * cp * sy - sr * sp * cy
+        self._publisher.publish(output)
+
+
+def main() -> None:
+    rclpy.init()
+    node = JoystickAdapter()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if rclpy.ok():
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

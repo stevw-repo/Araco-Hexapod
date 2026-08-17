@@ -23,7 +23,7 @@
       {
         "id": "robot_xacro_macros",
         "uri": "package://araco_description/urdf/araco_macros.xacro",
-        "sha256": "6284e50c234c20dea24d93e0d29912019108a588d578b59c27c40672a9c2212d",
+        "sha256": "d89c97592a7573e2718c9a1c821419ff0bb86c8f461c371daea99a52879b93b6",
         "media_type": "application/xacro+xml",
         "creator": "Araco Hexapod contributors",
         "source": "project-authored",

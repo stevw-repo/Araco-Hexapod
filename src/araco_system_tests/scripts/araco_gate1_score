@@ -248,14 +248,23 @@ class Gate1Scorer(Node):
         self.tf_samples += len(message.transforms)
 
     def poll_services(self):
-        if (self.controller_future is None and
+        # The controller manager may expose its services before controller and
+        # hardware initialization is complete.  Safety reaching fully ready
+        # HOLDING is the typed barrier that proves initialization completed.
+        # Query each service once after that barrier instead of load-polling it
+        # during startup and accidentally retaining an incomplete early reply.
+        if self.holding_wall_time is None:
+            return
+        if (self.controller_response is None and
+                self.controller_future is None and
                 self.controller_client.service_is_ready()):
             self.controller_future = self.controller_client.call_async(
                 ListControllers.Request())
         if self.controller_future is not None and self.controller_future.done():
             self.controller_response = self.controller_future.result()
             self.controller_future = None
-        if self.hardware_future is None and self.hardware_client.service_is_ready():
+        if (self.hardware_response is None and self.hardware_future is None and
+                self.hardware_client.service_is_ready()):
             self.hardware_future = self.hardware_client.call_async(
                 ListHardwareComponents.Request())
         if self.hardware_future is not None and self.hardware_future.done():

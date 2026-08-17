@@ -1,0 +1,330 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Focused key-state window and guarded simulator safety controls."""
+
+from __future__ import annotations
+
+import threading
+import tkinter as tk
+
+from araco_interfaces.action import SafetyTransition
+from araco_interfaces.msg import SafetyStatus
+from araco_teleop.keyboard import encode_snapshot
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.executors import ExternalShutdownException
+from rclpy.executors import SingleThreadedExecutor
+from rclpy.node import Node
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
+from std_msgs.msg import String
+
+
+ALLOWED_KEYS = frozenset(('space', 'w', 'a', 's', 'd', 'q', 'e'))
+STATE_NAMES = {
+    SafetyStatus.STATE_INITIALIZING: 'INITIALIZING',
+    SafetyStatus.STATE_INACTIVE: 'INACTIVE',
+    SafetyStatus.STATE_HOLDING: 'HOLDING',
+    SafetyStatus.STATE_ENABLING: 'ENABLING',
+    SafetyStatus.STATE_MOTION_ENABLED: 'MOTION ENABLED',
+    SafetyStatus.STATE_STOPPING: 'STOPPING',
+    SafetyStatus.STATE_FAULT_HOLD: 'FAULT HOLD',
+    SafetyStatus.STATE_SHUTTING_DOWN: 'SHUTTING DOWN',
+}
+
+
+class KeyboardUiNode(Node):
+    """Publish focused full key state and call only the guarded safety action."""
+
+    def __init__(self) -> None:
+        super().__init__('keyboard_teleop_ui', namespace='araco')
+        self._lock = threading.Lock()
+        self._pressed = set()
+        self._focused = False
+        self._sequence = 0
+        self._safety_view = 'Waiting for safety status…'
+        self._action_view = 'Release all movement keys, then click Enable Motion.'
+        qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT)
+        reliable = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
+        self._publisher = self.create_publisher(String, 'teleop/key_state', qos)
+        self.create_subscription(
+            SafetyStatus, 'safety/status', self._on_safety, reliable)
+        self._action = ActionClient(
+            self, SafetyTransition, 'safety/transition')
+        self.create_timer(0.02, self.publish_snapshot)
+
+    def set_focus(self, focused: bool) -> None:
+        """Update window focus; losing it atomically releases every key."""
+        with self._lock:
+            self._focused = focused
+            if not focused:
+                self._pressed.clear()
+
+    def press(self, key: str) -> None:
+        """Record one normalized key press."""
+        if key in ALLOWED_KEYS:
+            with self._lock:
+                self._pressed.add(key)
+
+    def release(self, key: str) -> None:
+        """Record one normalized key release."""
+        with self._lock:
+            self._pressed.discard(key)
+
+    def release_all(self) -> None:
+        """Clear all input state and publish the release immediately."""
+        with self._lock:
+            self._pressed.clear()
+        self.publish_snapshot()
+
+    def publish_snapshot(self) -> None:
+        """Publish the complete state as a short-lived heartbeat."""
+        with self._lock:
+            focused = self._focused
+            pressed = set(self._pressed)
+            self._sequence += 1
+            sequence = self._sequence
+        message = String()
+        message.data = encode_snapshot(sequence, focused, pressed)
+        self._publisher.publish(message)
+
+    def request_enable(self) -> None:
+        """Request guarded simulation motion enablement."""
+        with self._lock:
+            if self._pressed:
+                self._action_view = 'Release all keys before enabling motion.'
+                return
+        self._request(SafetyTransition.Goal.REQUEST_ENABLE_MOTION, 'Enable Motion')
+
+    def request_hold(self) -> None:
+        """Release input first, then request a controlled hold."""
+        self.release_all()
+        self._request(SafetyTransition.Goal.REQUEST_HOLD, 'Controlled Hold')
+
+    def _request(self, request: int, label: str) -> None:
+        with self._lock:
+            if not self._action.server_is_ready():
+                self._action_view = f'{label}: safety action is not ready.'
+                return
+            self._action_view = f'{label}: request sent…'
+        goal = SafetyTransition.Goal()
+        goal.request = request
+        future = self._action.send_goal_async(goal)
+        future.add_done_callback(
+            lambda completed: self._on_goal(completed, label))
+
+    def _on_goal(self, future, label: str) -> None:
+        try:
+            handle = future.result()
+        except Exception as error:  # noqa: BLE001 - surface ROS action failure in UI
+            with self._lock:
+                self._action_view = f'{label}: action error: {error}'
+            return
+        if not handle.accepted:
+            with self._lock:
+                self._action_view = f'{label}: action server rejected the goal.'
+            return
+        result_future = handle.get_result_async()
+        result_future.add_done_callback(
+            lambda completed: self._on_result(completed, label))
+
+    def _on_result(self, future, label: str) -> None:
+        try:
+            result = future.result().result
+            detail = 'accepted' if result.accepted else 'denied'
+            text = f'{label}: {detail} (reason {result.reason_code}).'
+        except Exception as error:  # noqa: BLE001 - surface ROS action failure in UI
+            text = f'{label}: result error: {error}'
+        with self._lock:
+            self._action_view = text
+
+    def _on_safety(self, message: SafetyStatus) -> None:
+        state = STATE_NAMES.get(message.state, f'UNKNOWN {message.state}')
+        ready = message.readiness_mask == message.required_readiness_mask
+        text = (
+            f'{state}  |  readiness: {"ready" if ready else "not ready"}'
+            f'  |  reason: {message.reason_code}'
+        )
+        with self._lock:
+            self._safety_view = text
+
+    def view(self) -> tuple[str, str, tuple[str, ...], bool]:
+        """Return a thread-safe UI snapshot."""
+        with self._lock:
+            return (
+                self._safety_view,
+                self._action_view,
+                tuple(sorted(self._pressed)),
+                self._focused,
+            )
+
+
+class KeyboardWindow:
+    """Tk window that owns real key press/release and focus state."""
+
+    def __init__(self, root: tk.Tk, node: KeyboardUiNode) -> None:
+        self._root = root
+        self._node = node
+        self._closing = False
+        self._release_jobs = {}
+        root.title('Araco Keyboard Control')
+        root.geometry('520x390')
+        root.minsize(480, 350)
+        root.configure(background='#15181d')
+
+        title = tk.Label(
+            root, text='ARACO  •  SIMULATOR TELEOP', font=('Sans', 16, 'bold'),
+            foreground='#e8eef7', background='#15181d')
+        title.pack(pady=(20, 8))
+        tk.Label(
+            root,
+            text='1. Click Enable Motion   2. Click this window   '
+                 '3. Hold SPACE + movement keys',
+            font=('Sans', 10), foreground='#aeb9c8', background='#15181d',
+            wraplength=470, justify='center').pack(pady=(0, 14))
+
+        self._safety = tk.StringVar(value='Waiting for safety status…')
+        self._action = tk.StringVar(value='Waiting for operator action.')
+        self._keys = tk.StringVar(value='Keys: none')
+        self._focus = tk.StringVar(value='Window focus: NO — commands released')
+        for variable, color in (
+            (self._safety, '#66d9ef'),
+            (self._action, '#f6c85f'),
+            (self._keys, '#e8eef7'),
+            (self._focus, '#ff7b72'),
+        ):
+            tk.Label(
+                root, textvariable=variable, font=('Monospace', 10),
+                foreground=color, background='#20252d', padx=10, pady=7,
+                anchor='w').pack(fill='x', padx=22, pady=2)
+
+        button_row = tk.Frame(root, background='#15181d')
+        button_row.pack(pady=18)
+        tk.Button(
+            button_row, text='Enable Motion', command=self._enable,
+            takefocus=False, background='#238636', foreground='white',
+            activebackground='#2ea043', padx=18, pady=8).pack(side='left', padx=6)
+        tk.Button(
+            button_row, text='Controlled Hold', command=self._hold,
+            takefocus=False, background='#9e6a03', foreground='white',
+            activebackground='#bb8009', padx=18, pady=8).pack(side='left', padx=6)
+
+        tk.Label(
+            root, text='W/S forward–reverse   A/D left–right   Q/E yaw\n'
+                       'Release SPACE, change window, or press ESC to stop.',
+            font=('Sans', 11, 'bold'), foreground='#e8eef7',
+            background='#15181d', justify='center').pack(pady=(0, 14))
+
+        root.bind_all('<KeyPress>', self._key_press)
+        root.bind_all('<KeyRelease>', self._key_release)
+        root.bind_all('<FocusIn>', self._focus_changed)
+        root.bind_all('<FocusOut>', self._focus_changed)
+        root.protocol('WM_DELETE_WINDOW', self.close)
+        root.after(50, self._refresh)
+
+    @staticmethod
+    def _normalize(keysym: str) -> str:
+        value = keysym.lower()
+        return 'space' if value == 'space' else value
+
+    def _key_press(self, event) -> None:
+        key = self._normalize(event.keysym)
+        release_job = self._release_jobs.pop(key, None)
+        if release_job is not None:
+            self._root.after_cancel(release_job)
+        if key == 'escape':
+            self._hold()
+        else:
+            self._node.press(key)
+
+    def _key_release(self, event) -> None:
+        key = self._normalize(event.keysym)
+        if key not in ALLOWED_KEYS:
+            return
+        release_job = self._release_jobs.pop(key, None)
+        if release_job is not None:
+            self._root.after_cancel(release_job)
+        self._release_jobs[key] = self._root.after(
+            30, lambda released=key: self._commit_release(released))
+
+    def _commit_release(self, key: str) -> None:
+        self._release_jobs.pop(key, None)
+        self._node.release(key)
+
+    def _focus_changed(self, _event) -> None:
+        self._root.after_idle(self._apply_focus)
+
+    def _apply_focus(self) -> None:
+        focused = self._root.focus_displayof() is not None
+        if not focused:
+            for release_job in self._release_jobs.values():
+                self._root.after_cancel(release_job)
+            self._release_jobs.clear()
+        self._node.set_focus(focused)
+
+    def _enable(self) -> None:
+        self._node.request_enable()
+        self._root.focus_force()
+
+    def _hold(self) -> None:
+        self._node.request_hold()
+        self._root.focus_force()
+
+    def _refresh(self) -> None:
+        if not rclpy.ok():
+            self._root.destroy()
+            return
+        safety, action, keys, focused = self._node.view()
+        self._safety.set(safety)
+        self._action.set(action)
+        self._keys.set(f'Keys: {" + ".join(keys).upper() if keys else "none"}')
+        self._focus.set(
+            'Window focus: YES' if focused
+            else 'Window focus: NO — commands released')
+        self._root.after(50, self._refresh)
+
+    def close(self) -> None:
+        if self._closing:
+            return
+        self._closing = True
+        for release_job in self._release_jobs.values():
+            self._root.after_cancel(release_job)
+        self._release_jobs.clear()
+        self._node.set_focus(False)
+        self._node.request_hold()
+        self._root.after(300, self._root.destroy)
+
+
+def main() -> None:
+    rclpy.init()
+    root = tk.Tk()
+    node = KeyboardUiNode()
+    executor = SingleThreadedExecutor()
+    executor.add_node(node)
+
+    def spin() -> None:
+        try:
+            executor.spin()
+        except ExternalShutdownException:
+            pass
+
+    spin_thread = threading.Thread(target=spin, daemon=True)
+    spin_thread.start()
+    KeyboardWindow(root, node)
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if rclpy.ok():
+            node.release_all()
+        executor.shutdown()
+        spin_thread.join(timeout=1.0)
+        node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

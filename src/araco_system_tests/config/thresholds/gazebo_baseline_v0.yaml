@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/system_tests/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.system-tests.gazebo-baseline",
-  "artifact_version": "0.1.0",
+  "artifact_version": "0.2.0",
   "owner_package": "araco_system_tests",
   "deployment_scope": "test_only",
   "evidence": {
@@ -39,6 +39,48 @@
       "maximum_base_height_error_m": 0.02,
       "minimum_foot_contact_duty": 0.9,
       "maximum_penetration_m": 0.005
+    },
+    "gate3": {
+      "startup_wall_max_s": 30.0,
+      "settle_sim_max_s": 2.0,
+      "score_window_sim_s": 0.5,
+      "minimum_window_samples": 10,
+      "maximum_position_error_per_axis_m": 0.015,
+      "maximum_orientation_error_rad": 0.05,
+      "maximum_joint_tracking_error_rad": 0.1,
+      "maximum_foot_orientation_projection_error_rad": 0.05,
+      "minimum_foot_contact_duty": 0.85
+    },
+    "gate4": {
+      "startup_wall_max_s": 30.0,
+      "case_duration_sim_s": 7.6,
+      "score_start_sim_s": 1.8,
+      "score_end_sim_s": 5.4,
+      "minimum_window_samples": 100,
+      "maximum_planar_velocity_mean_error_m_s": 0.02,
+      "maximum_yaw_rate_mean_error_rad_s": 0.1,
+      "maximum_roll_pitch_rms_rad": 0.12,
+      "maximum_height_rms_error_m": 0.025,
+      "minimum_support_contact_duty": 0.95,
+      "maximum_swing_contact_duty": 0.2,
+      "maximum_joint_tracking_error_rad": 0.1,
+      "controlled_stop_max_s": 1.5,
+      "maximum_stop_drift_m": 0.075,
+      "maximum_stop_drift_yaw_rad": 0.4,
+      "stable_hold_dwell_s": 0.25,
+      "maximum_held_joint_speed_rad_s": 0.05,
+      "maximum_held_base_speed_m_s": 0.01
+    },
+    "gate6": {
+      "repetitions": 3,
+      "seed": 42,
+      "maximum_final_displacement_difference_m": 0.02,
+      "maximum_final_yaw_difference_rad": 0.05,
+      "maximum_controlled_stop_distance_difference_m": 0.015,
+      "maximum_roll_pitch_rms_difference_rad": 0.03,
+      "minimum_median_real_time_factor": 0.8,
+      "planned_complete_suite_sim_s": 100.0,
+      "startup_artifact_allowance_s": 60.0
     },
     "timing": {
       "control_loop_min_hz": 95,

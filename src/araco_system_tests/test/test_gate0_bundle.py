@@ -32,30 +32,35 @@ ARTIFACTS = {
         'config/policy/simulator_v0.yaml',
         'config/qos/control_v0.yaml',
     ],
-    'araco_teleop': ['config/mappings/keyboard_sim_v0.yaml'],
+    'araco_teleop': ['config/mappings/keyboard_sim_v1.yaml'],
     'araco_gazebo': [
         'config/world/flat_ground_v0.yaml',
-        'config/backend/gz_ros2_control_v0.yaml',
+        'config/backend/gz_ros2_control_v2.yaml',
         'config/bridge/simulator_v0.yaml',
     ],
     'araco_bringup': [
-        'config/wiring/single_robot_v0.yaml',
+        'config/wiring/single_robot_v1.yaml',
         'config/controllers/simulator_v0.yaml',
         'config/profiles/gazebo_dev_v0.yaml',
         'config/profiles/gazebo_ci_v0.yaml',
+        'config/profiles/gazebo_gate3_v0.yaml',
+        'config/profiles/gazebo_gate4_v0.yaml',
     ],
-    'araco_system_tests': ['config/thresholds/gazebo_baseline_v0.yaml'],
+    'araco_system_tests': [
+        'config/thresholds/gazebo_baseline_v0.yaml',
+        'config/scenarios/gate6_v0.yaml',
+    ],
 }
 
 
-def test_all_twenty_owner_artifacts_validate_from_installed_space():
+def test_all_twenty_three_owner_artifacts_validate_from_installed_space():
     loaded = [
         load_artifact(package, relative)
         for package, paths in ARTIFACTS.items()
         for relative in paths
     ]
-    assert len(loaded) == 20
-    assert len({artifact.artifact_id for artifact in loaded}) == 20
+    assert len(loaded) == 23
+    assert len({artifact.artifact_id for artifact in loaded}) == 23
     for artifact in loaded:
         package_share = Path(get_package_share_directory(artifact.package)).resolve()
         assert artifact.installed_path.is_relative_to(package_share)
@@ -78,12 +83,21 @@ def test_profiles_compose_deterministically_with_equal_behavior(tmp_path):
     dev_directory = tmp_path / 'dev'
     dev_repeat_directory = tmp_path / 'dev_repeat'
     ci_directory = tmp_path / 'ci'
+    gate3_directory = tmp_path / 'gate3'
+    gate4_directory = tmp_path / 'gate4'
     dev = compose_profile('gazebo_dev_v0', dev_directory)
     dev_repeat = compose_profile('gazebo_dev_v0', dev_repeat_directory)
     ci = compose_profile('gazebo_ci_v0', ci_directory)
+    gate3 = compose_profile('gazebo_gate3_v0', gate3_directory)
+    gate4 = compose_profile('gazebo_gate4_v0', gate4_directory)
 
-    assert dev['behavior_fingerprint'] == ci['behavior_fingerprint']
+    assert dev['behavior_fingerprint'] == ci['behavior_fingerprint'] == (
+        gate3['behavior_fingerprint']) == gate4['behavior_fingerprint']
     assert dev['input_selection_fingerprint'] != ci['input_selection_fingerprint']
+    assert gate3['input_selection_fingerprint'] not in {
+        dev['input_selection_fingerprint'], ci['input_selection_fingerprint']}
+    assert gate4['input_selection_fingerprint'] == (
+        gate3['input_selection_fingerprint'])
     assert dev['run_fingerprint'] == dev_repeat['run_fingerprint']
     assert dev['generated_file_sha256'] == dev_repeat['generated_file_sha256']
     assert (dev_directory / 'description/robot.urdf').read_bytes() == (
@@ -123,6 +137,15 @@ def test_profiles_compose_deterministically_with_equal_behavior(tmp_path):
         assert f'{leg}_tibia_link_primary_visual' in tibia_names
         assert f'{leg}_tibia_link_servo_case_visual' in tibia_names
         assert f'{leg}_tibia_link_servo_horn_visual' in tibia_names
+
+        foot = root.find(f"./link[@name='{leg}_foot_link']")
+        assert foot is not None
+        collision = foot.find('collision')
+        assert collision is not None
+        assert collision.find('geometry/sphere').attrib['radius'] == '0.004'
+        collision_xyz = tuple(
+            float(value) for value in collision.find('origin').attrib['xyz'].split())
+        assert collision_xyz == pytest.approx((0.05, 0.0, 0.0))
     assert (
         dev['controller_partitions']['leg_joints']
         == ci['controller_partitions']['leg_joints']

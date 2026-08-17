@@ -41,6 +41,7 @@ Every number here is one of:
 
 | Effective node name | Owner | Initial execution model |
 |---|---|---|
+| `/araco/keyboard_teleop_ui` | `araco_teleop` | Development-only Tk window; wall-time 50 Hz full-key-state heartbeat plus safety action client |
 | `/araco/teleop_adapter` | `araco_teleop` | One process; input callbacks plus 50 Hz steady timer |
 | `/araco/command_arbiter` | `araco_supervision` | One process; deterministic 100 Hz steady loop |
 | `/araco/safety_supervisor` | `araco_supervision` | Separate process; deterministic 100 Hz steady loop |
@@ -62,6 +63,7 @@ transition and completes action feedback/result asynchronously.
 
 | Effective name | Type | Publisher | Consumer |
 |---|---|---|---|
+| `/araco/teleop/key_state` | `std_msgs/msg/String` carrying `araco.keyboard-state.v1` JSON | focused development keyboard UI | teleop adapter only |
 | `/araco/command/candidates/teleop` | `araco_interfaces/msg/CommandCandidate` | teleop adapter | command arbiter |
 | `/araco/command/candidates/navigation` | `araco_interfaces/msg/CommandCandidate` | future navigation adapter; disabled initially | command arbiter |
 | `/araco/command/candidates/system_test` | `araco_interfaces/msg/CommandCandidate` | test fixture only | command arbiter in test profile only |
@@ -179,7 +181,7 @@ not values supplied by publishers.
 
 | Source | ID | Priority | Candidate rate | Steady freshness timeout | Initial availability |
 |---|---:|---:|---:|---:|---|
-| Teleop | `10` | `100` | `50 Hz` | `0.150 s` | Registered/enabled in both profiles; keyboard adapter launched in development and absent from scored CI runs |
+| Teleop | `10` | `100` | `50 Hz` | `0.150 s` | Registered/enabled in both profiles; adapter and focused keyboard UI launched in development and absent from scored CI runs |
 | Navigation | `20` | `50` | `20 Hz` | `0.300 s` | Disabled until navigation phase |
 | System test | `250` | `200` | `100 Hz` | `0.100 s` | Test fixture only; forbidden in normal bringup |
 
@@ -242,6 +244,14 @@ Candidate loss is normally a recoverable source event. Loss of the trusted
 selected stream, safe stream, state/control components, backend, or time base is
 a control-path fault according to the accepted safety table.
 
+Typed controller-manager identity/state validation is deliberately separate
+from those high-rate liveness watchdogs. The simulator policy staggers
+`list_controllers` and `list_hardware_components`; each is requested at `1 Hz`.
+This avoids loading controller-manager service locks at control-loop frequency.
+The latest validated reply remains a mailbox value while its service is
+available; controller, joint, and clock streams continue to provide the bounded
+ongoing liveness evidence above.
+
 ## Initial command and gait envelope
 
 The normal envelope is the value delivered to locomotion. A finite value
@@ -276,12 +286,33 @@ Initial locomotion shaping values are:
 | Yaw controlled-stop deceleration | `0.900 rad/s²` |
 | Body-offset translation rate | `0.030 m/s` |
 | Body-offset angular rate | `0.300 rad/s` |
-| Tripod gait cycle period | `1.200 s` |
+| Tripod baseline cadence | `1.000 Hz` |
+| Tripod maximum cadence | `1.500 Hz` |
+| Tripod cadence slew limit | `1.000 Hz/s` |
+| Preferred maximum stride scale | `0.50` |
+| Local-foot-speed admission deadband | `0.005 m/s` |
 | Nominal duty factor | `0.50` |
 | Maximum planned stride | `0.060 m` |
 | Nominal swing clearance | `0.030 m` |
 | Stable-hold dwell | `0.250 s` |
 | Maximum controlled-stop duration | `1.500 s` |
+
+The `gazebo_joystick_v0` presentation profile instead selects a versioned
+Responsive simulator contract:
+
+| Parameter | Responsive value |
+|---|---:|
+| Translation limit | `0.200 m/s` |
+| Walking-yaw limit | `1.200 rad/s` |
+| Translation acceleration / stop deceleration | `0.400 / 0.600 m/s²` |
+| Yaw acceleration / stop deceleration | `2.400 / 3.600 rad/s²` |
+| Tripod baseline / maximum cadence | `1.500 / 2.500 Hz` |
+| Tripod cadence slew limit | `2.000 Hz/s` |
+
+Maximum stride is `0.120 m`; maximum clearance remains `0.030 m` and is scaled
+by the same per-leg normalized factor as stride. Planted-body pose rates are
+unchanged. CI, Gate, and keyboard profiles continue to use the initial values
+above, so the established acceptance baseline is not retuned.
 
 The stop completes the current swing transition; it does not snap the gait
 phase or instantly plant a moving foot. If the healthy control path cannot
@@ -302,6 +333,18 @@ travel. A future physical profile is forbidden from loading them.
 | Six foot pitch joints | `[-1.250, +0.350]` | `[-0.850, +0.100]` | `2.0 rad/s` | `1.2 rad/s` | `3.0 N·m` |
 | Gimbal yaw | `[-1.571, +1.571]` | fixed target `0` in v0 | `1.5 rad/s` | no active command | `3.0 N·m` |
 
+The joystick-only Responsive simulator policy uses each leg joint's complete
+canonical model range shown above and a `2.0 rad/s` command-rate cap. This is a
+simulator operational choice supported by the current exact-geometry IK sweep;
+it is not physical-servo calibration or a hardware safety limit. All other
+profiles retain the initial operational ranges and `1.2 rad/s` cap.
+
+If a Responsive gait reaches a workspace boundary, locomotion freezes the
+current gait phase and decelerates its curve amplitude toward the nominal
+six-foot stance. Reason 11 remains visible until the retreat is complete and
+planar controls are centered; centering re-arms normal gait. This prevents an
+exact boundary from becoming an indefinite retry lock.
+
 All 24 standing targets are at least `0.10 rad` inside their initial
 operational range. Generated trajectories are rejected before publication if a
 target exceeds the operational range or if the implied per-tick rate exceeds
@@ -320,7 +363,7 @@ to claim that the real servo can sustain the corresponding load.
 | Maximum physics step | `0.001 s` | Functional timing contract |
 | Target real-time factor | `1.0` | Required for equivalent steady/ROS-time watchdog behavior |
 | Deterministic test seed | `42` | Gate 6 baseline |
-| `gz_ros2_control` position proportional gain | `0.040` | Provisional; about `0.100 s` first-order time constant at 250 Hz |
+| `gz_ros2_control` position proportional gain | `0.150` | Provisional v2 functional response; simulator-only and not a physical-servo model |
 | Foot-ground friction coefficients | `mu = 0.90`, `mu2 = 0.90` | Provisional simulator estimate |
 | Non-foot collision friction | `mu = 0.40`, `mu2 = 0.40` | Provisional simulator estimate |
 | Restitution | `0.0` | Provisional; no intentional bounce |
@@ -415,9 +458,24 @@ steady or wall time. Ground truth is visible only to the test scorer.
 
 ### Gate 4 — Tripod locomotion and controlled stop
 
-The baseline commands are `±0.040 m/s` forward, `±0.030 m/s` lateral,
-`±0.200 rad/s` yaw, and one combined command `[0.030, 0.020, 0.150]` in SI
-units. Each runs for at least five `1.2 s` gait cycles after startup.
+The commands are a `0.006 m/s` precision-forward case, `±0.040 m/s` forward,
+`±0.030 m/s` lateral, `±0.200 rad/s` yaw, and one combined command
+`[0.030, 0.020, 0.150]` in SI units. Each runs for at least five complete gait
+cycles after startup.
+
+The accepted gait artifact `0.3.0` uses the legacy function-defined horizontal
+and vertical foot-path shapes, normalized to the configured stride and
+clearance and phase-aligned to the new state machine. Its horizontal path is
+continuous at legacy phase `0.75`: the `+0.5` plateau changes there into a
+linear decrease to zero at phase `1.0`, retaining constant supporting-foot
+velocity across the cycle boundary. The production joint-rate limiter remains
+authoritative when the raw polynomial requests a sharper step. The fixed 100 Hz
+locomotion loop advances a continuous `1.0–1.5 Hz` phase oscillator. Stride is
+the primary speed variable, cadence rises only above the preferred `0.5` stride
+scale, and each leg's maximum clearance uses exactly its own normalized stride
+scale. Gate 4 observes each case for `7.6 s` to measure at least five completed
+cycles; the central score window and all physical/contact/tracking/stop limits
+remain unchanged.
 
 - Over the central three cycles, planar velocity-vector mean error is
   `≤ 0.020 m/s` and yaw-rate mean error is `≤ 0.100 rad/s`.
@@ -425,7 +483,8 @@ units. Each runs for at least five `1.2 s` gait cycles after startup.
 - At least two intended support feet remain in contact at every scored sample;
   the intended support tripod has at least two contacts for `≥ 95%` of its
   support interval. Swing-foot contact occupies `≤ 20%` of its swing interval,
-  excluding `0.050 s` at each transition.
+  excluding the first `0.050 s`, including its exact boundary, at each
+  transition.
 - There are no non-foot ground contacts, self-collision events outside the
   declared adjacent-link exclusion set, joint-limit breaches, invalid or
   partial locomotion transactions, or backwards gait-phase jumps.

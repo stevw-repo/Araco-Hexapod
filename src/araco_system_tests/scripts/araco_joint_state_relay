@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Gate-5-only pausable relay for deterministic joint-state loss."""
+
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
+from sensor_msgs.msg import JointState
+from std_srvs.srv import SetBool
+
+
+class JointStateRelay(Node):
+    """Relay the real broadcaster unchanged through a test-controlled seam."""
+
+    def __init__(self):
+        super().__init__('joint_state_relay')
+        sensor = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
+        self.enabled = True
+        self.publisher = self.create_publisher(
+            JointState, '/araco/system_test/joint_states', sensor)
+        self.create_subscription(
+            JointState, '/joint_states', self._on_joint_state, sensor)
+        self.create_service(
+            SetBool, '/araco/system_test/joint_state_relay_enable',
+            self._on_enable)
+
+    def _on_joint_state(self, message):
+        if self.enabled:
+            self.publisher.publish(message)
+
+    def _on_enable(self, request, response):
+        self.enabled = request.data
+        response.success = True
+        response.message = (
+            'joint-state relay enabled' if self.enabled else
+            'joint-state relay paused')
+        return response
+
+
+def main():
+    """Run the test-only relay."""
+    rclpy.init()
+    node = JointStateRelay()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()

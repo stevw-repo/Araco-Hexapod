@@ -1,1 +1,268 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","oneOf":[{"type":"object","required":["kind","gait_id","cycle_period_s","duty_factor","maximum_stride_m","swing_clearance_m","trajectory_horizon_s","phase_groups","shaping"],"properties":{"kind":{"const":"gait"},"gait_id":{"type":"string","minLength":1},"cycle_period_s":{"type":"number","exclusiveMinimum":0},"duty_factor":{"type":"number","exclusiveMinimum":0,"exclusiveMaximum":1},"maximum_stride_m":{"type":"number","exclusiveMinimum":0},"swing_clearance_m":{"type":"number","exclusiveMinimum":0},"trajectory_horizon_s":{"type":"number","exclusiveMinimum":0},"phase_groups":{"type":"array","minItems":2,"maxItems":2,"items":{"type":"array","minItems":3,"maxItems":3,"items":{"type":"string"}}},"shaping":{"type":"object","required":["translation_acceleration_m_s2","translation_stop_deceleration_m_s2","yaw_acceleration_rad_s2","yaw_stop_deceleration_rad_s2","body_translation_rate_m_s","body_angular_rate_rad_s"],"properties":{"translation_acceleration_m_s2":{"type":"number","exclusiveMinimum":0},"translation_stop_deceleration_m_s2":{"type":"number","exclusiveMinimum":0},"yaw_acceleration_rad_s2":{"type":"number","exclusiveMinimum":0},"yaw_stop_deceleration_rad_s2":{"type":"number","exclusiveMinimum":0},"body_translation_rate_m_s":{"type":"number","exclusiveMinimum":0},"body_angular_rate_rad_s":{"type":"number","exclusiveMinimum":0}},"additionalProperties":false}},"additionalProperties":false},{"type":"object","required":["kind","classes","assignments","command_envelope"],"properties":{"kind":{"const":"operational_policy"},"classes":{"type":"object","minProperties":4,"additionalProperties":{"type":"object","required":["lower_rad","upper_rad","command_rate_cap_rad_s"],"properties":{"lower_rad":{"type":"number"},"upper_rad":{"type":"number"},"command_rate_cap_rad_s":{"type":"number","exclusiveMinimum":0}},"additionalProperties":false}},"assignments":{"type":"object","minProperties":24,"additionalProperties":{"type":"string"}},"command_envelope":{"type":"object","required":["planar_speed_normal_m_s","planar_speed_hard_m_s","yaw_rate_normal_rad_s","yaw_rate_hard_rad_s","controlled_stop_max_s","stable_hold_dwell_s"],"properties":{"planar_speed_normal_m_s":{"type":"number","minimum":0},"planar_speed_hard_m_s":{"type":"number","minimum":0},"yaw_rate_normal_rad_s":{"type":"number","minimum":0},"yaw_rate_hard_rad_s":{"type":"number","minimum":0},"controlled_stop_max_s":{"type":"number","exclusiveMinimum":0},"stable_hold_dwell_s":{"type":"number","minimum":0}},"additionalProperties":false}},"additionalProperties":false}]}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "kind",
+        "gait_id",
+        "base_cadence_hz",
+        "maximum_cadence_hz",
+        "cadence_rate_hz_s",
+        "preferred_maximum_stride_scale",
+        "motion_deadband_m_s",
+        "duty_factor",
+        "maximum_stride_m",
+        "swing_clearance_m",
+        "trajectory_horizon_s",
+        "phase_groups",
+        "shaping"
+      ],
+      "properties": {
+        "kind": {
+          "const": "gait"
+        },
+        "gait_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_cadence_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maximum_cadence_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "cadence_rate_hz_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "preferred_maximum_stride_scale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "motion_deadband_m_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "duty_factor": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "maximum_stride_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "swing_clearance_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "trajectory_horizon_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "phase_groups": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "shaping": {
+          "type": "object",
+          "required": [
+            "translation_acceleration_m_s2",
+            "translation_stop_deceleration_m_s2",
+            "yaw_acceleration_rad_s2",
+            "yaw_stop_deceleration_rad_s2",
+            "body_translation_rate_m_s",
+            "body_angular_rate_rad_s"
+          ],
+          "properties": {
+            "translation_acceleration_m_s2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "translation_stop_deceleration_m_s2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "yaw_acceleration_rad_s2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "yaw_stop_deceleration_rad_s2": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "body_translation_rate_m_s": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "body_angular_rate_rad_s": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "kind",
+        "classes",
+        "assignments",
+        "command_envelope"
+      ],
+      "properties": {
+        "kind": {
+          "const": "operational_policy"
+        },
+        "classes": {
+          "type": "object",
+          "minProperties": 4,
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "lower_rad",
+              "upper_rad",
+              "command_rate_cap_rad_s"
+            ],
+            "properties": {
+              "lower_rad": {
+                "type": "number"
+              },
+              "upper_rad": {
+                "type": "number"
+              },
+              "command_rate_cap_rad_s": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "assignments": {
+          "type": "object",
+          "minProperties": 24,
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "command_envelope": {
+          "type": "object",
+          "required": [
+            "planar_speed_normal_m_s",
+            "planar_speed_hard_m_s",
+            "yaw_rate_normal_rad_s",
+            "yaw_rate_hard_rad_s",
+            "body_xy_normal_m",
+            "body_z_normal_lower_m",
+            "body_z_normal_upper_m",
+            "body_roll_pitch_normal_rad",
+            "body_yaw_normal_rad",
+            "body_xy_hard_m",
+            "body_z_hard_lower_m",
+            "body_z_hard_upper_m",
+            "body_roll_pitch_hard_rad",
+            "body_yaw_hard_rad",
+            "quaternion_norm_tolerance",
+            "reserved_twist_tolerance",
+            "stand_velocity_tolerance",
+            "controlled_stop_max_s",
+            "stable_hold_dwell_s"
+          ],
+          "properties": {
+            "planar_speed_normal_m_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "planar_speed_hard_m_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "yaw_rate_normal_rad_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "yaw_rate_hard_rad_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "body_xy_normal_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "body_z_normal_lower_m": {
+              "type": "number"
+            },
+            "body_z_normal_upper_m": {
+              "type": "number"
+            },
+            "body_roll_pitch_normal_rad": {
+              "type": "number",
+              "minimum": 0
+            },
+            "body_yaw_normal_rad": {
+              "type": "number",
+              "minimum": 0
+            },
+            "body_xy_hard_m": {
+              "type": "number",
+              "minimum": 0
+            },
+            "body_z_hard_lower_m": {
+              "type": "number"
+            },
+            "body_z_hard_upper_m": {
+              "type": "number"
+            },
+            "body_roll_pitch_hard_rad": {
+              "type": "number",
+              "minimum": 0
+            },
+            "body_yaw_hard_rad": {
+              "type": "number",
+              "minimum": 0
+            },
+            "quaternion_norm_tolerance": {
+              "type": "number",
+              "minimum": 0
+            },
+            "reserved_twist_tolerance": {
+              "type": "number",
+              "minimum": 0
+            },
+            "stand_velocity_tolerance": {
+              "type": "number",
+              "minimum": 0
+            },
+            "controlled_stop_max_s": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "stable_hold_dwell_s": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  ]
+}

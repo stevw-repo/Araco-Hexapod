@@ -52,13 +52,13 @@
         "package": "araco_kinematics",
         "path": "config/solver/ik_v0.yaml",
         "artifact_id": "araco.kinematics.ik",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.2.0"
       },
       {
         "package": "araco_locomotion",
         "path": "config/gait/tripod_slow_sim_v0.yaml",
         "artifact_id": "araco.locomotion.gait-tripod-slow",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.3.0"
       },
       {
         "package": "araco_locomotion",
@@ -76,7 +76,7 @@
         "package": "araco_supervision",
         "path": "config/policy/simulator_v0.yaml",
         "artifact_id": "araco.supervision.safety-policy",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.2.0"
       },
       {
         "package": "araco_supervision",
@@ -86,9 +86,9 @@
       },
       {
         "package": "araco_teleop",
-        "path": "config/mappings/keyboard_sim_v0.yaml",
+        "path": "config/mappings/keyboard_sim_v1.yaml",
         "artifact_id": "araco.teleop.keyboard-mapping",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.3.0"
       },
       {
         "package": "araco_gazebo",
@@ -98,9 +98,9 @@
       },
       {
         "package": "araco_gazebo",
-        "path": "config/backend/gz_ros2_control_v0.yaml",
+        "path": "config/backend/gz_ros2_control_v2.yaml",
         "artifact_id": "araco.gazebo.backend-gz-ros2-control",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.3.0"
       },
       {
         "package": "araco_gazebo",
@@ -110,9 +110,9 @@
       },
       {
         "package": "araco_bringup",
-        "path": "config/wiring/single_robot_v0.yaml",
+        "path": "config/wiring/single_robot_v1.yaml",
         "artifact_id": "araco.bringup.wiring",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.2.0"
       },
       {
         "package": "araco_bringup",

@@ -2,7 +2,7 @@
 # Copyright 2026 Araco Hexapod contributors
 # SPDX-License-Identifier: MIT
 
-"""Run Gate 1 headlessly and atomically preserve complete pass/fail evidence."""
+"""Run Gate 1 through Gate 5 headlessly and preserve complete evidence."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from ament_index_python.packages import get_package_share_directory
+import yaml
 
 
 def _write_json(path, value):
@@ -55,16 +56,16 @@ def _run(command, environment, output, timeout=10):
     return outcome, text
 
 
-def _junit(path, checks, message):
+def _junit(path, gate, checks, message):
     suite = ET.Element('testsuite', {
-        'name': 'araco_gate1',
+        'name': f'araco_gate{gate}',
         'tests': str(len(checks)),
         'failures': str(sum(not value for value in checks.values())),
         'errors': '0',
     })
     for name, passed in checks.items():
         case = ET.SubElement(suite, 'testcase', {
-            'classname': 'araco_system_tests.gate1', 'name': name})
+            'classname': f'araco_system_tests.gate{gate}', 'name': name})
         if not passed:
             failure = ET.SubElement(case, 'failure', {'message': message})
             failure.text = message
@@ -100,12 +101,26 @@ def _environment(command_environment):
 
 
 def main():
-    """Execute one immutable Gate 1 evidence run."""
+    """Execute one immutable Gate 1 through Gate 4 evidence run."""
+    executable = Path(os.path.basename(__file__)).name
+    gate = (
+        5 if executable == 'araco_gate5_evidence' else
+        4 if executable == 'araco_gate4_evidence' else
+        3 if executable == 'araco_gate3_evidence' else
+        2 if executable == 'araco_gate2_evidence' else 1)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output_directory')
-    parser.add_argument('--profile', default='gazebo_ci_v0', choices=['gazebo_ci_v0'])
+    default_profile = (
+        'gazebo_gate5_v0' if gate == 5 else
+        'gazebo_gate4_v0' if gate == 4 else
+        'gazebo_gate3_v0' if gate == 3 else 'gazebo_ci_v0')
+    parser.add_argument(
+        '--profile', default=default_profile, choices=[default_profile])
     parser.add_argument('--domain-id', type=int)
+    parser.add_argument('--case-name', action='append')
     arguments = parser.parse_args()
+    if arguments.case_name and gate != 4:
+        parser.error('--case-name is available only for Gate 4 diagnostics')
     destination = Path(arguments.output_directory).expanduser().resolve()
     if destination.exists():
         parser.error(f'output directory already exists: {destination}')
@@ -124,7 +139,8 @@ def main():
     environment = os.environ.copy()
     environment['ROS_DOMAIN_ID'] = str(
         arguments.domain_id if arguments.domain_id is not None else 100 + os.getpid() % 100)
-    environment['GZ_PARTITION'] = f'araco_gate1_{os.getpid()}_{int(time.time())}'
+    environment['GZ_PARTITION'] = (
+        f'araco_gate{gate}_{os.getpid()}_{int(time.time())}')
     environment['ROS_LOG_DIR'] = str(stage / 'ros_logs')
     started = time.monotonic()
     launch_command = [
@@ -134,8 +150,17 @@ def main():
     outcomes = {}
     errors = []
     launch = None
+    relay = None
+    gazebo_stop_valid = False
     launch_stream = (logs / 'launch.log').open('w', encoding='utf-8')
+    relay_stream = (logs / 'joint_state_relay.log').open('w', encoding='utf-8')
     try:
+        if gate == 5:
+            relay = subprocess.Popen(
+                ['ros2', 'run', 'araco_system_tests',
+                 'araco_joint_state_relay'],
+                env=environment, text=True, stdout=relay_stream,
+                stderr=subprocess.STDOUT, start_new_session=True)
         launch = subprocess.Popen(
             launch_command, env=environment, text=True, stdout=launch_stream,
             stderr=subprocess.STDOUT, start_new_session=True)
@@ -148,37 +173,67 @@ def main():
             score = {'status': 'FAIL', 'checks': {}, 'metrics': {}}
             outcomes['scorer'] = {'return_code': None, 'not_started': True}
         else:
+            scorer_executable = (
+                'araco_gate5_score' if gate == 5 else
+                'araco_gate4_score' if gate == 4 else
+                'araco_gate3_score' if gate == 3 else 'araco_gate1_score')
             scorer_command = [
-                'ros2', 'run', 'araco_system_tests', 'araco_gate1_score',
+                'ros2', 'run', 'araco_system_tests', scorer_executable,
                 '--bundle', str(bundle), '--thresholds', str(threshold_source),
                 '--output', str(metrics_path), '--started-monotonic', str(started),
             ]
+            if gate == 5:
+                scorer_command = [
+                    'ros2', 'run', 'araco_system_tests', scorer_executable,
+                    '--output', str(metrics_path),
+                ]
+            for case_name in arguments.case_name or []:
+                scorer_command.extend(['--case-name', case_name])
             outcomes['scorer'], _ = _run(
-                scorer_command, environment, logs / 'scorer.log', timeout=50)
+                scorer_command, environment, logs / 'scorer.log',
+                timeout=240 if gate == 5 else 180 if gate == 4 else
+                100 if gate == 3 else 50)
             if metrics_path.is_file():
                 score = json.loads(metrics_path.read_text(encoding='utf-8'))
             else:
                 score = {'status': 'FAIL', 'checks': {}, 'metrics': {}}
                 errors.append('scorer did not emit metrics.json')
 
-        shutdown_command = [
-            'ros2', 'action', 'send_goal', '/araco/safety/transition',
-            'araco_interfaces/action/SafetyTransition', '{request: 4}',
-        ]
-        outcomes['safety_shutdown'], shutdown_text = _run(
-            shutdown_command, environment, logs / 'safety_shutdown.log', timeout=10)
-        shutdown_valid = (
-            outcomes['safety_shutdown']['return_code'] == 0 and
-            'accepted: true' in shutdown_text and 'final_state: 7' in shutdown_text)
-        if not shutdown_valid:
-            errors.append('orderly SafetyTransition shutdown was not accepted')
-        gazebo_command = [
-            'gz', 'service', '-s', '/server_control',
-            '--reqtype', 'gz.msgs.ServerControl', '--reptype', 'gz.msgs.Boolean',
-            '--timeout', '3000', '--req', 'stop: true',
-        ]
-        outcomes['gazebo_stop'], _ = _run(
-            gazebo_command, environment, logs / 'gazebo_stop.log', timeout=5)
+        backend_process_stopped = (
+            gate == 5 and
+            score.get('metrics', {}).get('backend_process_stopped') is True)
+        if backend_process_stopped:
+            outcomes['safety_shutdown'] = {
+                'skipped': True,
+                'reason': 'Gate 5 final scenario stopped required Gazebo process',
+            }
+            outcomes['gazebo_stop'] = {
+                'skipped': True,
+                'reason': 'Gazebo server already stopped by Gate 5 scorer',
+            }
+            shutdown_valid = True
+            gazebo_stop_valid = True
+        else:
+            shutdown_command = [
+                'ros2', 'action', 'send_goal', '/araco/safety/transition',
+                'araco_interfaces/action/SafetyTransition', '{request: 4}',
+            ]
+            outcomes['safety_shutdown'], shutdown_text = _run(
+                shutdown_command, environment, logs / 'safety_shutdown.log', timeout=10)
+            shutdown_valid = (
+                outcomes['safety_shutdown']['return_code'] == 0 and
+                'accepted: true' in shutdown_text and 'final_state: 7' in shutdown_text)
+            if not shutdown_valid:
+                errors.append('orderly SafetyTransition shutdown was not accepted')
+            gazebo_command = [
+                'gz', 'service', '-s', '/server_control',
+                '--reqtype', 'gz.msgs.ServerControl',
+                '--reptype', 'gz.msgs.Boolean', '--timeout', '3000',
+                '--req', 'stop: true',
+            ]
+            outcomes['gazebo_stop'], _ = _run(
+                gazebo_command, environment, logs / 'gazebo_stop.log', timeout=5)
+            gazebo_stop_valid = outcomes['gazebo_stop']['return_code'] == 0
     except Exception as error:  # preserve unexpected harness failures as evidence
         errors.append(f'evidence runner exception: {type(error).__name__}: {error}')
         score = {'status': 'FAIL', 'checks': {}, 'metrics': {}}
@@ -199,7 +254,21 @@ def main():
                 'return_code': launch.returncode,
                 'wall_s': time.monotonic() - started,
             }
+        if relay is not None:
+            os.killpg(relay.pid, signal.SIGINT)
+            try:
+                relay.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(relay.pid, signal.SIGTERM)
+                relay.wait(timeout=5)
+            outcomes['joint_state_relay'] = {
+                'command': [
+                    'ros2', 'run', 'araco_system_tests',
+                    'araco_joint_state_relay'],
+                'return_code': relay.returncode,
+            }
         launch_stream.close()
+        relay_stream.close()
 
     launch_text = (logs / 'launch.log').read_text(encoding='utf-8')
     forbidden_log_tokens = ('Traceback (most recent call last)', 'process has died', '[ERROR]')
@@ -210,12 +279,101 @@ def main():
     if not launch_valid:
         errors.append('launch did not exit cleanly')
     checks = {
-        'gate1_score': score.get('status') == 'PASS',
+        f'gate{gate}_score': score.get('status') == 'PASS',
         'orderly_safety_shutdown': shutdown_valid,
-        'gazebo_stop_request': outcomes.get('gazebo_stop', {}).get('return_code') == 0,
+        'gazebo_stop_request': gazebo_stop_valid,
         'launch_exit': launch_valid,
         'launch_log_clean': log_clean,
     }
+    if gate == 2:
+        solver_path = bundle / 'normalized_artifacts/araco_kinematics_ik.json'
+        params_path = bundle / 'node_params/locomotion.yaml'
+        solver = (
+            json.loads(solver_path.read_text(encoding='utf-8'))
+            if solver_path.is_file() else {})
+        params = (
+            yaml.safe_load(params_path.read_text(encoding='utf-8'))
+            if params_path.is_file() else {})
+        locomotion = params.get('/araco/locomotion', {}).get('ros__parameters', {})
+        checks.update({
+            'analytic_ik_contract': (
+                solver.get('data', {}).get('algorithm') ==
+                'analytic-four-dof-position-and-foot-pitch' and
+                solver.get('data', {}).get('foot_pitch_target_policy') ==
+                'project_world_down_into_each_leg_sagittal_plane' and
+                solver.get('data', {}).get('orientation_residual_policy') ==
+                'report_rejected_angle' and
+                solver.get('data', {}).get('failure_policy') ==
+                'reject_complete_transaction' and
+                solver.get('data', {}).get('standing_branch') == 'knee_down'),
+            'typed_six_leg_standing_inputs': (
+                len(locomotion.get('leg_geometry_m', [])) == 4 and
+                len(locomotion.get('leg_mount_positions_base_m', [])) == 18 and
+                len(locomotion.get('standing_foot_targets_base_m', [])) == 18 and
+                len(locomotion.get('joint_lower_rad', [])) == 24 and
+                len(locomotion.get('joint_upper_rad', [])) == 24),
+            'computed_standing_commit_log': (
+                'active in Gate 2 computed-standing mode' in launch_text),
+        })
+        if not all(checks[name] for name in (
+                'analytic_ik_contract', 'typed_six_leg_standing_inputs',
+                'computed_standing_commit_log')):
+            errors.append('Gate 2 computed-standing contract was not proven')
+    if gate == 3:
+        params_path = bundle / 'node_params/locomotion.yaml'
+        params = (
+            yaml.safe_load(params_path.read_text(encoding='utf-8'))
+            if params_path.is_file() else {})
+        locomotion = params.get('/araco/locomotion', {}).get('ros__parameters', {})
+        checks.update({
+            'typed_body_pose_runtime_contract': (
+                len(locomotion.get('joint_command_rate_cap_rad_s', [])) == 24 and
+                locomotion.get('body_translation_rate_m_s') == 0.03 and
+                locomotion.get('body_angular_rate_rad_s') == 0.3),
+            'planted_foot_body_pose_log': (
+                'Phase 4 planted-foot body-pose ready' in launch_text),
+        })
+        if not all(checks[name] for name in (
+                'typed_body_pose_runtime_contract',
+                'planted_foot_body_pose_log')):
+            errors.append('Gate 3 planted-foot runtime contract was not proven')
+    if gate == 4:
+        params_path = bundle / 'node_params/locomotion.yaml'
+        params = (
+            yaml.safe_load(params_path.read_text(encoding='utf-8'))
+            if params_path.is_file() else {})
+        locomotion = params.get('/araco/locomotion', {}).get('ros__parameters', {})
+        checks.update({
+            'typed_tripod_runtime_contract': (
+                locomotion.get('gait_base_cadence_hz') == 1.0 and
+                locomotion.get('gait_maximum_cadence_hz') == 1.5 and
+                locomotion.get('gait_cadence_rate_hz_s') == 1.0 and
+                locomotion.get('gait_preferred_maximum_stride_scale') == 0.5 and
+                locomotion.get('gait_motion_deadband_m_s') == 0.005 and
+                locomotion.get('gait_duty_factor') == 0.5 and
+                locomotion.get('gait_maximum_stride_m') == 0.06 and
+                locomotion.get('gait_swing_clearance_m') == 0.03 and
+                locomotion.get('stable_hold_dwell_s') == 0.25),
+            'tripod_gait_log': (
+                'Phase 5 tripod gait ready' in launch_text and
+                'responsive cadence/stride scheduler ready' in launch_text),
+        })
+        if not all(checks[name] for name in (
+                'typed_tripod_runtime_contract', 'tripod_gait_log')):
+            errors.append('Gate 4 tripod-gait runtime contract was not proven')
+    if gate == 5:
+        checks.update({
+            'typed_arbitration_status_log': (
+                'safety transition state=' in launch_text and
+                'Phase 5 tripod gait ready' in launch_text),
+            'fault_matrix_complete': len(score.get('checks', {})) >= 20,
+            'backend_process_loss_proven': (
+                score.get('metrics', {}).get('backend_process_stopped') is True),
+        })
+        if not all(checks[name] for name in (
+                'typed_arbitration_status_log', 'fault_matrix_complete',
+                'backend_process_loss_proven')):
+            errors.append('Gate 5 supervision/fault matrix was not proven')
     status = 'PASS' if all(checks.values()) else 'FAIL'
     manifest = (
         json.loads((bundle / 'manifest.json').read_text(encoding='utf-8'))
@@ -225,16 +383,18 @@ def main():
     _write_json(stage / 'validation_report.json', {
         'status': status, 'checks': checks, 'errors': errors})
     _write_json(stage / 'gate_result.json', {
-        'gate': 1,
+        'gate': gate,
         'status': status,
         'profile': arguments.profile,
         'run_fingerprint': manifest.get('run_fingerprint'),
         'behavior_fingerprint': manifest.get('behavior_fingerprint'),
         'metrics': score.get('metrics', {}),
     })
-    _junit(stage / 'junit.xml', checks, '; '.join(errors) or 'Gate 1 check failed')
+    _junit(
+        stage / 'junit.xml', gate, checks,
+        '; '.join(errors) or f'Gate {gate} check failed')
     os.replace(stage, destination)
-    print(f'Gate 1 {status}: {destination}')
+    print(f'Gate {gate} {status}: {destination}')
     raise SystemExit(0 if status == 'PASS' else 1)
 
 

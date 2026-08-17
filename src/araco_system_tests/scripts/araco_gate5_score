@@ -1,0 +1,551 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Exercise Gate 5 fault behavior through the installed production nodes."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import subprocess
+import time
+
+from araco_interfaces.action import SafetyTransition
+from araco_interfaces.msg import ArbitrationStatus
+from araco_interfaces.msg import CommandCandidate
+from araco_interfaces.msg import LocomotionStatus
+from araco_interfaces.msg import SafeCommand
+from araco_interfaces.msg import SafetyStatus
+from araco_interfaces.msg import SelectedCommand
+from controller_manager_msgs.srv import SetHardwareComponentState
+from controller_manager_msgs.srv import SwitchController
+from lifecycle_msgs.msg import Transition
+from lifecycle_msgs.srv import ChangeState
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy
+from std_srvs.srv import SetBool
+
+
+class Gate5Scorer(Node):
+    """Drive allowed test input and external lifecycle/controller seams."""
+
+    def __init__(self):
+        super().__init__('gate5_scorer')
+        reliable = QoSProfile(depth=100, reliability=ReliabilityPolicy.RELIABLE)
+        sensor = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
+        self.publisher = self.create_publisher(
+            CommandCandidate, '/araco/command/candidates/system_test', sensor)
+        self.create_subscription(
+            ArbitrationStatus, '/araco/command/arbitration_status',
+            self._on_arbitration, reliable)
+        self.create_subscription(
+            SelectedCommand, '/araco/command/selected',
+            self._on_selected, reliable)
+        self.create_subscription(
+            SafetyStatus, '/araco/safety/status', self._on_safety, reliable)
+        self.create_subscription(
+            SafeCommand, '/araco/command/safe', self._on_safe, reliable)
+        self.create_subscription(
+            LocomotionStatus, '/araco/locomotion/status',
+            self._on_locomotion, reliable)
+        self.action = ActionClient(
+            self, SafetyTransition, '/araco/safety/transition')
+        self.controller_switch = self.create_client(
+            SwitchController, '/controller_manager/switch_controller')
+        self.hardware_state = self.create_client(
+            SetHardwareComponentState,
+            '/controller_manager/set_hardware_component_state')
+        self.joint_relay = self.create_client(
+            SetBool, '/araco/system_test/joint_state_relay_enable')
+        self.lifecycle_clients = {
+            '/araco/command_arbiter': self.create_client(
+                ChangeState, '/araco/command_arbiter/change_state'),
+            '/araco/safety_supervisor': self.create_client(
+                ChangeState, '/araco/safety_supervisor/change_state'),
+        }
+        self.sequence = time.time_ns()
+        self.active = False
+        self.publish_enabled = True
+        self.arbitration = None
+        self.selected = None
+        self.safety = None
+        self.safe = None
+        self.locomotion = None
+        self.execute_samples = 0
+        self.last_safe_receipt = 0.0
+        self.last_locomotion_receipt = 0.0
+        self.safety_path = []
+        self.selection_path = []
+        self.errors = []
+
+    def _on_arbitration(self, message):
+        self.arbitration = message
+        record = (message.selection_epoch, message.selected_source_id,
+                  message.reason_code)
+        if not self.selection_path or self.selection_path[-1] != record:
+            self.selection_path.append(record)
+
+    def _on_selected(self, message):
+        self.selected = message
+
+    def _on_safety(self, message):
+        self.safety = message
+        record = (message.safety_epoch, message.state, message.reason_code,
+                  message.fault_mask)
+        if not self.safety_path or self.safety_path[-1] != record:
+            self.safety_path.append(record)
+
+    def _on_safe(self, message):
+        self.safe = message
+        self.last_safe_receipt = time.monotonic()
+        if message.disposition in (
+                message.DISPOSITION_EXECUTE, message.DISPOSITION_LIMITED):
+            self.execute_samples += 1
+
+    def _on_locomotion(self, message):
+        self.locomotion = message
+        self.last_locomotion_receipt = time.monotonic()
+
+    def publish(self, advance=True):
+        if not self.publish_enabled:
+            return
+        if advance:
+            self.sequence += 1
+        message = CommandCandidate()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = 'base_link'
+        message.sequence = self.sequence
+        message.active = self.active
+        message.intent.gait = message.intent.GAIT_TRIPOD
+        message.intent.planar_velocity.linear.x = 0.03
+        message.intent.body_pose_offset.orientation.w = 1.0
+        self.publisher.publish(message)
+
+    def wait(self, predicate, timeout, publish=True):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if publish:
+                self.publish()
+            rclpy.spin_once(self, timeout_sec=0.01)
+            if predicate():
+                return True
+        return False
+
+    def settle_release(self):
+        self.publish_enabled = True
+        self.active = False
+        return self.wait(
+            lambda: self.arbitration is not None and
+            self.arbitration.all_sources_released and
+            self.arbitration.selected_source_id == 0,
+            1.0)
+
+    def wait_stable(self, predicate, dwell, timeout, publish=True):
+        stable_since = None
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if publish:
+                self.publish()
+            rclpy.spin_once(self, timeout_sec=0.01)
+            if predicate():
+                stable_since = stable_since or time.monotonic()
+                if time.monotonic() - stable_since >= dwell:
+                    return True
+            else:
+                stable_since = None
+        return False
+
+    def request(self, request, activate_after_accept=False, timeout=6.0):
+        if not self.action.wait_for_server(timeout_sec=2.0):
+            return False
+        goal = SafetyTransition.Goal()
+        goal.request = request
+        future = self.action.send_goal_async(goal)
+        if not self.wait(future.done, 2.0):
+            return False
+        handle = future.result()
+        if handle is None or not handle.accepted:
+            return False
+        if activate_after_accept:
+            self.active = True
+        result = handle.get_result_async()
+        if not self.wait(result.done, timeout):
+            return False
+        wrapped = result.result()
+        return wrapped is not None and wrapped.result.accepted
+
+    def acquire(self):
+        if not self.settle_release():
+            return False
+        if not self.wait_stable(
+                lambda: self.safety is not None and
+                self.safety.state == self.safety.STATE_HOLDING and
+                self.safety.readiness_mask ==
+                self.safety.required_readiness_mask == 127,
+                0.2, 6.0):
+            return False
+        return self.request(
+            SafetyTransition.Goal.REQUEST_ENABLE_MOTION,
+            activate_after_accept=True) and self.wait(
+                lambda: self.safety is not None and
+                self.safety.state == self.safety.STATE_MOTION_ENABLED and
+                self.safe is not None and self.safe.disposition in (
+                    self.safe.DISPOSITION_EXECUTE,
+                    self.safe.DISPOSITION_LIMITED), 2.0)
+
+    def cli(self, command, timeout=8.0):
+        completed = subprocess.run(
+            command, text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, timeout=timeout, check=False)
+        if completed.returncode != 0:
+            self.errors.append(
+                f'command failed ({completed.returncode}): '
+                f"{' '.join(command)}: {completed.stdout.strip()}")
+        return completed.returncode == 0
+
+    def lifecycle(self, node, transition):
+        client = self.lifecycle_clients[node]
+        if not client.wait_for_service(timeout_sec=3.0):
+            self.errors.append(f'lifecycle service unavailable: {node}')
+            return False
+        request = ChangeState.Request()
+        request.transition.id = (
+            Transition.TRANSITION_ACTIVATE if transition == 'activate' else
+            Transition.TRANSITION_DEACTIVATE)
+        future = client.call_async(request)
+        if not self.wait(future.done, 8.0):
+            self.errors.append(f'lifecycle response timed out: {node}')
+            return False
+        response = future.result()
+        if response is None or not response.success:
+            self.errors.append(f'lifecycle transition failed: {node} {transition}')
+            return False
+        return True
+
+    def controller(self, deactivate=None, activate=None):
+        if not self.controller_switch.wait_for_service(timeout_sec=3.0):
+            self.errors.append('controller switch service unavailable')
+            return False
+        request = SwitchController.Request()
+        request.activate_controllers = [activate] if activate else []
+        request.deactivate_controllers = [deactivate] if deactivate else []
+        request.strictness = request.STRICT
+        request.timeout.sec = 3
+        future = self.controller_switch.call_async(request)
+        if not self.wait(future.done, 8.0):
+            self.errors.append('controller switch response timed out')
+            return False
+        response = future.result()
+        if response is None or not response.ok:
+            detail = response.message if response is not None else 'no response'
+            self.errors.append(f'controller switch failed: {detail}')
+            return False
+        return True
+
+    def pause(self, paused):
+        value = 'true' if paused else 'false'
+        return self.cli([
+            'gz', 'service', '-s', '/world/araco_flat_ground/control',
+            '--reqtype', 'gz.msgs.WorldControl',
+            '--reptype', 'gz.msgs.Boolean', '--timeout', '3000',
+            '--req', f'pause: {value}'])
+
+    def hardware(self, active):
+        if not self.hardware_state.wait_for_service(timeout_sec=3.0):
+            self.errors.append('hardware-state service unavailable')
+            return False
+        request = SetHardwareComponentState.Request()
+        request.name = 'GazeboSimSystem'
+        request.target_state.id = (
+            request.target_state.PRIMARY_STATE_ACTIVE if active else
+            request.target_state.PRIMARY_STATE_INACTIVE)
+        request.target_state.label = 'active' if active else 'inactive'
+        future = self.hardware_state.call_async(request)
+        if not self.wait(future.done, 8.0):
+            self.errors.append('hardware-state response timed out')
+            return False
+        response = future.result()
+        if response is None or not response.ok:
+            self.errors.append('hardware-state transition failed')
+            return False
+        return response.state.id == request.target_state.id
+
+    def set_joint_relay(self, enabled):
+        if not self.joint_relay.wait_for_service(timeout_sec=2.0):
+            self.errors.append('joint-state relay service unavailable')
+            return False
+        request = SetBool.Request()
+        request.data = enabled
+        future = self.joint_relay.call_async(request)
+        if not self.wait(future.done, 2.0):
+            self.errors.append('joint-state relay response timed out')
+            return False
+        response = future.result()
+        if response is None or not response.success:
+            self.errors.append('joint-state relay transition failed')
+            return False
+        return True
+
+    def reset_fault(self):
+        if not self.settle_release():
+            return False
+        if not self.wait_stable(
+                lambda: self.safety is not None and
+                self.safety.state == self.safety.STATE_FAULT_HOLD and
+                self.safety.reason_code == self.safety.REASON_RESET_REQUIRED and
+                self.safety.readiness_mask ==
+                self.safety.required_readiness_mask == 127 and
+                self.locomotion is not None and
+                self.locomotion.trajectory_valid and
+                self.locomotion.mode in (
+                    self.locomotion.MODE_HOLDING,
+                    self.locomotion.MODE_STANDING),
+                0.2, 10.0):
+            return False
+        return self.request(SafetyTransition.Goal.REQUEST_RESET_FAULT)
+
+    @staticmethod
+    def epochs_valid_with_restarts(path, expected_restarts):
+        """Require monotonic epochs inside each explicit lifecycle incarnation."""
+        restarts = 0
+        for previous, current in zip(path, path[1:]):
+            if current[0] < previous[0]:
+                if current[0] != 0 or previous[0] == 0:
+                    return False
+                restarts += 1
+        return restarts == expected_restarts
+
+    def run(self):
+        checks = {}
+
+        # A source that is active at startup is quarantined and never executes.
+        self.active = True
+        runtime_ready = self.wait(
+            lambda: self.arbitration is not None and
+            self.safety is not None and self.locomotion is not None,
+            35.0)
+        checks['runtime_topics_ready'] = runtime_ready
+        checks['startup_active_quarantined'] = (
+            runtime_ready and
+            self.arbitration.selected_source_id == 0 and
+            250 in self.arbitration.quarantined_source_ids and
+            self.execute_samples == 0)
+
+        checks['normal_release_enable_edge'] = runtime_ready and self.acquire()
+        if not checks['normal_release_enable_edge']:
+            return {
+                'status': 'FAIL',
+                'checks': checks,
+                'metrics': {
+                    'safety_path': self.safety_path,
+                    'selection_path': self.selection_path,
+                    'errors': self.errors,
+                    'startup_failure': 'runtime did not reach first enabled motion',
+                },
+            }
+
+        # Duplicate sequence is a real malformed candidate at the allowed test
+        # input. Newer active samples cannot rescue it without release+enable.
+        self.sequence += 1
+        self.publish(advance=False)
+        duplicate_sequence_synchronized = self.wait(
+            lambda: self.selected is not None and
+            self.selected.has_selection and
+            self.selected.source_id == 250 and
+            self.selected.source_sequence == self.sequence,
+            0.08, publish=False)
+        prior_epoch = self.arbitration.selection_epoch
+        self.publish(advance=False)
+        lost = duplicate_sequence_synchronized and self.wait(
+            lambda: self.arbitration is not None and
+            self.arbitration.selection_epoch == prior_epoch + 1 and
+            self.arbitration.selected_source_id == 0 and
+            self.arbitration.reason_code == 10,
+            1.0, publish=False)
+        held = self.wait(
+            lambda: self.safety is not None and
+            self.safety.state == self.safety.STATE_HOLDING, 3.0)
+        self.execute_samples = 0
+        self.wait(lambda: False, 0.25)
+        checks['duplicate_reorder_stops_once'] = lost and held
+        checks['quarantine_has_no_surprise_resume'] = (
+            self.execute_samples == 0 and
+            self.safety.state == self.safety.STATE_HOLDING)
+
+        checks['explicit_reenable_after_quarantine'] = self.acquire()
+
+        # Candidate loss is recoverable but cannot fall back or auto-resume.
+        prior_epoch = self.arbitration.selection_epoch
+        self.publish_enabled = False
+        stale = self.wait(
+            lambda: self.arbitration is not None and
+            self.arbitration.selection_epoch == prior_epoch + 1 and
+            self.arbitration.reason_code == 8 and
+            self.arbitration.selected_source_id == 0,
+            1.0, publish=False)
+        held = self.wait(
+            lambda: self.safety is not None and
+            self.safety.state == self.safety.STATE_HOLDING,
+            3.0, publish=False)
+        self.publish_enabled = True
+        self.active = True
+        self.execute_samples = 0
+        self.wait(lambda: False, 0.25)
+        checks['candidate_timeout_recoverable_stop'] = stale and held
+        checks['stale_active_cannot_resume'] = self.execute_samples == 0
+
+        checks['acquire_before_selected_loss'] = self.acquire()
+        selected_epoch = self.safety.safety_epoch
+        selected_loss = self.lifecycle('/araco/command_arbiter', 'deactivate')
+        selected_fault = self.wait(
+            lambda: self.safety is not None and
+            self.safety.state == self.safety.STATE_FAULT_HOLD and
+            self.safety.fault_mask & self.safety.FAULT_SELECTED_COMMAND_STREAM,
+            4.0, publish=False)
+        checks['selected_stream_loss_latches'] = (
+            selected_loss and selected_fault and
+            self.safety.safety_epoch > selected_epoch)
+        checks['arbiter_restart_requires_reset'] = (
+            self.lifecycle('/araco/command_arbiter', 'activate') and
+            self.reset_fault())
+
+        checks['acquire_before_safe_loss'] = self.acquire()
+        safe_loss = self.lifecycle('/araco/safety_supervisor', 'deactivate')
+        local_stop = self.wait(
+            lambda: self.locomotion is not None and
+            self.locomotion.mode in (
+                self.locomotion.MODE_STOPPING, self.locomotion.MODE_HOLDING) and
+            self.locomotion.reason_code == 13,
+            2.5, publish=False)
+        safety_restart = self.lifecycle('/araco/safety_supervisor', 'activate')
+        restart_holding = self.wait(
+            lambda: self.safety is not None and
+            self.safety.state == self.safety.STATE_HOLDING,
+            4.0)
+        checks['safe_stream_loss_stops_locally'] = (
+            safe_loss and local_stop and safety_restart and restart_holding)
+
+        checks['acquire_before_controller_loss'] = self.acquire()
+        controller_loss = self.controller(deactivate='leg_trajectory_controller')
+        controller_fault = self.wait(
+            lambda: self.safety is not None and
+            self.safety.state == self.safety.STATE_FAULT_HOLD and
+            self.safety.fault_mask & self.safety.FAULT_CONTROLLER,
+            3.0)
+        controller_restore = self.controller(activate='leg_trajectory_controller')
+        checks['controller_loss_latches'] = controller_loss and controller_fault
+        checks['controller_restore_requires_reset'] = (
+            controller_restore and self.reset_fault())
+
+        checks['acquire_before_joint_state_loss'] = self.acquire()
+        joint_loss = self.set_joint_relay(False)
+        joint_fault = self.wait(
+            lambda: self.safety is not None and
+            self.safety.state == self.safety.STATE_FAULT_HOLD and
+            self.safety.fault_mask & self.safety.FAULT_JOINT_STATE,
+            3.0)
+        joint_restore = self.set_joint_relay(True)
+        checks['joint_state_loss_latches'] = joint_loss and joint_fault
+        checks['joint_state_restore_requires_reset'] = (
+            joint_restore and self.reset_fault())
+
+        checks['acquire_before_backend_component_loss'] = self.acquire()
+        backend_loss = self.hardware(False)
+        backend_fault = self.wait(
+            lambda: self.safety is not None and
+            self.safety.state == self.safety.STATE_FAULT_HOLD and
+            self.safety.fault_mask & self.safety.FAULT_BACKEND,
+            4.0)
+        backend_restore = self.hardware(True)
+        checks['backend_component_loss_latches'] = backend_loss and backend_fault
+        checks['backend_component_restore_requires_reset'] = (
+            backend_restore and self.reset_fault())
+
+        checks['acquire_before_clock_loss'] = self.acquire()
+        clock_loss = self.pause(True)
+        clock_fault = self.wait(
+            lambda: self.safety is not None and
+            self.safety.state == self.safety.STATE_FAULT_HOLD and
+            self.safety.fault_mask & self.safety.FAULT_TIME,
+            2.0)
+        clock_restore = self.pause(False)
+        checks['clock_pause_latches'] = clock_loss and clock_fault
+        checks['clock_resume_requires_reset'] = (
+            clock_restore and self.reset_fault())
+
+        # The final scenario removes the actual test-owned Gazebo server. The
+        # launch contract marks it required, so the complete simulator runtime
+        # must quiesce rather than continue executing against a missing plant.
+        checks['acquire_before_backend_process_loss'] = self.acquire()
+        backend_process_stop = self.cli([
+            'gz', 'service', '-s', '/server_control',
+            '--reqtype', 'gz.msgs.ServerControl',
+            '--reptype', 'gz.msgs.Boolean', '--timeout', '3000',
+            '--req', 'stop: true'])
+        self.publish_enabled = False
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline:
+            rclpy.spin_once(self, timeout_sec=0.02)
+        runtime_streams_quiesced = (
+            self.last_safe_receipt > 0.0 and
+            self.last_locomotion_receipt > 0.0 and
+            time.monotonic() - self.last_safe_receipt >= 0.5 and
+            time.monotonic() - self.last_locomotion_receipt >= 0.5)
+        checks['backend_process_loss_quiesces_runtime'] = (
+            backend_process_stop and runtime_streams_quiesced)
+
+        checks['safety_epochs_exact_across_one_restart'] = (
+            self.epochs_valid_with_restarts(self.safety_path, 1))
+        checks['selection_epochs_exact_across_one_restart'] = (
+            self.epochs_valid_with_restarts(self.selection_path, 1))
+        return {
+            'status': 'PASS' if all(checks.values()) else 'FAIL',
+            'checks': checks,
+            'metrics': {
+                'safety_path': self.safety_path,
+                'selection_path': self.selection_path,
+                'errors': self.errors,
+                'backend_process_stopped':
+                    checks['backend_process_loss_quiesces_runtime'],
+            },
+        }
+
+
+def main():
+    """Run one fresh-process Gate 5 scenario matrix."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', required=True)
+    arguments, ros_arguments = parser.parse_known_args()
+    rclpy.init(args=[parser.prog, *ros_arguments])
+    node = Gate5Scorer()
+    try:
+        try:
+            result = node.run()
+        except Exception as error:  # always preserve a machine-readable probe result
+            result = {
+                'status': 'FAIL',
+                'checks': {'scorer_completed_without_exception': False},
+                'metrics': {
+                    'errors': [
+                        f'{type(error).__name__}: {error}', *node.errors],
+                    'safety_path': node.safety_path,
+                    'selection_path': node.selection_path,
+                },
+            }
+        Path(arguments.output).write_text(
+            json.dumps(result, indent=2, sort_keys=True) + '\n',
+            encoding='utf-8')
+        print(json.dumps(result, sort_keys=True))
+        raise SystemExit(0 if result['status'] == 'PASS' else 1)
+    finally:
+        if rclpy.ok():
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

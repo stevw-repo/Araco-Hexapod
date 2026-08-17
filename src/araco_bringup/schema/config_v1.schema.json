@@ -1,9 +1,291 @@
 {
-  "$schema":"https://json-schema.org/draft/2020-12/schema",
-  "oneOf":[
-    {"type":"object","required":["kind","namespace_policy","nodes","node_rates_hz","topics","use_sim_time"],"properties":{"kind":{"const":"wiring"},"namespace_policy":{"const":"single_relative_token"},"nodes":{"type":"array","minItems":1,"items":{"type":"string"},"uniqueItems":true},"node_rates_hz":{"type":"object","required":["teleop_adapter","command_arbiter","safety_supervisor","locomotion"],"properties":{"teleop_adapter":{"type":"number","exclusiveMinimum":0},"command_arbiter":{"type":"number","exclusiveMinimum":0},"safety_supervisor":{"type":"number","exclusiveMinimum":0},"locomotion":{"type":"number","exclusiveMinimum":0}},"additionalProperties":false},"topics":{"type":"object","required":["candidate","selected","safe","joint_states","locomotion_status","safety_status"],"properties":{"candidate":{"type":"string"},"selected":{"type":"string"},"safe":{"type":"string"},"joint_states":{"type":"string"},"locomotion_status":{"type":"string"},"safety_status":{"type":"string"}},"additionalProperties":false},"use_sim_time":{"const":true}},"additionalProperties":false},
-    {"type":"object","required":["kind","controller_manager_rate_hz","joint_state_rate_hz","joint_state_broadcaster_type","trajectory_controller_type","interpolation_method","leg_cmd_timeout_s","activation_order","joint_membership_policy"],"properties":{"kind":{"const":"controllers"},"controller_manager_rate_hz":{"type":"integer","minimum":1},"joint_state_rate_hz":{"type":"integer","minimum":1},"joint_state_broadcaster_type":{"type":"string","minLength":1},"trajectory_controller_type":{"type":"string","minLength":1},"interpolation_method":{"const":"splines"},"leg_cmd_timeout_s":{"type":"number","exclusiveMinimum":0},"activation_order":{"type":"array","minItems":3,"items":{"type":"string"},"uniqueItems":true},"joint_membership_policy":{"const":"derive_roles_from_canonical_model"}},"additionalProperties":false},
-    {"type":"object","required":["kind","profile_id","profile_version","deployment_class","selected_artifacts","required_nodes","input_selection","presentation","allowed_overrides"],"properties":{"kind":{"const":"profile"},"profile_id":{"enum":["gazebo_dev_v0","gazebo_ci_v0"]},"profile_version":{"type":"string","pattern":"^[0-9]+\\.[0-9]+\\.[0-9]+$"},"deployment_class":{"const":"simulator_only"},"selected_artifacts":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/reference"}},"required_nodes":{"type":"array","minItems":1,"items":{"type":"string"},"uniqueItems":true},"input_selection":{"type":"object","required":["keyboard_adapter","system_test_adapter"],"properties":{"keyboard_adapter":{"type":"boolean"},"system_test_adapter":{"const":false}},"additionalProperties":false},"presentation":{"type":"object","required":["gui","rviz","developer_diagnostics","machine_report"],"properties":{"gui":{"type":"boolean"},"rviz":{"type":"boolean"},"developer_diagnostics":{"type":"boolean"},"machine_report":{"const":true}},"additionalProperties":false},"allowed_overrides":{"type":"array","minItems":6,"maxItems":6,"items":{"enum":["robot_namespace","gui","rviz","log_level","record_on_failure","report_destination"]},"uniqueItems":true}},"additionalProperties":false}
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "kind",
+        "namespace_policy",
+        "nodes",
+        "node_rates_hz",
+        "topics",
+        "use_sim_time"
+      ],
+      "properties": {
+        "kind": {
+          "const": "wiring"
+        },
+        "namespace_policy": {
+          "const": "single_relative_token"
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "node_rates_hz": {
+          "type": "object",
+          "required": [
+            "teleop_adapter",
+            "command_arbiter",
+            "safety_supervisor",
+            "locomotion"
+          ],
+          "properties": {
+            "teleop_adapter": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "command_arbiter": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "safety_supervisor": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "locomotion": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "topics": {
+          "type": "object",
+          "required": [
+            "candidate",
+            "selected",
+            "safe",
+            "joint_states",
+            "locomotion_status",
+            "safety_status"
+          ],
+          "properties": {
+            "candidate": {
+              "type": "string"
+            },
+            "selected": {
+              "type": "string"
+            },
+            "safe": {
+              "type": "string"
+            },
+            "joint_states": {
+              "type": "string"
+            },
+            "locomotion_status": {
+              "type": "string"
+            },
+            "safety_status": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "use_sim_time": {
+          "const": true
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "kind",
+        "controller_manager_rate_hz",
+        "joint_state_rate_hz",
+        "joint_state_broadcaster_type",
+        "trajectory_controller_type",
+        "interpolation_method",
+        "leg_cmd_timeout_s",
+        "activation_order",
+        "joint_membership_policy"
+      ],
+      "properties": {
+        "kind": {
+          "const": "controllers"
+        },
+        "controller_manager_rate_hz": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "joint_state_rate_hz": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "joint_state_broadcaster_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trajectory_controller_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interpolation_method": {
+          "const": "splines"
+        },
+        "leg_cmd_timeout_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "activation_order": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "joint_membership_policy": {
+          "const": "derive_roles_from_canonical_model"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "kind",
+        "profile_id",
+        "profile_version",
+        "deployment_class",
+        "selected_artifacts",
+        "required_nodes",
+        "input_selection",
+        "presentation",
+        "allowed_overrides"
+      ],
+      "properties": {
+        "kind": {
+          "const": "profile"
+        },
+            "profile_id": {
+              "enum": [
+                "gazebo_dev_v0",
+                "gazebo_joystick_v0",
+                "gazebo_ci_v0",
+            "gazebo_gate3_v0",
+            "gazebo_gate4_v0",
+            "gazebo_gate5_v0"
+          ]
+        },
+        "profile_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "deployment_class": {
+          "const": "simulator_only"
+        },
+        "selected_artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/reference"
+          }
+        },
+        "required_nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "input_selection": {
+          "type": "object",
+          "required": [
+            "keyboard_adapter",
+            "system_test_adapter"
+          ],
+              "properties": {
+                "keyboard_adapter": {
+                  "type": "boolean"
+                },
+                "joystick_adapter": {
+                  "type": "boolean"
+                },
+                "system_test_adapter": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "presentation": {
+          "type": "object",
+          "required": [
+            "gui",
+            "rviz",
+            "developer_diagnostics",
+            "machine_report"
+          ],
+          "properties": {
+            "gui": {
+              "type": "boolean"
+            },
+            "rviz": {
+              "type": "boolean"
+            },
+            "developer_diagnostics": {
+              "type": "boolean"
+            },
+            "machine_report": {
+              "const": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "allowed_overrides": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "enum": [
+              "robot_namespace",
+              "gui",
+              "rviz",
+              "log_level",
+              "record_on_failure",
+              "report_destination"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
   ],
-  "$defs":{"reference":{"type":"object","required":["package","path","artifact_id","artifact_version"],"properties":{"package":{"type":"string","pattern":"^araco_[a-z_]+$"},"path":{"type":"string","pattern":"^config/"},"artifact_id":{"type":"string","pattern":"^araco\\."},"artifact_version":{"type":"string","pattern":"^[0-9]+\\.[0-9]+\\.[0-9]+$"}},"additionalProperties":false}}
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "required": [
+        "package",
+        "path",
+        "artifact_id",
+        "artifact_version"
+      ],
+      "properties": {
+        "package": {
+          "type": "string",
+          "pattern": "^araco_[a-z_]+$"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^config/"
+        },
+        "artifact_id": {
+          "type": "string",
+          "pattern": "^araco\\."
+        },
+        "artifact_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
 }

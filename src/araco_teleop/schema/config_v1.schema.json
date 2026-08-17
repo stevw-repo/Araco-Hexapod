@@ -1,1 +1,101 @@
-{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","required":["kind","adapter","source_id","publication_rate_hz","deadman_key","release_publishes_inactive","keys","frame_id"],"properties":{"kind":{"const":"teleop_mapping"},"adapter":{"const":"keyboard"},"source_id":{"type":"integer","minimum":1},"publication_rate_hz":{"type":"number","exclusiveMinimum":0},"deadman_key":{"type":"string","minLength":1},"release_publishes_inactive":{"const":true},"keys":{"type":"object","minProperties":1,"additionalProperties":{"type":"object","required":["field","value"],"properties":{"field":{"enum":["vx","vy","wz"]},"value":{"type":"number"}},"additionalProperties":false}},"frame_id":{"const":"base_link"}},"additionalProperties":false}
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["kind", "adapter", "source_id", "publication_rate_hz", "release_publishes_inactive", "frame_id"],
+  "properties": {
+    "kind": {"const": "teleop_mapping"},
+    "adapter": {"enum": ["keyboard", "joystick"]},
+    "source_id": {"type": "integer", "minimum": 1},
+    "publication_rate_hz": {"type": "number", "exclusiveMinimum": 0},
+    "heartbeat_timeout_s": {"type": "number", "exclusiveMinimum": 0},
+    "deadman_neutral_keeps_source_active": {"const": true},
+    "release_publishes_inactive": {"const": true},
+    "frame_id": {"const": "base_link"},
+    "frontend": {"const": "tk_key_state_window"},
+    "state_protocol": {"const": "araco.keyboard-state.v1"},
+    "state_topic": {"const": "teleop/key_state"},
+    "deadman_key": {"const": "space"},
+    "keys": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["field", "value"],
+        "properties": {
+          "field": {"enum": ["vx", "vy", "wz"]},
+          "value": {"type": "number"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "device_name": {"const": "LiteStar PXN-2113 Pro"},
+    "usb_id": {"const": "11ff:0837"},
+    "sdl_guid": {"type": "string", "minLength": 32, "maxLength": 32},
+    "joy_topic": {"const": "joy"},
+    "axis_count": {"const": 6},
+    "button_count": {"const": 12},
+    "deadzone": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+    "activation_policy": {"const": "auto_enable_once_from_fresh_neutral_standing_selection"},
+    "deadman_button": {"type": "integer", "minimum": 0, "maximum": 11},
+    "deadman_physical_label": {"type": "string", "minLength": 1},
+    "roll_left_button": {"type": "integer", "minimum": 0, "maximum": 11},
+    "roll_left_physical_label": {"type": "string", "minLength": 1},
+    "roll_right_button": {"type": "integer", "minimum": 0, "maximum": 11},
+    "roll_right_physical_label": {"type": "string", "minLength": 1},
+    "roll_button_scale_rad": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.15},
+    "axes": {
+      "type": "object",
+      "required": ["forward", "lateral", "walking_yaw", "body_height", "body_pitch", "posture_yaw"],
+      "properties": {
+        "forward": {"$ref": "#/$defs/scaled_axis"},
+        "lateral": {"$ref": "#/$defs/scaled_axis"},
+        "walking_yaw": {"$ref": "#/$defs/scaled_axis"},
+        "body_height": {
+          "type": "object",
+          "required": ["index", "positive_end_is_zero", "range_m"],
+          "properties": {
+            "index": {"const": 2},
+            "positive_end_is_zero": {"type": "boolean"},
+            "range_m": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.03}
+          },
+          "additionalProperties": false
+        },
+        "body_pitch": {"$ref": "#/$defs/scaled_axis"},
+        "posture_yaw": {"$ref": "#/$defs/scaled_axis"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "scaled_axis": {
+      "type": "object",
+      "required": ["index", "invert", "scale"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0, "maximum": 5},
+        "invert": {"type": "boolean"},
+        "scale": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"adapter": {"const": "keyboard"}}},
+      "then": {"required": ["frontend", "state_protocol", "state_topic", "heartbeat_timeout_s", "deadman_key", "deadman_neutral_keeps_source_active", "keys"]}
+    },
+    {
+      "if": {"properties": {"adapter": {"const": "joystick"}}},
+      "then": {
+        "required": ["device_name", "usb_id", "sdl_guid", "joy_topic", "axis_count", "button_count", "heartbeat_timeout_s", "deadzone", "activation_policy", "roll_left_button", "roll_left_physical_label", "roll_right_button", "roll_right_physical_label", "roll_button_scale_rad", "axes"],
+        "not": {
+          "anyOf": [
+            {"required": ["deadman_button"]},
+            {"required": ["deadman_physical_label"]},
+            {"required": ["deadman_neutral_keeps_source_active"]}
+          ]
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

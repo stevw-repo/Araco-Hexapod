@@ -68,8 +68,19 @@
         "collision_origin_xyz_m": [0.06, 0.0, 0.0],
         "collision_size_m": [0.12, 0.035, 0.035]
       },
-      "foot": {"visual_mesh_uri": "package://araco_description/meshes/generated/foot.stl", "collision_origin_xyz_m": [0.025, 0.0, 0.0], "collision_size_m": [0.05, 0.03, 0.03]},
+      "foot": {"visual_mesh_uri": "package://araco_description/meshes/generated/foot.stl", "visual_boxes": [{"center_xyz_m": [0.025, 0.0, 0.0], "size_m": [0.05, 0.03, 0.03]}], "collision_shape": "sphere", "collision_origin_xyz_m": [0.05, 0.0, 0.0], "collision_size_m": [0.05, 0.03, 0.03], "collision_radius_m": 0.004},
       "gimbal": {"visual_mesh_uri": "package://araco_description/meshes/generated/gimbal.stl", "collision_origin_xyz_m": [0.0, 0.0, 0.03], "collision_size_m": [0.11, 0.035, 0.035]}
+    },
+    "kinematics": {
+      "leg_geometry_m": {
+        "coxa": 0.043,
+        "femur": 0.12,
+        "tibia": 0.12,
+        "foot": 0.05
+      },
+      "standing_foot_pitch_rad": -1.570796326794897,
+      "standing_branch": "knee_down",
+      "convention": "yaw_about_positive_z_then_pitch_about_negative_y"
     },
     "visual_policy": {
       "fidelity": "fusion_exact_presentation",

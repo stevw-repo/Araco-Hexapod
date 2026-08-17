@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/kinematics/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.kinematics.ik",
-  "artifact_version": "0.1.0",
+  "artifact_version": "0.2.0",
   "owner_package": "araco_kinematics",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -19,12 +19,14 @@
   ],
   "data": {
     "kind": "ik_solver",
-    "algorithm": "damped-least-squares",
-    "position_tolerance_m": 0.0001,
-    "maximum_iterations": 40,
-    "damping": 0.001,
-    "singularity_threshold": 0.0001,
-    "reachability_margin_m": 0.005,
+    "algorithm": "analytic-four-dof-position-and-foot-pitch",
+    "foot_pitch_target_policy": "project_world_down_into_each_leg_sagittal_plane",
+    "orientation_residual_policy": "report_rejected_angle",
+    "position_tolerance_m": 1e-9,
+    "singularity_threshold": 1e-6,
+    "near_limit_margin_rad": 0.05,
+    "oracle_tolerance_rad": 2e-6,
+    "standing_branch": "knee_down",
     "failure_policy": "reject_complete_transaction"
   }
 }

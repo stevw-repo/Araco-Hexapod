@@ -15,6 +15,18 @@ safety_supervisor:
     read_only: true
     validation:
       gt<>: [0.0]
+  controller_manager_validation_period_s:
+    type: double
+    description: Period for each staggered typed controller-manager validation request.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  joint_state_topic:
+    type: string
+    description: Exact joint-state topic selected by versioned wiring.
+    read_only: true
+    validation:
+      not_empty<>: []
   safety_policy_path:
     type: string
     description: Exact installed safety-policy artifact path.
@@ -35,3 +47,37 @@ safety_supervisor:
     type: string_array
     description: Canonical one-joint gimbal controller partition.
     read_only: true
+  selected_command_timeout_s:
+    type: double
+    description: Steady timeout for the trusted selected-command stream.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  stable_hold_dwell_s:
+    type: double
+    description: Required locomotion holding dwell before STOPPING completes.
+    read_only: true
+    validation:
+      gt_eq<>: [0.0]
+  auto_enable_once_from_neutral_standing_source:
+    type: bool
+    description: Automatically authorize one fresh neutral-standing source once per lifecycle activation.
+    read_only: true
+  body_envelope:
+    planar_speed_normal_m_s: {type: double, description: Normal planar speed magnitude., read_only: true}
+    planar_speed_hard_m_s: {type: double, description: Hard planar speed magnitude., read_only: true}
+    yaw_rate_normal_rad_s: {type: double, description: Normal yaw-rate magnitude., read_only: true}
+    yaw_rate_hard_rad_s: {type: double, description: Hard yaw-rate magnitude., read_only: true}
+    xy_normal_m: {type: double, description: Normal X/Y body-offset magnitude., read_only: true}
+    z_normal_lower_m: {type: double, description: Normal lower Z body offset., read_only: true}
+    z_normal_upper_m: {type: double, description: Normal upper Z body offset., read_only: true}
+    roll_pitch_normal_rad: {type: double, description: Normal roll/pitch magnitude., read_only: true}
+    yaw_normal_rad: {type: double, description: Normal posture-yaw magnitude., read_only: true}
+    xy_hard_m: {type: double, description: Hard X/Y body-offset magnitude., read_only: true}
+    z_hard_lower_m: {type: double, description: Hard lower Z body offset., read_only: true}
+    z_hard_upper_m: {type: double, description: Hard upper Z body offset., read_only: true}
+    roll_pitch_hard_rad: {type: double, description: Hard roll/pitch magnitude., read_only: true}
+    yaw_hard_rad: {type: double, description: Hard posture-yaw magnitude., read_only: true}
+    quaternion_norm_tolerance: {type: double, description: Unit-quaternion tolerance., read_only: true}
+    reserved_twist_tolerance: {type: double, description: Reserved twist zero tolerance., read_only: true}
+    stand_velocity_tolerance: {type: double, description: Stand velocity zero tolerance., read_only: true}

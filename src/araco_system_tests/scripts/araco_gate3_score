@@ -1,0 +1,580 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Drive and score the simulator-only Gate 3 planted-foot body-pose matrix."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from pathlib import Path
+import time
+
+from araco_interfaces.action import SafetyTransition
+from araco_interfaces.msg import CommandCandidate
+from araco_interfaces.msg import LocomotionStatus
+from araco_interfaces.msg import SafeCommand
+from araco_interfaces.msg import SafetyStatus
+from araco_interfaces.msg import SelectedCommand
+from control_msgs.msg import JointTrajectoryControllerState
+from nav_msgs.msg import Odometry
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.node import Node
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
+from ros_gz_interfaces.msg import Contacts
+from rosgraph_msgs.msg import Clock
+
+
+FEET = (
+    'left_front', 'left_middle', 'left_rear',
+    'right_front', 'right_middle', 'right_rear',
+)
+
+
+def _seconds(stamp):
+    return float(stamp.sec) + float(stamp.nanosec) * 1e-9
+
+
+def _quaternion(roll, pitch, yaw):
+    cr, sr = math.cos(roll / 2.0), math.sin(roll / 2.0)
+    cp, sp = math.cos(pitch / 2.0), math.sin(pitch / 2.0)
+    cy, sy = math.cos(yaw / 2.0), math.sin(yaw / 2.0)
+    return (
+        sr * cp * cy - cr * sp * sy,
+        cr * sp * cy + sr * cp * sy,
+        cr * cp * sy - sr * sp * cy,
+        cr * cp * cy + sr * sp * sy,
+    )
+
+
+def _multiply_quaternion(left, right):
+    lx, ly, lz, lw = left
+    rx, ry, rz, rw = right
+    return (
+        lw * rx + lx * rw + ly * rz - lz * ry,
+        lw * ry - lx * rz + ly * rw + lz * rx,
+        lw * rz + lx * ry - ly * rx + lz * rw,
+        lw * rw - lx * rx - ly * ry - lz * rz,
+    )
+
+
+def _orientation_error(actual, desired):
+    actual_norm = math.sqrt(sum(value * value for value in actual))
+    desired_norm = math.sqrt(sum(value * value for value in desired))
+    if actual_norm <= 1e-12 or desired_norm <= 1e-12:
+        return math.inf
+    dot = abs(sum(
+        actual[index] * desired[index]
+        for index in range(4)) / (actual_norm * desired_norm))
+    return 2.0 * math.acos(max(-1.0, min(1.0, dot)))
+
+
+def _conjugate_quaternion(quaternion):
+    x, y, z, w = quaternion
+    return (-x, -y, -z, w)
+
+
+def _rotate_vector(quaternion, vector):
+    norm = math.sqrt(sum(value * value for value in quaternion))
+    if norm <= 1e-12:
+        return (math.nan, math.nan, math.nan)
+    unit = tuple(value / norm for value in quaternion)
+    rotated = _multiply_quaternion(
+        _multiply_quaternion(unit, (*vector, 0.0)),
+        _conjugate_quaternion(unit))
+    return rotated[:3]
+
+
+def _angle_between(left, right):
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
+    if left_norm <= 1e-12 or right_norm <= 1e-12:
+        return math.inf
+    dot = sum(a * b for a, b in zip(left, right)) / (left_norm * right_norm)
+    if not math.isfinite(dot):
+        return math.inf
+    return math.acos(max(-1.0, min(1.0, dot)))
+
+
+class Gate3Scorer(Node):
+    """Publish the explicit test source while observing simulation truth."""
+
+    def __init__(self, bundle, thresholds, started_monotonic):
+        super().__init__('gate3_scorer', namespace='araco/system_tests')
+        self.thresholds = thresholds
+        self.started_monotonic = started_monotonic
+        pose = json.loads((
+            bundle / 'normalized_artifacts/'
+            'araco_description_nominal-standing-reference.json'
+        ).read_text(encoding='utf-8'))['data']['base_pose']
+        self.nominal_position = tuple(pose['position_xyz_m'])
+        self.nominal_orientation = tuple(pose['orientation_xyzw'])
+        model = json.loads((
+            bundle / 'normalized_artifacts/'
+            'araco_description_canonical-model.json'
+        ).read_text(encoding='utf-8'))['data']
+        self.leg_joints = {}
+        self.mount_yaws = {}
+        for foot in FEET:
+            joints = [
+                joint for joint in model['joints'] if joint['leg'] == foot]
+            if [joint['segment'] for joint in joints] != [
+                    'coxa', 'femur', 'tibia', 'foot']:
+                raise RuntimeError(f'invalid canonical joint order for {foot}')
+            self.leg_joints[foot] = tuple(joint['name'] for joint in joints)
+            self.mount_yaws[foot] = float(joints[0]['origin_rpy_rad'][2])
+        self.cases = [
+            ('zero', (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)),
+            ('x_positive_50', (0.010, 0.0, 0.0, 0.0, 0.0, 0.0)),
+            ('x_negative_50', (-0.010, 0.0, 0.0, 0.0, 0.0, 0.0)),
+            ('y_positive_50', (0.0, 0.010, 0.0, 0.0, 0.0, 0.0)),
+            ('y_negative_50', (0.0, -0.010, 0.0, 0.0, 0.0, 0.0)),
+            ('z_positive_50', (0.0, 0.0, 0.010, 0.0, 0.0, 0.0)),
+            ('z_negative_50', (0.0, 0.0, -0.015, 0.0, 0.0, 0.0)),
+            ('roll_positive_50', (0.0, 0.0, 0.0, 0.075, 0.0, 0.0)),
+            ('roll_negative_50', (0.0, 0.0, 0.0, -0.075, 0.0, 0.0)),
+            ('pitch_positive_50', (0.0, 0.0, 0.0, 0.0, 0.075, 0.0)),
+            ('pitch_negative_50', (0.0, 0.0, 0.0, 0.0, -0.075, 0.0)),
+            ('yaw_positive_50', (0.0, 0.0, 0.0, 0.0, 0.0, 0.100)),
+            ('yaw_negative_50', (0.0, 0.0, 0.0, 0.0, 0.0, -0.100)),
+            ('combined_35', (0.007, -0.007, -0.0105, 0.0525, -0.0525, 0.070)),
+        ]
+        self.sim_time = None
+        self.latest_safety = None
+        self.latest_safe = None
+        self.latest_selected = None
+        self.latest_locomotion = None
+        self.latest_joint_error = math.inf
+        self.latest_joint_positions = None
+        self.latest_contacts = set()
+        self.nonfoot_ground_contact = False
+        self.sequence = 0
+        self.active = False
+        self.command = self.cases[0][1]
+        self.case_index = -1
+        self.case_start = None
+        self.case_settle = None
+        self.case_samples = []
+        self.case_contact_counts = {foot: 0 for foot in FEET}
+        self.case_contact_samples = 0
+        self.results = []
+        self.state_path = []
+        self.motion_enabled_seen = False
+        reliable = QoSProfile(depth=100, reliability=ReliabilityPolicy.RELIABLE)
+        sensor = QoSProfile(depth=100, reliability=ReliabilityPolicy.BEST_EFFORT)
+        self.publisher = self.create_publisher(
+            CommandCandidate, '/araco/command/candidates/system_test', sensor)
+        self.create_subscription(Clock, '/clock', self._on_clock, 10)
+        self.create_subscription(
+            SafetyStatus, '/araco/safety/status', self._on_safety, reliable)
+        self.create_subscription(
+            SafeCommand, '/araco/command/safe', self._on_safe, reliable)
+        self.create_subscription(
+            SelectedCommand, '/araco/command/selected',
+            self._on_selected, reliable)
+        self.create_subscription(
+            LocomotionStatus, '/araco/locomotion/status',
+            self._on_locomotion, reliable)
+        self.create_subscription(
+            JointTrajectoryControllerState,
+            '/leg_trajectory_controller/controller_state',
+            self._on_controller, sensor)
+        self.create_subscription(
+            Odometry, '/araco/simulation/ground_truth/odom', self._on_odom, sensor)
+        self.create_subscription(
+            Contacts, '/araco/simulation/contacts/all', self._on_contacts, sensor)
+        self.action = ActionClient(
+            self, SafetyTransition, '/araco/safety/transition')
+        self.timer = self.create_timer(0.01, self._publish_candidate)
+
+    def _publish_candidate(self):
+        self.sequence += 1
+        message = CommandCandidate()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = 'base_link'
+        message.sequence = self.sequence
+        message.active = self.active
+        message.intent.gait = message.intent.GAIT_STAND
+        x, y, z, roll, pitch, yaw = self.command
+        message.intent.body_pose_offset.position.x = x
+        message.intent.body_pose_offset.position.y = y
+        message.intent.body_pose_offset.position.z = z
+        quaternion = _quaternion(roll, pitch, yaw)
+        message.intent.body_pose_offset.orientation.x = quaternion[0]
+        message.intent.body_pose_offset.orientation.y = quaternion[1]
+        message.intent.body_pose_offset.orientation.z = quaternion[2]
+        message.intent.body_pose_offset.orientation.w = quaternion[3]
+        self.publisher.publish(message)
+
+    def _on_clock(self, message):
+        self.sim_time = _seconds(message.clock)
+
+    def _on_safety(self, message):
+        self.latest_safety = message
+        if not self.state_path or self.state_path[-1] != message.state:
+            self.state_path.append(message.state)
+        self.motion_enabled_seen |= message.state == message.STATE_MOTION_ENABLED
+
+    def _on_safe(self, message):
+        self.latest_safe = message
+
+    def _on_selected(self, message):
+        self.latest_selected = message
+
+    def _on_locomotion(self, message):
+        self.latest_locomotion = message
+
+    def _on_controller(self, message):
+        if (len(message.joint_names) == 24 and
+                len(set(message.joint_names)) == 24 and
+                len(message.reference.positions) == 24 and
+                len(message.feedback.positions) == 24 and
+                len(message.error.positions) == 24 and
+                all(math.isfinite(value)
+                    for value in message.feedback.positions) and
+                all(math.isfinite(value) for value in message.error.positions)):
+            self.latest_joint_error = max(abs(value) for value in message.error.positions)
+            self.latest_joint_positions = dict(zip(
+                message.joint_names, message.feedback.positions))
+        else:
+            self.latest_joint_error = math.inf
+            self.latest_joint_positions = None
+
+    @staticmethod
+    def _is_ground(name):
+        return 'ground_plane' in name or 'ground::' in name
+
+    def _on_contacts(self, message):
+        touching = set()
+        for contact in message.contacts:
+            names = (contact.collision1.name, contact.collision2.name)
+            ground_index = next(
+                (index for index, name in enumerate(names) if self._is_ground(name)),
+                None)
+            if ground_index is None:
+                continue
+            robot_collision = names[1 - ground_index]
+            foot = next(
+                (item for item in FEET if f'{item}_foot_link' in robot_collision),
+                None)
+            if foot is None:
+                self.nonfoot_ground_contact = True
+            else:
+                touching.add(foot)
+        self.latest_contacts = touching
+        if self._in_score_window():
+            self.case_contact_samples += 1
+            for foot in touching:
+                self.case_contact_counts[foot] += 1
+
+    def _desired_pose(self):
+        x, y, z, roll, pitch, yaw = self.command
+        desired_position = (
+            self.nominal_position[0] + x,
+            self.nominal_position[1] + y,
+            self.nominal_position[2] + z,
+        )
+        desired_orientation = _multiply_quaternion(
+            self.nominal_orientation, _quaternion(roll, pitch, yaw))
+        return desired_position, desired_orientation
+
+    def _foot_orientation_metrics(self, base_orientation):
+        if self.latest_joint_positions is None:
+            return math.inf, math.inf, math.inf, math.inf
+        down_body = _rotate_vector(
+            _conjugate_quaternion(base_orientation), (0.0, 0.0, -1.0))
+        projection_errors = []
+        vertical_errors = []
+        residuals = []
+        for foot in FEET:
+            names = self.leg_joints[foot]
+            if any(name not in self.latest_joint_positions for name in names):
+                return math.inf, math.inf, math.inf, math.inf
+            coxa = self.latest_joint_positions[names[0]]
+            pitch = sum(self.latest_joint_positions[name] for name in names[1:])
+            azimuth = self.mount_yaws[foot] + coxa
+            cosine, sine = math.cos(azimuth), math.sin(azimuth)
+            radial = cosine * down_body[0] + sine * down_body[1]
+            lateral = -sine * down_body[0] + cosine * down_body[1]
+            projection_norm = math.hypot(radial, down_body[2])
+            if not math.isfinite(projection_norm) or projection_norm <= 1e-12:
+                return math.inf, math.inf, math.inf, math.inf
+            projected = (
+                cosine * radial / projection_norm,
+                sine * radial / projection_norm,
+                down_body[2] / projection_norm,
+            )
+            actual = (
+                cosine * math.cos(pitch),
+                sine * math.cos(pitch),
+                math.sin(pitch),
+            )
+            projection_errors.append(_angle_between(actual, projected))
+            vertical_errors.append(_angle_between(actual, down_body))
+            residuals.append(math.asin(max(-1.0, min(1.0, abs(lateral)))))
+        maximum_projection_error = max(projection_errors)
+        maximum_vertical_error = max(vertical_errors)
+        maximum_residual = max(residuals)
+        maximum_vertical_excess = max(
+            max(0.0, error - residual)
+            for error, residual in zip(vertical_errors, residuals))
+        return (
+            maximum_projection_error, maximum_vertical_error,
+            maximum_residual, maximum_vertical_excess)
+
+    def _on_odom(self, message):
+        if self.case_start is None or self.sim_time is None:
+            return
+        desired_position, desired_orientation = self._desired_pose()
+        pose = message.pose.pose
+        position_error = tuple(abs(actual - desired) for actual, desired in zip(
+            (pose.position.x, pose.position.y, pose.position.z), desired_position))
+        orientation_error = _orientation_error(
+            (pose.orientation.x, pose.orientation.y,
+             pose.orientation.z, pose.orientation.w), desired_orientation)
+        foot_metrics = self._foot_orientation_metrics((
+            pose.orientation.x, pose.orientation.y,
+            pose.orientation.z, pose.orientation.w))
+        sample = {
+            'position_error_m': position_error,
+            'orientation_error_rad': orientation_error,
+            'joint_error_rad': self.latest_joint_error,
+            'foot_projection_error_rad': foot_metrics[0],
+            'foot_vertical_error_rad': foot_metrics[1],
+            'foot_unavoidable_residual_rad': foot_metrics[2],
+            'foot_vertical_excess_rad': foot_metrics[3],
+        }
+        if self.case_settle is None and self._sample_within_limits(sample):
+            self.case_settle = self.sim_time - self.case_start
+        if self._in_score_window():
+            self.case_samples.append(sample)
+
+    def _sample_within_limits(self, sample):
+        return (
+            max(sample['position_error_m']) <=
+            self.thresholds['maximum_position_error_per_axis_m'] and
+            sample['orientation_error_rad'] <=
+            self.thresholds['maximum_orientation_error_rad'] and
+            sample['joint_error_rad'] <=
+            self.thresholds['maximum_joint_tracking_error_rad'] and
+            sample['foot_projection_error_rad'] <=
+            self.thresholds['maximum_foot_orientation_projection_error_rad'] and
+            sample['foot_vertical_excess_rad'] <=
+            self.thresholds['maximum_foot_orientation_projection_error_rad'])
+
+    def _in_score_window(self):
+        if self.case_start is None or self.sim_time is None:
+            return False
+        elapsed = self.sim_time - self.case_start
+        return (self.thresholds['settle_sim_max_s'] <= elapsed <=
+                self.thresholds['settle_sim_max_s'] +
+                self.thresholds['score_window_sim_s'])
+
+    def ready_for_enable(self):
+        return (
+            self.latest_safety is not None and
+            self.latest_safety.state == self.latest_safety.STATE_HOLDING and
+            self.latest_safety.readiness_mask ==
+            self.latest_safety.required_readiness_mask == 127 and
+            self.latest_selected is not None and
+            not self.latest_selected.has_selection and
+            time.monotonic() - self.started_monotonic <=
+            self.thresholds['startup_wall_max_s'])
+
+    def send_enable(self):
+        if not self.action.wait_for_server(timeout_sec=3.0):
+            return False
+        goal = SafetyTransition.Goal()
+        goal.request = goal.REQUEST_ENABLE_MOTION
+        future = self.action.send_goal_async(goal)
+        rclpy.spin_until_future_complete(self, future, timeout_sec=3.0)
+        handle = future.result()
+        if handle is None or not handle.accepted:
+            return False
+        # ENABLE_MOTION is a long-running action. Supply the required fresh
+        # post-enable source edge while waiting for its MOTION_ENABLED target.
+        self.active = True
+        result_future = handle.get_result_async()
+        rclpy.spin_until_future_complete(self, result_future, timeout_sec=3.0)
+        wrapped = result_future.result()
+        return (
+            wrapped is not None and wrapped.result.accepted and
+            wrapped.result.final_state == SafetyStatus.STATE_MOTION_ENABLED)
+
+    def start_case(self, index):
+        self.case_index = index
+        self.command = self.cases[index][1]
+        self.case_start = self.sim_time
+        self.case_settle = None
+        self.case_samples = []
+        self.case_contact_counts = {foot: 0 for foot in FEET}
+        self.case_contact_samples = 0
+
+    def case_complete(self):
+        return (
+            self.case_start is not None and self.sim_time is not None and
+            self.sim_time - self.case_start >=
+            self.thresholds['settle_sim_max_s'] +
+            self.thresholds['score_window_sim_s'])
+
+    def finish_case(self):
+        position_max = [
+            max((sample['position_error_m'][axis] for sample in self.case_samples),
+                default=math.inf)
+            for axis in range(3)
+        ]
+        orientation_max = max(
+            (sample['orientation_error_rad'] for sample in self.case_samples),
+            default=math.inf)
+        joint_max = max(
+            (sample['joint_error_rad'] for sample in self.case_samples),
+            default=math.inf)
+        foot_projection_max = max(
+            (sample['foot_projection_error_rad'] for sample in self.case_samples),
+            default=math.inf)
+        foot_vertical_max = max(
+            (sample['foot_vertical_error_rad'] for sample in self.case_samples),
+            default=math.inf)
+        foot_residual_max = max(
+            (sample['foot_unavoidable_residual_rad']
+             for sample in self.case_samples), default=math.inf)
+        foot_vertical_excess_max = max(
+            (sample['foot_vertical_excess_rad'] for sample in self.case_samples),
+            default=math.inf)
+        duties = {
+            foot: (self.case_contact_counts[foot] / self.case_contact_samples
+                   if self.case_contact_samples else 0.0)
+            for foot in FEET
+        }
+        locomotion_valid = (
+            self.latest_locomotion is not None and
+            self.latest_locomotion.mode == self.latest_locomotion.MODE_STANDING and
+            self.latest_locomotion.trajectory_valid and
+            self.latest_locomotion.gait == 0 and
+            self.latest_locomotion.gait_phase == 0.0 and
+            all(status == self.latest_locomotion.LEG_VALID
+                for status in self.latest_locomotion.leg_kinematic_status))
+        safety_valid = (
+            self.latest_safety is not None and
+            self.latest_safety.state == self.latest_safety.STATE_MOTION_ENABLED and
+            self.latest_safe is not None and
+            self.latest_safe.disposition in (
+                self.latest_safe.DISPOSITION_EXECUTE,
+                self.latest_safe.DISPOSITION_LIMITED))
+        minimum = self.thresholds['minimum_window_samples']
+        passed = (
+            self.case_settle is not None and
+            self.case_settle <= self.thresholds['settle_sim_max_s'] and
+            len(self.case_samples) >= minimum and
+            max(position_max) <=
+            self.thresholds['maximum_position_error_per_axis_m'] and
+            orientation_max <= self.thresholds['maximum_orientation_error_rad'] and
+            joint_max <= self.thresholds['maximum_joint_tracking_error_rad'] and
+            foot_projection_max <=
+            self.thresholds['maximum_foot_orientation_projection_error_rad'] and
+            foot_vertical_excess_max <=
+            self.thresholds['maximum_foot_orientation_projection_error_rad'] and
+            all(duty >= self.thresholds['minimum_foot_contact_duty']
+                for duty in duties.values()) and
+            locomotion_valid and safety_valid and not self.nonfoot_ground_contact)
+        self.results.append({
+            'name': self.cases[self.case_index][0],
+            'command_xyz_rpy': self.command,
+            'settle_sim_s': self.case_settle,
+            'scored_samples': len(self.case_samples),
+            'position_error_max_per_axis_m': position_max,
+            'orientation_error_max_rad': orientation_max,
+            'joint_tracking_error_max_rad': joint_max,
+            'foot_projection_error_max_rad': foot_projection_max,
+            'foot_vertical_error_max_rad': foot_vertical_max,
+            'foot_unavoidable_residual_max_rad': foot_residual_max,
+            'foot_vertical_excess_max_rad': foot_vertical_excess_max,
+            'foot_contact_duty': duties,
+            'locomotion_valid': locomotion_valid,
+            'safety_valid': safety_valid,
+            'status': 'PASS' if passed else 'FAIL',
+        })
+
+    def score(self, enable_accepted, release_returned_to_hold):
+        checks = {
+            'trusted_enable_accepted': enable_accepted,
+            'motion_enabled_observed': self.motion_enabled_seen,
+            'all_pose_cases': (
+                len(self.results) == len(self.cases) and
+                all(item['status'] == 'PASS' for item in self.results)),
+            'no_nonfoot_ground_contact': not self.nonfoot_ground_contact,
+            'release_returns_to_hold': release_returned_to_hold,
+        }
+        return {
+            'status': 'PASS' if all(checks.values()) else 'FAIL',
+            'checks': checks,
+            'metrics': {
+                'case_count': len(self.results),
+                'cases': self.results,
+                'safety_state_path': self.state_path,
+            },
+        }
+
+
+def _spin_until(node, predicate, deadline):
+    while rclpy.ok() and time.monotonic() < deadline and not predicate():
+        rclpy.spin_once(node, timeout_sec=0.02)
+    return predicate()
+
+
+def main():
+    """Execute all Gate 3 cases and emit one JSON score document."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bundle', required=True)
+    parser.add_argument('--thresholds', required=True)
+    parser.add_argument('--output', required=True)
+    parser.add_argument('--started-monotonic', type=float, required=True)
+    arguments, ros_arguments = parser.parse_known_args()
+    threshold_document = json.loads(
+        Path(arguments.thresholds).read_text(encoding='utf-8'))
+    thresholds = threshold_document['data']['gate3']
+    rclpy.init(args=[parser.prog, *ros_arguments])
+    node = Gate3Scorer(
+        Path(arguments.bundle).resolve(), thresholds, arguments.started_monotonic)
+    try:
+        startup_deadline = (
+            arguments.started_monotonic + thresholds['startup_wall_max_s'])
+        ready = _spin_until(node, node.ready_for_enable, startup_deadline)
+        enable_accepted = ready and node.send_enable()
+        node.active = enable_accepted
+        motion_deadline = time.monotonic() + 5.0
+        motion_enabled = _spin_until(
+            node,
+            lambda: node.latest_safety is not None and
+            node.latest_safety.state == node.latest_safety.STATE_MOTION_ENABLED,
+            motion_deadline)
+        if motion_enabled:
+            for index in range(len(node.cases)):
+                node.start_case(index)
+                deadline = time.monotonic() + 6.0
+                _spin_until(node, node.case_complete, deadline)
+                node.finish_case()
+        node.active = False
+        release_returned = _spin_until(
+            node,
+            lambda: node.latest_safety is not None and
+            node.latest_safety.state == node.latest_safety.STATE_HOLDING,
+            time.monotonic() + 3.0)
+        result = node.score(enable_accepted, release_returned)
+        Path(arguments.output).write_text(
+            json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + '\n',
+            encoding='utf-8')
+        print(json.dumps(result, sort_keys=True, allow_nan=False))
+        raise SystemExit(0 if result['status'] == 'PASS' else 1)
+    finally:
+        if rclpy.ok():
+            node.destroy_node()
+        rclpy.try_shutdown()
+
+
+if __name__ == '__main__':
+    main()

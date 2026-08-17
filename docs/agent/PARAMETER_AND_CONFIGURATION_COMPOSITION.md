@@ -155,16 +155,16 @@ independent of that fidelity label.
 | `araco_description` | `config/dynamics/rough_estimate_v0.yaml` | Derived mass/center/inertia snapshot generated from accepted rough Fusion evidence |
 | `araco_description` | `config/resources/robot_description_v1.yaml` | Xacro/template and mesh resource identities; no duplicate transforms |
 | `araco_kinematics` | `config/solver/ik_v0.yaml` | Solver tolerances, iteration/numerical policy, and reachability margins |
-| `araco_locomotion` | `config/gait/tripod_slow_sim_v0.yaml` | Tripod phasing, foot path, cycle duration, stance/body envelope, and trajectory horizon |
+| `araco_locomotion` | `config/gait/tripod_slow_sim_v0.yaml` | Tripod phasing, foot path, cadence/stride/clearance scheduling, stance/body envelope, and trajectory horizon |
 | `araco_locomotion` | `config/policy/operational_sim_v0.yaml` | Operational joint/body/velocity/acceleration restrictions nested inside model limits |
 | `araco_supervision` | `config/sources/simulator_v0.yaml` | Source IDs, priorities, enablement, rates, and freshness timeouts |
 | `araco_supervision` | `config/policy/simulator_v0.yaml` | Readiness, handover, stop, fault, reset, command-bound, and watchdog policy |
 | `araco_supervision` | `config/qos/control_v0.yaml` | Project-owned command/status endpoint QoS profiles |
-| `araco_teleop` | `config/mappings/keyboard_sim_v0.yaml` | Initial keyboard mapping and shaping |
+| `araco_teleop` | `config/mappings/keyboard_sim_v1.yaml` | Focused UI key-state protocol, heartbeat/deadman policy, and keyboard mapping; v0 is historical |
 | `araco_gazebo` | `config/world/flat_ground_v0.yaml` | Descriptor for the authoritative SDF world and accepted physics/seed integration |
-| `araco_gazebo` | `config/backend/gz_ros2_control_v0.yaml` | Gazebo control plugin, simulated interfaces, gains, damping/friction overlay, and spawn behavior |
+| `araco_gazebo` | `config/backend/gz_ros2_control_v2.yaml` | Gazebo control plugin, simulated interfaces, provisional response, damping/friction overlay, and spawn behavior; v0/v1 remain historical |
 | `araco_gazebo` | `config/bridge/simulator_v0.yaml` | ROS–Gazebo bridge endpoints and simulation-only topic mapping |
-| `araco_bringup` | `config/wiring/single_robot_v0.yaml` | Node names, namespace-relative topic wiring, remaps, and process composition |
+| `araco_bringup` | `config/wiring/single_robot_v1.yaml` | Node names including the development keyboard UI, namespace-relative topic wiring, remaps, and process composition; v0 is historical |
 | `araco_bringup` | `config/controllers/simulator_v0.yaml` | Controller types, interfaces, rates, JTC policy, and lifecycle order—but not hand-written joint lists |
 | `araco_bringup` | `config/profiles/gazebo_dev_v0.yaml` | Exact development artifact selection and allowed presentation choices |
 | `araco_bringup` | `config/profiles/gazebo_ci_v0.yaml` | Exact CI artifact selection and allowed headless/reporting choices |
@@ -176,10 +176,34 @@ description artifact is a generated, labeled runtime snapshot with that file
 and generator recorded in `generated_from`; runtime launch never reads
 `tools/fusion`.
 
-No placeholder gamepad artifact is created. The keyboard source is sufficient
-for initial simulator development. A future
-`config/mappings/pxn_2113_pro_v0.yaml` can be accepted after the installed
-device's axes, buttons, dead zones, and disconnect behavior are observed.
+The accepted simulator joystick artifact is
+`config/mappings/pxn_2113_pro_v0.yaml` version `0.9.0`. Its six axes and first
+two physical buttons were live-observed on the installed device. Physical
+buttons 1 and 2 are intentionally unassigned; the joystick has no deadman
+button or manual Enable Motion step. The joystick profile alone selects
+one-shot automatic enable after the stack is ready and a fresh valid neutral
+standing selection exists. Translation, walking yaw, roll, pitch, and posture
+yaw must be neutral; body-height trim may remain at its current position. The
+adapter emits one inactive startup sample before fresh active reports so the
+arbiter sees a new source session without operator input. Timeout, disconnect,
+malformed input, Controlled Hold, or a fault stops authority without automatic
+resume during that launch.
+Inverted axis 5 directly commands pitch. Axis 1 preserves its verified
+forward/reverse polarity; version `0.9.0` inherits the corrected lateral,
+walking-yaw, pitch, posture-yaw, height, and roll-button signs from `0.8.0` and
+adds the doubled-speed scales. The
+device's sequential physical buttons 3/4 are assigned to ROS indices 2/3 for
+rare roll-left/right commands, with simultaneous presses cancelling to zero.
+The adapter's malformed-report, timeout, deadzone, distinct-roll-button, and
+fail-closed behavior is covered by tests. Physical buttons 3/4 remain eligible
+for a later non-blocking live spot-check.
+
+The joystick profile selects the separate Responsive simulator gait and
+operational-policy artifacts. Version `0.9.0` provides `0.200 m/s` translation,
+`1.200 rad/s` walking yaw, a `0.120 m` stride cap, `1.5–2.5 Hz` cadence, full
+provisional simulator joint ranges, and `2.0 rad/s` simulator command-rate
+caps. CI, Gate, and keyboard profiles retain the established slow artifacts.
+Gate 0 rejects a mixed mapping/gait/envelope/operational-limit combination.
 
 ## Canonical model registry contract
 

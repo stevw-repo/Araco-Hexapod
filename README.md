@@ -7,15 +7,22 @@ targets Ubuntu 24.04, ROS 2 Jazzy, and Gazebo Harmonic.
 
 ## Current status
 
-Phase 2 / Gate 1 is complete. The repository contains the strict configuration
+Phase 7 / Gate 6 is complete. The repository contains the strict configuration
 substrate, canonical 26-link/25-joint model, provisional simulator dynamics,
 Gazebo Harmonic integration, exact 24-leg + 1-gimbal `ros2_control` ownership,
-ordered lifecycle supervision, a hold-only locomotion component, and atomic
-headless scoring evidence. Gate 1 reaches `HOLDING` without ever entering
-`MOTION_ENABLED`; it does not implement computed IK, gait, or physical hardware.
+ordered lifecycle supervision, deterministic four-DOF leg FK/IK, transactional
+six-leg standing, bounded planted-foot body-pose control, deterministic slow
+responsive stride/cadence tripod locomotion, controlled stopping, and atomic
+headless scoring evidence.
+The real arbitration and safety path supports body X/Y/Z, roll, pitch, posture
+yaw, and bounded forward/reverse/lateral/yaw/combined walking. Physical
+hardware control is not implemented or authorized. The accepted no-retry
+simulator baseline is retained at `/tmp/araco_gate6_final_20260816_06`.
 
 The accepted architecture, interface contracts, safety model, configuration
 rules, and phased delivery plan are maintained under `docs/agent/`.
+Verified simulator operation and troubleshooting commands are in
+[`docs/SIMULATOR_DEVELOPER_RUNBOOK.md`](docs/SIMULATOR_DEVELOPER_RUNBOOK.md).
 
 ## Packages
 
@@ -60,10 +67,63 @@ source install/setup.bash
 ros2 run araco_system_tests araco_gate1_evidence log/gate_1_local
 ```
 
+Run Gate 2 with the same physics scorer plus analytic-IK contract checks:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run araco_system_tests araco_gate2_evidence log/gate_2_local
+```
+
+Run the 14-case Gate 3 planted-foot body-pose matrix:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run araco_system_tests araco_gate3_evidence log/gate_3_local
+```
+
+Run the precision case plus seven-direction Gate 4 tripod gait and
+controlled-stop matrix:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run araco_system_tests araco_gate4_evidence log/gate_4_local
+```
+
+Run Gate 5 supervision and fault-injection validation:
+
+```bash
+ros2 run araco_system_tests araco_gate5_evidence log/gate_5_local
+```
+
+Run the complete three-repetition Gate 6 baseline:
+
+```bash
+ros2 run araco_system_tests araco_gate6_evidence \
+  --build-base build --install-base install log/gate_6_local
+```
+
 The destination must not already exist. A complete result contains the resolved
 runtime configuration, logs, metrics, JUnit, process outcomes, and validation
 report. Development launch is available with
 `ros2 launch araco_bringup gazebo.launch.py`.
+
+That launch opens Gazebo and the development-only **Araco Keyboard Control**
+window. Wait for its safety line to show `HOLDING` and `ready`, then:
+
+1. Click **Enable Motion**.
+2. Keep the keyboard-control window focused.
+3. Hold `Space` together with `W/S` (forward/reverse), `A/D`
+   (left/right), or `Q/E` (yaw). Multiple direction keys may be held together.
+   Releasing or changing direction keys while `Space` remains held keeps motion
+   authorized; with no direction key, the robot commands an active stand.
+4. Release `Space`, press `Esc`, change windows, or click
+   **Controlled Hold** to stop through the normal safety path.
+
+The terminal running `ros2 launch` is not the keyboard receiver. Closing or
+unfocusing the control window releases the command fail-closed.
 
 Generated `build/`, `install/`, and `log/` directories are local output and
 must not be committed.

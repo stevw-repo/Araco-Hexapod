@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/locomotion/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.locomotion.gait-tripod-slow",
-  "artifact_version": "0.1.0",
+  "artifact_version": "0.3.0",
   "owner_package": "araco_locomotion",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -14,13 +14,17 @@
   "dependencies": [
     {
       "artifact_id": "araco.kinematics.ik",
-      "artifact_version": "0.1.0"
+      "artifact_version": "0.2.0"
     }
   ],
   "data": {
     "kind": "gait",
-    "gait_id": "tripod_slow",
-    "cycle_period_s": 1.2,
+    "gait_id": "tripod_legacy_curve_responsive_scheduler",
+    "base_cadence_hz": 1.0,
+    "maximum_cadence_hz": 1.5,
+    "cadence_rate_hz_s": 1.0,
+    "preferred_maximum_stride_scale": 0.5,
+    "motion_deadband_m_s": 0.005,
     "duty_factor": 0.5,
     "maximum_stride_m": 0.06,
     "swing_clearance_m": 0.03,

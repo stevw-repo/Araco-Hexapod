@@ -34,7 +34,11 @@ class CompositionError(RuntimeError):
 
 PROFILE_PATHS = {
     'gazebo_dev_v0': 'config/profiles/gazebo_dev_v0.yaml',
+    'gazebo_joystick_v0': 'config/profiles/gazebo_joystick_v0.yaml',
     'gazebo_ci_v0': 'config/profiles/gazebo_ci_v0.yaml',
+    'gazebo_gate3_v0': 'config/profiles/gazebo_gate3_v0.yaml',
+    'gazebo_gate4_v0': 'config/profiles/gazebo_gate4_v0.yaml',
+    'gazebo_gate5_v0': 'config/profiles/gazebo_gate5_v0.yaml',
 }
 
 _ENVELOPE_REQUIRED = {
@@ -75,7 +79,12 @@ def _installed_resource(package: str, relative_path: str) -> Path:
     if relative.is_absolute() or '..' in relative.parts or not relative.parts:
         raise CompositionError(f'invalid installed relative path {relative_path!r}')
     share = _package_share(package)
-    path = (share / relative).resolve()
+    # Keep the lexical installed path here.  With ``--symlink-install`` the
+    # final resource component intentionally resolves into the source tree;
+    # resolving it before this containment check would reject every valid
+    # development install.  Absolute paths and traversal components have
+    # already been rejected above.
+    path = share / relative
     if path != share and share not in path.parents:
         raise CompositionError(f'resource escapes package share: {relative_path!r}')
     if not path.is_file():
@@ -196,6 +205,16 @@ def _validate_model(artifact: Artifact) -> None:
         raise CompositionError('canonical model must contain exactly 26 ordered primary links')
     if len(joints) != 25 or any(joint['type'] != 'revolute' for joint in joints):
         raise CompositionError('canonical model must contain exactly 25 revolute joints')
+    kinematics = data['kinematics']
+    geometry = kinematics['leg_geometry_m']
+    if (
+        set(geometry) != {'coxa', 'femur', 'tibia', 'foot'}
+        or not all(math.isfinite(float(value)) and float(value) > 0.0
+                   for value in geometry.values())
+        or kinematics['standing_branch'] not in {'knee_down', 'knee_up'}
+        or not math.isfinite(float(kinematics['standing_foot_pitch_rad']))
+    ):
+        raise CompositionError('canonical leg kinematics are invalid')
     if data['root_link'] != 'base_link' or link_names[0] != 'base_link':
         raise CompositionError('base_link must be the canonical root')
     children = []
@@ -458,6 +477,29 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
     names = [joint['name'] for joint in joints]
     leg_names = [joint['name'] for joint in joints if 'leg_command' in joint['roles']]
     gimbal_names = [joint['name'] for joint in joints if 'gimbal_command' in joint['roles']]
+    geometry = model['kinematics']['leg_geometry_m']
+    expected_origins = {
+        'femur': geometry['coxa'],
+        'tibia': geometry['femur'],
+        'foot': geometry['tibia'],
+    }
+    for joint in joints:
+        if joint['segment'] in expected_origins and (
+            abs(float(joint['origin_xyz_m'][0]) - expected_origins[joint['segment']]) > 1e-12
+            or any(abs(float(value)) > 1e-12 for value in joint['origin_xyz_m'][1:])
+        ):
+            raise CompositionError(
+                f"canonical kinematic length disagrees with {joint['name']} origin"
+            )
+    foot_size = model['geometry_classes']['foot']['collision_size_m']
+    foot_origin = model['geometry_classes']['foot']['collision_origin_xyz_m']
+    foot_shape = model['geometry_classes']['foot'].get('collision_shape')
+    foot_radius = model['geometry_classes']['foot'].get('collision_radius_m')
+    if (abs(float(foot_size[0]) - geometry['foot']) > 1e-12 or
+            foot_shape != 'sphere' or foot_radius is None or
+            not 0.0 < float(foot_radius) <= 0.01 or
+            abs(float(foot_origin[0]) - geometry['foot']) > 1e-12):
+        raise CompositionError('foot collision must be a bounded sphere at the kinematic tip')
     if set(limits['assignments']) != set(names):
         raise CompositionError('model-limit assignments do not cover the canonical joints')
     if set(pose['joint_positions_rad']) != set(names):
@@ -488,6 +530,39 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         raise CompositionError('canonical visual mesh is absent from resource registry')
     if set(operational['assignments']) != set(leg_names):
         raise CompositionError('operational limits do not cover the 24 leg joints')
+    expected_body_envelope = {
+        'body_xy_normal_m': 0.02,
+        'body_z_normal_lower_m': -0.03,
+        'body_z_normal_upper_m': 0.02,
+        'body_roll_pitch_normal_rad': 0.15,
+        'body_yaw_normal_rad': 0.2,
+        'body_xy_hard_m': 0.035,
+        'body_z_hard_lower_m': -0.045,
+        'body_z_hard_upper_m': 0.035,
+        'body_roll_pitch_hard_rad': 0.25,
+        'body_yaw_hard_rad': 0.35,
+        'quaternion_norm_tolerance': 1e-6,
+        'reserved_twist_tolerance': 1e-12,
+        'stand_velocity_tolerance': 1e-9,
+    }
+    actual_body_envelope = {
+        key: operational['command_envelope'][key]
+        for key in expected_body_envelope
+    }
+    if actual_body_envelope != expected_body_envelope:
+        raise CompositionError('body command envelope differs from accepted contract')
+    speed_envelope = (
+        operational['command_envelope']['planar_speed_normal_m_s'],
+        operational['command_envelope']['planar_speed_hard_m_s'],
+        operational['command_envelope']['yaw_rate_normal_rad_s'],
+        operational['command_envelope']['yaw_rate_hard_rad_s'],
+    )
+    baseline_speed_envelope = (0.05, 0.08, 0.3, 0.5)
+    responsive_speed_envelope = (0.2, 0.24, 1.2, 1.5)
+    if speed_envelope not in {
+        baseline_speed_envelope, responsive_speed_envelope
+    }:
+        raise CompositionError('velocity command envelope differs from accepted contracts')
     for joint in joints:
         model_limit = limits['classes'][limits['assignments'][joint['name']]]
         target = pose['joint_positions_rad'][joint['name']]
@@ -513,12 +588,33 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         or controllers['joint_state_rate_hz'] != 125
     ):
         raise CompositionError('controller rates differ from the accepted contract')
-    if (
-        gait['cycle_period_s'] != 1.2
-        or gait['trajectory_horizon_s'] != 0.04
-        or gait['maximum_stride_m'] != 0.06
-    ):
-        raise CompositionError('gait timing or envelope differs from the accepted contract')
+    shaping = gait['shaping']
+    gait_contract = (
+        gait['gait_id'], gait['base_cadence_hz'],
+        gait['maximum_cadence_hz'], gait['cadence_rate_hz_s'],
+        gait['preferred_maximum_stride_scale'], gait['motion_deadband_m_s'],
+        gait['duty_factor'], gait['maximum_stride_m'],
+        gait['swing_clearance_m'], gait['trajectory_horizon_s'],
+        shaping['translation_acceleration_m_s2'],
+        shaping['translation_stop_deceleration_m_s2'],
+        shaping['yaw_acceleration_rad_s2'],
+        shaping['yaw_stop_deceleration_rad_s2'],
+        shaping['body_translation_rate_m_s'],
+        shaping['body_angular_rate_rad_s'],
+    )
+    baseline_gait_contract = (
+        'tripod_legacy_curve_responsive_scheduler', 1.0, 1.5, 1.0,
+        0.5, 0.005, 0.5, 0.06, 0.03, 0.04,
+        0.1, 0.15, 0.6, 0.9, 0.03, 0.3,
+    )
+    responsive_gait_contract = (
+        'tripod_legacy_curve_responsive_scheduler', 1.5, 2.5, 2.0,
+        0.5, 0.005, 0.5, 0.12, 0.03, 0.04,
+        0.4, 0.6, 2.4, 3.6, 0.03, 0.3,
+    )
+    if gait_contract not in {baseline_gait_contract, responsive_gait_contract}:
+        raise CompositionError(
+            'gait identity, timing, or envelope differs from the accepted contract')
     expected_sources = {
         'teleop': (10, 100, 50, 0.15, True),
         'navigation': (20, 50, 20, 0.3, False),
@@ -547,8 +643,85 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         'debug_latest', 'diagnostics',
     }:
         raise CompositionError('QoS profile set differs from the accepted contract')
-    if mapping['source_id'] != 10 or mapping['publication_rate_hz'] != 50:
+    common_mapping_valid = (
+        mapping['source_id'] == 10
+        and mapping['publication_rate_hz'] == 50
+        and mapping['heartbeat_timeout_s'] == 0.12
+        and mapping['release_publishes_inactive']
+    )
+    keyboard_mapping_valid = mapping['adapter'] == 'keyboard' and (
+        mapping['frontend'] == 'tk_key_state_window'
+        and mapping['state_protocol'] == 'araco.keyboard-state.v1'
+        and mapping['state_topic'] == 'teleop/key_state'
+        and mapping['deadman_key'] == 'space'
+        and mapping['deadman_neutral_keeps_source_active']
+    )
+    joystick_mapping_valid = mapping['adapter'] == 'joystick' and (
+        mapping['device_name'] == 'LiteStar PXN-2113 Pro'
+        and mapping['usb_id'] == '11ff:0837'
+        and mapping['axis_count'] == 6
+        and mapping['button_count'] == 12
+        and mapping['activation_policy'] ==
+        'auto_enable_once_from_fresh_neutral_standing_selection'
+        and not any(key in mapping for key in (
+            'deadman_button', 'deadman_physical_label',
+            'deadman_neutral_keeps_source_active'))
+        and mapping['roll_left_button'] == 2
+        and mapping['roll_left_physical_label'] == 'physical button 3'
+        and mapping['roll_right_button'] == 3
+        and mapping['roll_right_physical_label'] == 'physical button 4'
+        and mapping['roll_button_scale_rad'] == 0.15
+        and mapping['axes'] == {
+            'forward': {'index': 1, 'invert': False, 'scale': 0.2},
+            'lateral': {'index': 0, 'invert': False, 'scale': 0.2},
+            'walking_yaw': {'index': 3, 'invert': False, 'scale': 1.2},
+            'body_height': {
+                'index': 2, 'positive_end_is_zero': True, 'range_m': 0.03},
+            'body_pitch': {'index': 5, 'invert': True, 'scale': 0.15},
+            'posture_yaw': {'index': 4, 'invert': False, 'scale': 0.2},
+        }
+    )
+    if not common_mapping_valid or not (
+        keyboard_mapping_valid or joystick_mapping_valid
+    ):
         raise CompositionError('teleop mapping does not match registered source authority')
+    operational_class_contract = tuple(
+        (
+            name,
+            operational['classes'][name]['lower_rad'],
+            operational['classes'][name]['upper_rad'],
+            operational['classes'][name]['command_rate_cap_rad_s'],
+        )
+        for name in ('coxa', 'femur', 'tibia', 'foot')
+    )
+    baseline_operational_class_contract = (
+        ('coxa', -0.45, 0.45, 1.2),
+        ('femur', 0.35, 1.1, 1.2),
+        ('tibia', -2.35, -1.15, 1.2),
+        ('foot', -0.85, 0.1, 1.2),
+    )
+    responsive_operational_class_contract = (
+        ('coxa', -0.7, 0.7, 2.0),
+        ('femur', 0.15, 1.35, 2.0),
+        ('tibia', -2.65, -0.75, 2.0),
+        ('foot', -1.25, 0.35, 2.0),
+    )
+    responsive_contract_selected = (
+        gait_contract == responsive_gait_contract
+        and speed_envelope == responsive_speed_envelope
+        and operational_class_contract == responsive_operational_class_contract
+    )
+    baseline_contract_selected = (
+        gait_contract == baseline_gait_contract
+        and speed_envelope == baseline_speed_envelope
+        and operational_class_contract == baseline_operational_class_contract
+    )
+    if not (responsive_contract_selected or baseline_contract_selected):
+        raise CompositionError(
+            'gait, velocity-envelope, and operational-limit profiles are mismatched')
+    if joystick_mapping_valid != responsive_contract_selected:
+        raise CompositionError(
+            'joystick mapping must select the complete responsive simulator contract')
     if (
         world['physics_engine'] != 'dart'
         or world['maximum_step_s'] != 0.001
@@ -564,6 +737,14 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         raise CompositionError('Gazebo backend contract differs')
     if not any(endpoint['ros_topic'] == '/clock' for endpoint in bridge['endpoints']):
         raise CompositionError('Gazebo bridge does not provide /clock')
+    expected_input_nodes = (
+        {'keyboard_teleop_ui', 'teleop_adapter'} if mapping['adapter'] == 'keyboard'
+        else {'joy_node', 'joystick_adapter'}
+    )
+    if set(wiring['nodes']) != expected_input_nodes | {
+        'command_arbiter', 'safety_supervisor', 'locomotion',
+    }:
+        raise CompositionError('node wiring differs from the accepted contract')
     if wiring['node_rates_hz'] != {
         'teleop_adapter': 50, 'command_arbiter': 100,
         'safety_supervisor': 100, 'locomotion': 100,
@@ -584,6 +765,8 @@ def _behavior_fingerprint(artifacts: dict[str, Artifact]) -> str:
 def _validate_profile_equivalence(
     profile_id: str, artifacts: dict[str, Artifact]
 ) -> None:
+    if profile_id not in {'gazebo_dev_v0', 'gazebo_ci_v0'}:
+        return
     peer_id = 'gazebo_ci_v0' if profile_id == 'gazebo_dev_v0' else 'gazebo_dev_v0'
     peer = load_artifact('araco_bringup', PROFILE_PATHS[peer_id])
     peer_artifacts = _artifact_map(peer)
@@ -621,15 +804,22 @@ def _render_urdf(
         inertial = dynamics['links'][link['name']]
         inertia = inertial['inertia_kg_m2']
         shape = geometry[link['geometry_class']]
+        macro_name = (
+            'araco_dynamic_sphere_link'
+            if shape.get('collision_shape') == 'sphere' else 'araco_dynamic_link')
+        collision_argument = (
+            f'collision_radius="{float(shape["collision_radius_m"]):.15g}"'
+            if shape.get('collision_shape') == 'sphere' else
+            f'collision_size="{_xml_values(shape["collision_size_m"])}"')
         lines.append(
-            '  <xacro:araco_dynamic_link '
+            f'  <xacro:{macro_name} '
             f'name="{link["name"]}" mass="{inertial["mass_kg"]:.15g}" '
             f'com_xyz="{_xml_values(inertial["center_of_mass_xyz_m"])}" '
             f'ixx="{inertia["ixx"]:.15g}" ixy="{inertia["ixy"]:.15g}" '
             f'ixz="{inertia["ixz"]:.15g}" iyy="{inertia["iyy"]:.15g}" '
             f'iyz="{inertia["iyz"]:.15g}" izz="{inertia["izz"]:.15g}" '
             f'collision_xyz="{_xml_values(shape["collision_origin_xyz_m"])}" '
-            f'collision_size="{_xml_values(shape["collision_size_m"])}">'
+            f'{collision_argument}>'
         )
         lines.extend([
             '    <visuals>',
@@ -655,7 +845,7 @@ def _render_urdf(
                 '    </visual>',
             ])
         lines.append('    </visuals>')
-        lines.append('  </xacro:araco_dynamic_link>')
+        lines.append(f'  </xacro:{macro_name}>')
     for frame in model['fixed_frames']:
         visuals = frame.get('visuals', [])
         if not visuals:
@@ -802,6 +992,99 @@ def _yaml_write(path: Path, data: dict[str, Any]) -> None:
     )
 
 
+def _standing_parameters(
+    model: dict[str, Any],
+    limits: dict[str, Any],
+    operational: dict[str, Any],
+    pose: dict[str, Any],
+    solver: dict[str, Any],
+) -> dict[str, Any]:
+    """Adapt canonical description data into typed, flattened runtime values."""
+    leg_joints = [
+        joint for joint in model['joints'] if 'leg_command' in joint['roles']
+    ]
+    leg_names = list(dict.fromkeys(joint['leg'] for joint in leg_joints))
+    if len(leg_joints) != 24 or len(leg_names) != 6:
+        raise CompositionError('standing adapter requires six ordered four-joint legs')
+    geometry_data = model['kinematics']['leg_geometry_m']
+    geometry = [float(geometry_data[key]) for key in ('coxa', 'femur', 'tibia', 'foot')]
+    foot_pitch = float(model['kinematics']['standing_foot_pitch_rad'])
+    mounts = []
+    mount_yaws = []
+    targets = []
+    lower = []
+    upper = []
+    rate_caps = []
+    for leg_name in leg_names:
+        joints = [joint for joint in leg_joints if joint['leg'] == leg_name]
+        if [joint['segment'] for joint in joints] != ['coxa', 'femur', 'tibia', 'foot']:
+            raise CompositionError(f'invalid canonical joint order for {leg_name}')
+        mount = _vector(joints[0]['origin_xyz_m'], 3, f'{leg_name} mount')
+        mount_yaw = float(joints[0]['origin_rpy_rad'][2])
+        values = [float(pose['joint_positions_rad'][joint['name']]) for joint in joints]
+        pitch_1 = values[1]
+        pitch_2 = pitch_1 + values[2]
+        actual_pitch = pitch_2 + values[3]
+        if abs(actual_pitch - foot_pitch) > 2e-6:
+            raise CompositionError(f'{leg_name} standing foot pitch violates policy')
+        radial = (
+            geometry[0]
+            + geometry[1] * math.cos(pitch_1)
+            + geometry[2] * math.cos(pitch_2)
+            + geometry[3] * math.cos(foot_pitch)
+        )
+        local_x = radial * math.cos(values[0])
+        local_y = radial * math.sin(values[0])
+        local_z = (
+            geometry[1] * math.sin(pitch_1)
+            + geometry[2] * math.sin(pitch_2)
+            + geometry[3] * math.sin(foot_pitch)
+        )
+        mounts.extend(mount)
+        mount_yaws.append(mount_yaw)
+        targets.extend([
+            mount[0] + math.cos(mount_yaw) * local_x - math.sin(mount_yaw) * local_y,
+            mount[1] + math.sin(mount_yaw) * local_x + math.cos(mount_yaw) * local_y,
+            mount[2] + local_z,
+        ])
+        for joint in joints:
+            model_limit = limits['classes'][limits['assignments'][joint['name']]]
+            operation = operational['classes'][
+                operational['assignments'][joint['name']]
+            ]
+            if (operation['lower_rad'] < model_limit['lower_rad'] or
+                    operation['upper_rad'] > model_limit['upper_rad']):
+                raise CompositionError('operational standing limit widens model limit')
+            lower.append(float(operation['lower_rad']))
+            upper.append(float(operation['upper_rad']))
+            rate_caps.append(float(operation['command_rate_cap_rad_s']))
+    if solver['algorithm'] != 'analytic-four-dof-position-and-foot-pitch':
+        raise CompositionError('unsupported selected IK algorithm')
+    if (solver['foot_pitch_target_policy'] !=
+            'project_world_down_into_each_leg_sagittal_plane'):
+        raise CompositionError('unsupported selected foot-pitch target policy')
+    if solver['orientation_residual_policy'] != 'report_rejected_angle':
+        raise CompositionError('unsupported selected orientation residual policy')
+    branch = solver['standing_branch']
+    if branch != model['kinematics']['standing_branch']:
+        raise CompositionError('solver and canonical standing branches disagree')
+    return {
+        'leg_geometry_m': geometry,
+        'leg_mount_positions_base_m': mounts,
+        'leg_mount_yaw_rad': mount_yaws,
+        'standing_foot_targets_base_m': targets,
+        'standing_foot_pitch_rad': [foot_pitch] * 6,
+        'joint_lower_rad': lower,
+        'joint_upper_rad': upper,
+        'joint_command_rate_cap_rad_s': rate_caps,
+        'standing_branch': branch,
+        'ik_position_tolerance_m': float(solver['position_tolerance_m']),
+        'ik_singularity_threshold': float(solver['singularity_threshold']),
+        'ik_near_limit_margin_rad': float(solver['near_limit_margin_rad']),
+        'standing_oracle_tolerance_rad': float(solver['oracle_tolerance_rad']),
+    }
+
+
 def _node_parameters(
     profile: Artifact,
     artifacts: dict[str, Artifact],
@@ -817,15 +1100,31 @@ def _node_parameters(
         'config.selected_artifact_ids': selected_ids,
         'use_sim_time': True,
     }
-    rates = _kind(artifacts, 'wiring').document['data']['node_rates_hz']
+    wiring = _kind(artifacts, 'wiring').document['data']
+    rates = wiring['node_rates_hz']
     source_registry = _kind(artifacts, 'source_registry')
     safety = _kind(artifacts, 'safety_policy')
     gait = _kind(artifacts, 'gait')
     model = _kind(artifacts, 'canonical_model').document['data']
+    limits = _kind(artifacts, 'joint_limits').document['data']
+    operational = _kind(artifacts, 'operational_policy').document['data']
     pose = _kind(artifacts, 'nominal_pose').document['data']
+    solver = _kind(artifacts, 'ik_solver').document['data']
+    standing = _standing_parameters(model, limits, operational, pose, solver)
     mapping = _kind(artifacts, 'teleop_mapping')
+    mapping_data = mapping.document['data']
+    source_items = {item['name']: item for item in source_registry.document['data']['sources']}
+    envelope = operational['command_envelope']
+    shaping = gait.document['data']['shaping']
+    watchdogs = safety.document['data']['watchdogs_s']
     definitions = {
         '/araco/teleop_adapter': {
+            **common,
+            'loop_rate_hz': float(rates['teleop_adapter']),
+            'mapping_path': str(mapping.installed_path),
+            'mapping_sha256': mapping.sha256,
+        },
+        '/araco/joystick_adapter': {
             **common,
             'loop_rate_hz': float(rates['teleop_adapter']),
             'mapping_path': str(mapping.installed_path),
@@ -836,10 +1135,42 @@ def _node_parameters(
             'loop_rate_hz': float(rates['command_arbiter']),
             'source_registry_path': str(source_registry.installed_path),
             'source_registry_sha256': source_registry.sha256,
+            'teleop_enabled': bool(
+                profile.document['data']['input_selection']['keyboard_adapter']
+                or profile.document['data']['input_selection'].get(
+                    'joystick_adapter', False)),
+            'system_test_enabled': bool(
+                profile.document['data']['input_selection']['system_test_adapter']),
+            'teleop_source_id': int(source_items['teleop']['id']),
+            'teleop_priority': int(source_items['teleop']['priority']),
+            'system_test_source_id': int(source_items['system_test']['id']),
+            'system_test_priority': int(source_items['system_test']['priority']),
+            'teleop_timeout_s': float(source_items['teleop']['freshness_timeout_s']),
+            'system_test_timeout_s': float(
+                source_items['system_test']['freshness_timeout_s']),
+            'body_envelope.planar_speed_hard_m_s': float(
+                envelope['planar_speed_hard_m_s']),
+            'body_envelope.yaw_rate_hard_rad_s': float(
+                envelope['yaw_rate_hard_rad_s']),
+            'body_envelope.xy_hard_m': float(envelope['body_xy_hard_m']),
+            'body_envelope.z_hard_lower_m': float(envelope['body_z_hard_lower_m']),
+            'body_envelope.z_hard_upper_m': float(envelope['body_z_hard_upper_m']),
+            'body_envelope.roll_pitch_hard_rad': float(
+                envelope['body_roll_pitch_hard_rad']),
+            'body_envelope.yaw_hard_rad': float(envelope['body_yaw_hard_rad']),
+            'body_envelope.quaternion_norm_tolerance': float(
+                envelope['quaternion_norm_tolerance']),
+            'body_envelope.reserved_twist_tolerance': float(
+                envelope['reserved_twist_tolerance']),
+            'body_envelope.stand_velocity_tolerance': float(
+                envelope['stand_velocity_tolerance']),
         },
         '/araco/safety_supervisor': {
             **common,
             'loop_rate_hz': float(rates['safety_supervisor']),
+            'controller_manager_validation_period_s': float(
+                safety.document['data']['controller_manager_validation_period_s']),
+            'joint_state_topic': wiring['topics']['joint_states'],
             'safety_policy_path': str(safety.installed_path),
             'safety_policy_sha256': safety.sha256,
             'state_joint_names': [
@@ -851,6 +1182,38 @@ def _node_parameters(
             'gimbal_joint_names': [
                 joint['name'] for joint in model['joints'] if 'gimbal_command' in joint['roles']
             ],
+            'selected_command_timeout_s': float(watchdogs['selected_command']),
+            'stable_hold_dwell_s': float(envelope['stable_hold_dwell_s']),
+            'auto_enable_once_from_neutral_standing_source': bool(
+                mapping_data['adapter'] == 'joystick' and
+                mapping_data.get('activation_policy') ==
+                'auto_enable_once_from_fresh_neutral_standing_selection'),
+            'body_envelope.planar_speed_normal_m_s': float(
+                envelope['planar_speed_normal_m_s']),
+            'body_envelope.planar_speed_hard_m_s': float(
+                envelope['planar_speed_hard_m_s']),
+            'body_envelope.yaw_rate_normal_rad_s': float(
+                envelope['yaw_rate_normal_rad_s']),
+            'body_envelope.yaw_rate_hard_rad_s': float(
+                envelope['yaw_rate_hard_rad_s']),
+            'body_envelope.xy_normal_m': float(envelope['body_xy_normal_m']),
+            'body_envelope.z_normal_lower_m': float(envelope['body_z_normal_lower_m']),
+            'body_envelope.z_normal_upper_m': float(envelope['body_z_normal_upper_m']),
+            'body_envelope.roll_pitch_normal_rad': float(
+                envelope['body_roll_pitch_normal_rad']),
+            'body_envelope.yaw_normal_rad': float(envelope['body_yaw_normal_rad']),
+            'body_envelope.xy_hard_m': float(envelope['body_xy_hard_m']),
+            'body_envelope.z_hard_lower_m': float(envelope['body_z_hard_lower_m']),
+            'body_envelope.z_hard_upper_m': float(envelope['body_z_hard_upper_m']),
+            'body_envelope.roll_pitch_hard_rad': float(
+                envelope['body_roll_pitch_hard_rad']),
+            'body_envelope.yaw_hard_rad': float(envelope['body_yaw_hard_rad']),
+            'body_envelope.quaternion_norm_tolerance': float(
+                envelope['quaternion_norm_tolerance']),
+            'body_envelope.reserved_twist_tolerance': float(
+                envelope['reserved_twist_tolerance']),
+            'body_envelope.stand_velocity_tolerance': float(
+                envelope['stand_velocity_tolerance']),
         },
         '/araco/locomotion': {
             **common,
@@ -864,7 +1227,31 @@ def _node_parameters(
                 pose['joint_positions_rad'][joint['name']]
                 for joint in model['joints'] if 'leg_command' in joint['roles']
             ],
+            **standing,
             'trajectory_horizon_s': gait.document['data']['trajectory_horizon_s'],
+            'gait_base_cadence_hz': float(gait.document['data']['base_cadence_hz']),
+            'gait_maximum_cadence_hz': float(
+                gait.document['data']['maximum_cadence_hz']),
+            'gait_cadence_rate_hz_s': float(
+                gait.document['data']['cadence_rate_hz_s']),
+            'gait_preferred_maximum_stride_scale': float(
+                gait.document['data']['preferred_maximum_stride_scale']),
+            'gait_motion_deadband_m_s': float(
+                gait.document['data']['motion_deadband_m_s']),
+            'gait_duty_factor': float(gait.document['data']['duty_factor']),
+            'gait_maximum_stride_m': float(gait.document['data']['maximum_stride_m']),
+            'gait_swing_clearance_m': float(gait.document['data']['swing_clearance_m']),
+            'translation_acceleration_m_s2': float(
+                shaping['translation_acceleration_m_s2']),
+            'translation_stop_deceleration_m_s2': float(
+                shaping['translation_stop_deceleration_m_s2']),
+            'yaw_acceleration_rad_s2': float(shaping['yaw_acceleration_rad_s2']),
+            'yaw_stop_deceleration_rad_s2': float(
+                shaping['yaw_stop_deceleration_rad_s2']),
+            'stable_hold_dwell_s': float(envelope['stable_hold_dwell_s']),
+            'body_translation_rate_m_s': float(shaping['body_translation_rate_m_s']),
+            'body_angular_rate_rad_s': float(shaping['body_angular_rate_rad_s']),
+            'safe_command_timeout_s': float(watchdogs['safe_command']),
         },
     }
     for parameters in definitions.values():
@@ -901,6 +1288,7 @@ def _emit_bundle(
     )
     node_filenames = {
         '/araco/teleop_adapter': 'teleop_adapter.yaml',
+        '/araco/joystick_adapter': 'joystick_adapter.yaml',
         '/araco/command_arbiter': 'command_arbiter.yaml',
         '/araco/safety_supervisor': 'safety_supervisor.yaml',
         '/araco/locomotion': 'locomotion.yaml',

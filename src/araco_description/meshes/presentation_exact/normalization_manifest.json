@@ -11,7 +11,7 @@
   },
   "inputs": {
     "source_manifest_sha256": "de97ed3cbbd417d220e30fcf20907a28f937023ef0a7d578beb80f40a07fa573",
-    "canonical_model_sha256": "a7d0d50472eff3f6b9bb08332a1797fefc7a522bc45cf3d05a8db3bae2b7eee4",
+    "canonical_model_sha256": "2286773314ded079dcffc21ab6cdd8e53650094c05783bf8f34d56549cc57124",
     "nominal_pose_sha256": "76ba6ad316237ae1837ec806ba9b84dfb07bd7feac0b6ba35abc159b449a2a2d"
   },
   "transform_pipeline": [

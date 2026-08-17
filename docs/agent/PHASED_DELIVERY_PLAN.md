@@ -315,6 +315,9 @@ transaction.
 
 ## Phase 4 — Gate 3: static body-pose control
 
+Status: implemented and validated on 2026-08-16. Gates 0–3 pass. Phase 5
+remains separately authorized work.
+
 ### Deliverables
 
 - Implement locomotion's absolute body-pose offset handling for height,
@@ -350,11 +353,15 @@ non-foot contact, or ground-truth leakage into production control.
 
 ## Phase 5 — Gate 4: tripod locomotion and controlled stop
 
+Status: implemented and validated on 2026-08-16. Gates 0–4 pass. Phase 6
+remains unauthorized.
+
 ### Deliverables
 
 - Implement the deterministic tripod phase machine, support/swing grouping,
-  foot path, stance placement, body/turn blending, and the accepted 1.2-second
-  cycle at the 100 Hz locomotion rate.
+  foot path, stance placement, and body/turn blending at the fixed 100 Hz
+  locomotion rate. The subsequently accepted scheduler advances continuous
+  `1.0–1.5 Hz` phase while using stride as the primary speed variable.
 - Generate complete named positions-only one-point trajectories with the
   accepted 40 ms horizon and transactional phase/foot/IK commit.
 - Implement bounded forward, reverse, lateral, yaw, and combined commands in
@@ -365,10 +372,10 @@ non-foot contact, or ground-truth leakage into production control.
 - Complete the arbiter/safety portions required for ordinary selection loss and
   manual hold. Full restart, handover, and component-fault matrices remain
   Phase 6 work and cannot be falsely reported as complete.
-- Exercise the existing keyboard adapter through the normal developer command
-  path as a non-scored smoke test. Gate 4 scoring still uses the deterministic
-  system-test source. PXN-2113 Pro mapping remains deferred until the actual
-  device is observed.
+- Exercise the focused keyboard window and full-state heartbeat adapter through
+  the normal developer command path as a non-scored human-input smoke test.
+  Gate 4 scoring still uses the deterministic system-test source. PXN-2113 Pro
+  mapping remains deferred until the actual device is observed.
 
 ### Gate 4 test layers
 
@@ -648,5 +655,8 @@ The user's 2026-08-15 approval freezes:
 
 Approval of this plan did not itself authorize implementation. The user
 subsequently authorized and completed Phase 0, then separately authorized
-Phase 1 / static Gate 0 and Phase 2 / live Gate 1, both of which passed on
-2026-08-16. Phase 3 / Gate 2 still requires its own authorization.
+Phase 1 / static Gate 0, Phase 2 / live Gate 1, Phase 3 / computed-standing
+Gate 2, and Phase 4 / static body-pose Gate 3; all passed on 2026-08-16.
+Phase 5 / Gate 4 was separately authorized, implemented, and validated on
+2026-08-16. Gates 0–4 pass. Phase 6 and later work still require separate
+authorization.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["kind", "gate0", "gate1", "timing"],
+  "required": ["kind", "gate0", "gate1", "gate3", "gate4", "gate6", "timing"],
   "properties": {
     "kind": {"const": "test_thresholds"},
     "gate0": {
@@ -49,6 +49,88 @@
         "maximum_base_height_error_m": {"const": 0.02},
         "minimum_foot_contact_duty": {"const": 0.9},
         "maximum_penetration_m": {"const": 0.005}
+      },
+      "additionalProperties": false
+    },
+    "gate3": {
+      "type": "object",
+      "required": [
+        "startup_wall_max_s", "settle_sim_max_s", "score_window_sim_s",
+        "minimum_window_samples", "maximum_position_error_per_axis_m",
+        "maximum_orientation_error_rad", "maximum_joint_tracking_error_rad",
+        "maximum_foot_orientation_projection_error_rad",
+        "minimum_foot_contact_duty"
+      ],
+      "properties": {
+        "startup_wall_max_s": {"const": 30.0},
+        "settle_sim_max_s": {"const": 2.0},
+        "score_window_sim_s": {"const": 0.5},
+        "minimum_window_samples": {"type": "integer", "minimum": 1},
+        "maximum_position_error_per_axis_m": {"const": 0.015},
+        "maximum_orientation_error_rad": {"const": 0.05},
+        "maximum_joint_tracking_error_rad": {"const": 0.1},
+        "maximum_foot_orientation_projection_error_rad": {"const": 0.05},
+        "minimum_foot_contact_duty": {"const": 0.85}
+      },
+      "additionalProperties": false
+    },
+    "gate4": {
+      "type": "object",
+      "required": [
+        "startup_wall_max_s", "case_duration_sim_s", "score_start_sim_s",
+        "score_end_sim_s", "minimum_window_samples",
+        "maximum_planar_velocity_mean_error_m_s",
+        "maximum_yaw_rate_mean_error_rad_s", "maximum_roll_pitch_rms_rad",
+        "maximum_height_rms_error_m", "minimum_support_contact_duty",
+        "maximum_swing_contact_duty", "maximum_joint_tracking_error_rad",
+        "controlled_stop_max_s", "maximum_stop_drift_m",
+        "maximum_stop_drift_yaw_rad", "stable_hold_dwell_s",
+        "maximum_held_joint_speed_rad_s", "maximum_held_base_speed_m_s"
+      ],
+      "properties": {
+        "startup_wall_max_s": {"const": 30.0},
+        "case_duration_sim_s": {"const": 7.6},
+        "score_start_sim_s": {"const": 1.8},
+        "score_end_sim_s": {"const": 5.4},
+        "minimum_window_samples": {"type": "integer", "minimum": 1},
+        "maximum_planar_velocity_mean_error_m_s": {"const": 0.02},
+        "maximum_yaw_rate_mean_error_rad_s": {"const": 0.1},
+        "maximum_roll_pitch_rms_rad": {"const": 0.12},
+        "maximum_height_rms_error_m": {"const": 0.025},
+        "minimum_support_contact_duty": {"const": 0.95},
+        "maximum_swing_contact_duty": {"const": 0.2},
+        "maximum_joint_tracking_error_rad": {"const": 0.1},
+        "controlled_stop_max_s": {"const": 1.5},
+        "maximum_stop_drift_m": {"const": 0.075},
+        "maximum_stop_drift_yaw_rad": {"const": 0.4},
+        "stable_hold_dwell_s": {"const": 0.25},
+        "maximum_held_joint_speed_rad_s": {"const": 0.05},
+        "maximum_held_base_speed_m_s": {"const": 0.01}
+      },
+      "additionalProperties": false
+    },
+    "gate6": {
+      "type": "object",
+      "required": [
+        "repetitions", "seed",
+        "maximum_final_displacement_difference_m",
+        "maximum_final_yaw_difference_rad",
+        "maximum_controlled_stop_distance_difference_m",
+        "maximum_roll_pitch_rms_difference_rad",
+        "minimum_median_real_time_factor",
+        "planned_complete_suite_sim_s",
+        "startup_artifact_allowance_s"
+      ],
+      "properties": {
+        "repetitions": {"const": 3},
+        "seed": {"const": 42},
+        "maximum_final_displacement_difference_m": {"const": 0.02},
+        "maximum_final_yaw_difference_rad": {"const": 0.05},
+        "maximum_controlled_stop_distance_difference_m": {"const": 0.015},
+        "maximum_roll_pitch_rms_difference_rad": {"const": 0.03},
+        "minimum_median_real_time_factor": {"const": 0.8},
+        "planned_complete_suite_sim_s": {"type": "number", "exclusiveMinimum": 0},
+        "startup_artifact_allowance_s": {"const": 60.0}
       },
       "additionalProperties": false
     },

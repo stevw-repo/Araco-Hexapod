@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 from araco_interfaces.action import SafetyTransition
+from araco_interfaces.msg import ArbitrationStatus
 from araco_interfaces.msg import CommandCandidate
 from araco_interfaces.msg import JointStateProvenance
 from araco_interfaces.msg import LocomotionStatus
@@ -46,6 +47,17 @@ def test_command_interface_fields():
 
 
 def test_status_interface_fields():
+    assert ArbitrationStatus.get_fields_and_field_types() == {
+        'header': 'std_msgs/Header',
+        'selection_epoch': 'uint64',
+        'previous_source_id': 'uint32',
+        'selected_source_id': 'uint32',
+        'selected_activation_epoch': 'uint64',
+        'reason_code': 'uint16',
+        'deliberate_higher_priority_preemption': 'boolean',
+        'all_sources_released': 'boolean',
+        'quarantined_source_ids': 'sequence<uint32>',
+    }
     assert JointStateProvenance.get_fields_and_field_types() == {
         'header': 'std_msgs/Header',
         'provenance_epoch': 'uint64',
@@ -63,6 +75,10 @@ def test_status_interface_fields():
         'gait': 'uint8',
         'gait_phase': 'double',
         'gait_cycle': 'uint64',
+        'gait_cadence_hz': 'double',
+        'gait_maximum_stride_scale': 'double',
+        'gait_maximum_clearance_m': 'double',
+        'gait_applied_velocity_scale': 'double',
         'leg_kinematic_status': 'uint8[6]',
         'trajectory_valid': 'boolean',
         'reason_code': 'uint16',

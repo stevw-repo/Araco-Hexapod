@@ -1,0 +1,39 @@
+{
+  "schema_id": "araco://schemas/bringup/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.bringup.profile-gazebo-gate4",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_bringup",
+  "deployment_scope": "test_only",
+  "evidence": {"class": "test_contract", "sources": ["docs/agent/PHASED_DELIVERY_PLAN.md"]},
+  "dependencies": [],
+  "data": {
+    "kind": "profile",
+    "profile_id": "gazebo_gate4_v0",
+    "profile_version": "0.1.0",
+    "deployment_class": "simulator_only",
+    "selected_artifacts": [
+      {"package":"araco_description","path":"config/model/canonical_model_v1.yaml","artifact_id":"araco.description.canonical-model","artifact_version":"1.0.0"},
+      {"package":"araco_description","path":"config/limits/provisional_sim_v0.yaml","artifact_id":"araco.description.provisional-sim-limits","artifact_version":"0.1.0"},
+      {"package":"araco_description","path":"config/poses/nominal_standing_reference_v0.yaml","artifact_id":"araco.description.nominal-standing-reference","artifact_version":"0.1.0"},
+      {"package":"araco_description","path":"config/dynamics/rough_estimate_v0.yaml","artifact_id":"araco.description.rough-estimate","artifact_version":"0.1.0"},
+      {"package":"araco_description","path":"config/resources/robot_description_v1.yaml","artifact_id":"araco.description.robot-description-resources","artifact_version":"1.0.0"},
+      {"package":"araco_kinematics","path":"config/solver/ik_v0.yaml","artifact_id":"araco.kinematics.ik","artifact_version":"0.2.0"},
+      {"package":"araco_locomotion","path":"config/gait/tripod_slow_sim_v0.yaml","artifact_id":"araco.locomotion.gait-tripod-slow","artifact_version":"0.3.0"},
+      {"package":"araco_locomotion","path":"config/policy/operational_sim_v0.yaml","artifact_id":"araco.locomotion.operational-policy","artifact_version":"0.1.0"},
+      {"package":"araco_supervision","path":"config/sources/simulator_v0.yaml","artifact_id":"araco.supervision.source-registry","artifact_version":"0.1.0"},
+      {"package":"araco_supervision","path":"config/policy/simulator_v0.yaml","artifact_id":"araco.supervision.safety-policy","artifact_version":"0.2.0"},
+      {"package":"araco_supervision","path":"config/qos/control_v0.yaml","artifact_id":"araco.supervision.qos","artifact_version":"0.1.0"},
+      {"package":"araco_teleop","path":"config/mappings/keyboard_sim_v1.yaml","artifact_id":"araco.teleop.keyboard-mapping","artifact_version":"0.3.0"},
+      {"package":"araco_gazebo","path":"config/world/flat_ground_v0.yaml","artifact_id":"araco.gazebo.world-flat-ground","artifact_version":"0.1.0"},
+      {"package":"araco_gazebo","path":"config/backend/gz_ros2_control_v2.yaml","artifact_id":"araco.gazebo.backend-gz-ros2-control","artifact_version":"0.3.0"},
+      {"package":"araco_gazebo","path":"config/bridge/simulator_v0.yaml","artifact_id":"araco.gazebo.bridge","artifact_version":"0.1.0"},
+      {"package":"araco_bringup","path":"config/wiring/single_robot_v1.yaml","artifact_id":"araco.bringup.wiring","artifact_version":"0.2.0"},
+      {"package":"araco_bringup","path":"config/controllers/simulator_v0.yaml","artifact_id":"araco.bringup.controllers","artifact_version":"0.1.0"}
+    ],
+    "required_nodes": ["command_arbiter", "safety_supervisor", "locomotion"],
+    "input_selection": {"keyboard_adapter": false, "system_test_adapter": true},
+    "presentation": {"gui": false, "rviz": false, "developer_diagnostics": false, "machine_report": true},
+    "allowed_overrides": ["robot_namespace", "gui", "rviz", "log_level", "record_on_failure", "report_destination"]
+  }
+}

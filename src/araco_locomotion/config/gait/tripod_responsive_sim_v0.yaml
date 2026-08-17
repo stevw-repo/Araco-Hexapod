@@ -1,0 +1,55 @@
+{
+  "schema_id": "araco://schemas/locomotion/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.locomotion.gait-tripod-slow",
+  "artifact_version": "0.5.0",
+  "owner_package": "araco_locomotion",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
+      "user-selected Responsive simulator speed profile on 2026-08-17",
+      "user-requested true double stride on 2026-08-17"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.kinematics.ik",
+      "artifact_version": "0.2.0"
+    }
+  ],
+  "data": {
+    "kind": "gait",
+    "gait_id": "tripod_legacy_curve_responsive_scheduler",
+    "base_cadence_hz": 1.5,
+    "maximum_cadence_hz": 2.5,
+    "cadence_rate_hz_s": 2.0,
+    "preferred_maximum_stride_scale": 0.5,
+    "motion_deadband_m_s": 0.005,
+    "duty_factor": 0.5,
+    "maximum_stride_m": 0.12,
+    "swing_clearance_m": 0.03,
+    "trajectory_horizon_s": 0.04,
+    "phase_groups": [
+      [
+        "left_front",
+        "right_middle",
+        "left_rear"
+      ],
+      [
+        "right_front",
+        "left_middle",
+        "right_rear"
+      ]
+    ],
+    "shaping": {
+      "translation_acceleration_m_s2": 0.4,
+      "translation_stop_deceleration_m_s2": 0.6,
+      "yaw_acceleration_rad_s2": 2.4,
+      "yaw_stop_deceleration_rad_s2": 3.6,
+      "body_translation_rate_m_s": 0.03,
+      "body_angular_rate_rad_s": 0.3
+    }
+  }
+}

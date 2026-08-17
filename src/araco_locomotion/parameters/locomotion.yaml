@@ -47,11 +47,169 @@ locomotion:
     read_only: true
   nominal_positions_rad:
     type: double_array
-    description: Canonical ordered transitional Gate 1 hold reference.
+    description: Canonical ordered standing oracle; never copied directly to output.
     read_only: true
+  leg_geometry_m:
+    type: double_array
+    description: Coxa, femur, tibia, and terminal foot lengths from the canonical model.
+    read_only: true
+  leg_mount_positions_base_m:
+    type: double_array
+    description: Six ordered coxa-joint origins in base_link, flattened xyz.
+    read_only: true
+  leg_mount_yaw_rad:
+    type: double_array
+    description: Six ordered coxa-frame yaw rotations in base_link.
+    read_only: true
+  standing_foot_targets_base_m:
+    type: double_array
+    description: Six immutable standing foot-tip targets in base_link, flattened xyz.
+    read_only: true
+  standing_foot_pitch_rad:
+    type: double_array
+    description: Six ordered terminal foot pitches in each leg yaw frame.
+    read_only: true
+  joint_lower_rad:
+    type: double_array
+    description: Canonical ordered lower limits for the 24 leg joints.
+    read_only: true
+  joint_upper_rad:
+    type: double_array
+    description: Canonical ordered upper limits for the 24 leg joints.
+    read_only: true
+  joint_command_rate_cap_rad_s:
+    type: double_array
+    description: Ordered operational command-rate limits for all 24 leg joints.
+    read_only: true
+  body_translation_rate_m_s:
+    type: double
+    description: Maximum body-offset translation shaping rate.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  body_angular_rate_rad_s:
+    type: double
+    description: Maximum body-offset angular shaping rate.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  safe_command_timeout_s:
+    type: double
+    description: Steady timeout after the first accepted SafeCommand.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  standing_branch:
+    type: string
+    description: Explicit analytic IK branch selected by policy.
+    read_only: true
+  ik_position_tolerance_m:
+    type: double
+    description: Maximum FK verification error after IK.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  ik_singularity_threshold:
+    type: double
+    description: Absolute knee-sine threshold classified as singular.
+    read_only: true
+    validation:
+      gt_eq<>: [0.0]
+  ik_near_limit_margin_rad:
+    type: double
+    description: Joint distance from a limit classified near-limit.
+    read_only: true
+    validation:
+      gt_eq<>: [0.0]
+  standing_oracle_tolerance_rad:
+    type: double
+    description: Maximum difference between computed IK and accepted standing oracle.
+    read_only: true
+    validation:
+      gt<>: [0.0]
   trajectory_horizon_s:
     type: double
     description: Positive one-point trajectory horizon.
     read_only: true
     validation:
       gt<>: [0.0]
+  gait_base_cadence_hz:
+    type: double
+    description: Responsive tripod cadence retained at low and normal speed.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  gait_maximum_cadence_hz:
+    type: double
+    description: Maximum scheduler cadence used to bound high-speed stride.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  gait_cadence_rate_hz_s:
+    type: double
+    description: Maximum continuous cadence change per second.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  gait_preferred_maximum_stride_scale:
+    type: double
+    description: Largest preferred leg stride fraction before cadence increases.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+      lt_eq<>: [1.0]
+  gait_motion_deadband_m_s:
+    type: double
+    description: Maximum local foot speed treated as stand rather than gait motion.
+    read_only: true
+    validation:
+      gt_eq<>: [0.0]
+  gait_duty_factor:
+    type: double
+    description: Fraction of each leg cycle spent in stance.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+      lt<>: [1.0]
+  gait_maximum_stride_m:
+    type: double
+    description: Maximum planar stride magnitude at a foot.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  gait_swing_clearance_m:
+    type: double
+    description: Maximum swing-foot lift above the planned stance target.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  translation_acceleration_m_s2:
+    type: double
+    description: Normal planar command acceleration shaping limit.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  translation_stop_deceleration_m_s2:
+    type: double
+    description: Controlled-stop planar deceleration limit.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  yaw_acceleration_rad_s2:
+    type: double
+    description: Normal yaw command acceleration shaping limit.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  yaw_stop_deceleration_rad_s2:
+    type: double
+    description: Controlled-stop yaw deceleration limit.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  stable_hold_dwell_s:
+    type: double
+    description: Required settled six-foot dwell after gait stopping.
+    read_only: true
+    validation:
+      gt_eq<>: [0.0]

@@ -16,6 +16,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MotionIntent.msg"
   "msg/CommandCandidate.msg"
   "msg/SelectedCommand.msg"
+  "msg/ArbitrationStatus.msg"
   "msg/SafeCommand.msg"
   "msg/JointStateProvenance.msg"
   "msg/LocomotionStatus.msg"

@@ -1,0 +1,56 @@
+{
+  "schema_id": "araco://schemas/teleop/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.teleop.pxn-2113-pro-mapping",
+  "artifact_version": "0.9.0",
+  "owner_package": "araco_teleop",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "live ROS Joy axis and button calibration on 2026-08-16: physical main trigger/button 1 is ROS index 0; physical button 2 is ROS index 1; both are intentionally unused",
+      "legacy Araco receiver.py axis roles",
+      "user-approved 2026-08-16 no-deadman, direct-pitch, and dedicated-roll-button layout; physical buttons 3/4 use sequential ROS indices 2/3 pending an optional live spot-check",
+      "live Gazebo correction on 2026-08-16: preserve forward/reverse and reverse lateral, walking yaw, pitch, and posture yaw",
+      "live Gazebo correction on 2026-08-17: restore the previous body-height and dedicated roll polarities",
+      "user-selected Responsive simulator speed profile on 2026-08-17",
+      "user clarified that doubled stride is intended to double planar speed on 2026-08-17"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.supervision.source-registry",
+      "artifact_version": "0.1.0"
+    }
+  ],
+  "data": {
+    "kind": "teleop_mapping",
+    "adapter": "joystick",
+    "device_name": "LiteStar PXN-2113 Pro",
+    "usb_id": "11ff:0837",
+    "sdl_guid": "0300b14bff1100003708000010010000",
+    "joy_topic": "joy",
+    "axis_count": 6,
+    "button_count": 12,
+    "source_id": 10,
+    "publication_rate_hz": 50,
+    "heartbeat_timeout_s": 0.12,
+    "deadzone": 0.08,
+    "activation_policy": "auto_enable_once_from_fresh_neutral_standing_selection",
+    "roll_left_button": 2,
+    "roll_left_physical_label": "physical button 3",
+    "roll_right_button": 3,
+    "roll_right_physical_label": "physical button 4",
+    "roll_button_scale_rad": 0.15,
+    "release_publishes_inactive": true,
+    "axes": {
+      "forward": {"index": 1, "invert": false, "scale": 0.2},
+      "lateral": {"index": 0, "invert": false, "scale": 0.2},
+      "walking_yaw": {"index": 3, "invert": false, "scale": 1.2},
+      "body_height": {"index": 2, "positive_end_is_zero": true, "range_m": 0.03},
+      "body_pitch": {"index": 5, "invert": true, "scale": 0.15},
+      "posture_yaw": {"index": 4, "invert": false, "scale": 0.2}
+    },
+    "frame_id": "base_link"
+  }
+}

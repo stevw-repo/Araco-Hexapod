@@ -105,6 +105,13 @@ Semantics:
   does not mean motion is safe or authorized.
 - A teleoperation deadman maps to `active`; a navigation adapter sets it only
   while it owns an active navigation request.
+- The development keyboard frontend publishes its complete focused pressed-key
+  set at `50 Hz` using the internal `araco.keyboard-state.v1` protocol. The
+  adapter requires `space`, window focus, and a heartbeat no older than
+  `0.120 s`; malformed, stale, disconnected, or unfocused input is inactive.
+- With a fresh focused `space` deadman, zero direction is `active=true` plus
+  `GAIT_STAND`. This retains the accepted teleop source while the operator
+  changes direction keys. Releasing `space` remains an immediate source release.
 - `active=false` explicitly releases the source. Handover behavior after a
   release belongs to the arbitration/safety-state design, not this message.
 
@@ -133,6 +140,18 @@ Semantics:
   intent as though it were fresh.
 - Selection is still not authorization to move; it is the sole input command
   considered by the safety supervisor.
+
+### `ArbitrationStatus.msg` (Phase 6 addendum)
+
+Phase 6 adds a typed status alongside `SelectedCommand`; it does not alter the
+accepted command envelope or grant authority. It carries the selection epoch,
+previous/current source IDs, selected activation epoch, common reason code,
+whether a source change is a deliberate fresh higher-priority preemption, and
+the quarantined source IDs. Safety uses this status to distinguish release,
+staleness, invalid/restarted input, guarded higher-priority handover, and
+forbidden automatic lower-priority fallback without parsing logs or trusting a
+source-declared reason. The status and selected command must name the same
+selection epoch before a handover decision is accepted.
 
 ### `SafeCommand.msg`
 
@@ -335,6 +354,10 @@ uint8 mode
 uint8 gait
 float64 gait_phase
 uint64 gait_cycle
+float64 gait_cadence_hz
+float64 gait_maximum_stride_scale
+float64 gait_maximum_clearance_m
+float64 gait_applied_velocity_scale
 uint8[6] leg_kinematic_status
 bool trajectory_valid
 uint16 reason_code
@@ -346,13 +369,25 @@ Requirements:
 - `gait` reuses the accepted `MotionIntent` stand/tripod values.
 - `gait_phase` is in `[0, 1)` and is meaningful only while starting, walking,
   or stopping. `gait_cycle` increments once per completed gait cycle.
+- `gait_cadence_hz` is the applied phase-oscillator frequency. It is zero in
+  hold and positive while the scheduler is walking or completing a stop.
+- `gait_maximum_stride_scale` is the largest normalized per-leg stride in the
+  current update. `gait_maximum_clearance_m` must equal the configured maximum
+  clearance multiplied by that scale.
+- `gait_applied_velocity_scale` is the single uniform planar/yaw scale applied
+  when the stride limit cannot satisfy the shaped request at the current
+  cadence. It preserves the requested planar direction and translation/yaw
+  mixture; it is zero in hold and otherwise in `(0, 1]`.
 - The fixed leg order is left front, left middle, left rear, right front, right
   middle, right rear.
 - `trajectory_valid=true` means all 24 position targets passed local finite,
   reachability, and configured-limit validation. It does not mean the
   controller accepted them or the robot reached them.
-- Any unacceptable leg result prevents publication of a partial 24-joint
-  trajectory and moves locomotion according to the accepted safety/fault table.
+- Any unacceptable candidate leg result prevents publication of a partial
+  24-joint trajectory. A finite bounded operator request that merely reaches
+  the IK workspace boundary keeps the last complete valid trajectory and
+  reports `REASON_COMMAND_LIMITED`; loss of the last valid commit or a
+  non-finite/internal calculation still follows the safety fault table.
 - Exact `reason_code` values are frozen with the safety and fault contract.
 
 For visualization and regression debugging, locomotion may also publish a
