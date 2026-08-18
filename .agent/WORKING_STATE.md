@@ -3,7 +3,7 @@
 Updated: 2026-08-18
 Machine: `stevw-s14-Stealth-14Studio-A13VF` (Ubuntu 24.04.4 LTS)
 Location: these continuity files moved from `docs/agent/` to `.agent/` on
-2026-08-18. The move is staged and not committed.
+2026-08-18, committed as `6b23132`.
 
 ## Current goal and result
 
@@ -102,10 +102,45 @@ triggered `SOURCE_STALE` are also invalid and are not acceptance evidence.
   the deleted `/tmp` evidence.
 - `gz sdf -k src/araco_gazebo/worlds/rgbd_validation_v0.sdf`: valid.
 - Focused navigation, profile-composition, and scorer tests pass.
-- `colcon test` for `araco_navigation`, `araco_gazebo`, `araco_bringup`, and
-  `araco_system_tests`: `386 tests, 0 errors, 0 failures, 23 skipped`.
+- The earlier `386 tests, 0 errors, 0 failures, 23 skipped` result covered only
+  `araco_navigation`, `araco_gazebo`, `araco_bringup`, and `araco_system_tests`.
+  It never exercised `araco_description` or `araco_perception`.
+- 2026-08-18 full-workspace run at commit `3bd9dc9`: `colcon build` succeeded;
+  `colcon test` reported `424 tests, 0 errors, 4 failures, 26 skipped`. The
+  four reported failures are two distinct tests, each counted twice across
+  `Test.xml` and the xunit report. Both are described below.
 - All Gazebo, RViz, bridge, RTAB-Map, and control sessions were closed after
   live diagnostics.
+
+## Two open test failures
+
+Both must be resolved before any gate run. Neither has been fixed.
+
+1. `araco_description` —
+   `test_gate0_description.py::test_resources_are_redistributable_hashed_and_reproducible`.
+   **Caused by the 2026-08-18 evidence-source repoint.**
+   `meshes/presentation_exact/normalization_manifest.json` is a generated file
+   that embeds the SHA-256 of `config/model/canonical_model_v1.yaml`. The
+   repoint changed that artifact's bytes, so the recorded hash is stale:
+   manifest records `2286773314ded079dcffc21ab6cdd8e53650094c05783bf8f34d56549cc57124`,
+   current file hashes to
+   `71dba5050f1f402bcdd4ccee66480daacf9d38430287937ce17b01f88362efb8`.
+   Fix: regenerate the manifest by rerunning
+   `meshes/source/normalize_fusion_exact_visuals.py` with the arguments the
+   test uses, then confirm only the manifest changed. This coupling was not
+   anticipated when the repoint was accepted.
+
+2. `araco_perception` —
+   `test_sensor_contract.py::test_rtabmap_rviz_layout_covers_2d_and_colored_3d_maps`.
+   **Pre-existing test defect, unrelated to any change in this session.**
+   The test asserts `display['Topic'] == '/araco/perception/cloud_map'`, but in
+   the RViz layout `Topic` is a QoS dictionary whose `Value` key holds the
+   topic, exactly as the Map assertion above it already handles. The layout
+   file is correct: it does contain a `PointCloud2` display on
+   `/araco/perception/cloud_map` with `Color Transformer: RGB8`.
+   Fix: compare `display['Topic']['Value']` in the test. Do not change the
+   RViz layout. The test was added with `araco_perception` and appears never to
+   have been run, because the focused four-package suite excluded it.
 
 ## Remaining risks
 
@@ -132,12 +167,19 @@ required rerun is missing, so route 09 evidence taken now would be void.
 
 Required order:
 
-1. Rebuild and run the full suite:
-   `colcon build --symlink-install && colcon test && colcon test-result --verbose`.
-2. Run Gates 0 through 6 into `log/`, not `/tmp`. Evidence written to `/tmp`
+1. Done on 2026-08-18 at commit `3bd9dc9`. Build succeeded; the full suite
+   reported two distinct failures, recorded above. Gates were deliberately not
+   started, on the user's instruction to stop and hand off.
+2. Fix the two open test failures above, then rerun the full suite until it is
+   clean. The `araco_description` manifest regeneration must be reviewed: it
+   rewrites a generated artifact, so confirm the diff contains only the
+   expected hash change.
+3. Run Gates 0 through 6 into `log/`, not `/tmp`. Evidence written to `/tmp`
    has already been lost once to a reboot. `log/` is git-ignored but durable.
-3. Record the resulting fingerprints and evidence paths here.
-4. Only then run route 09.
+   Gate 6 needs explicit `--build-base build --install-base install` and takes
+   roughly 20 minutes. Each destination must not already exist.
+4. Record the resulting fingerprints and evidence paths here.
+5. Only then run route 09.
 
 Route 09 procedure, once the gates above pass:
 
