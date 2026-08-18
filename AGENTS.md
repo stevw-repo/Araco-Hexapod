@@ -14,9 +14,9 @@ For every non-trivial task:
 
 If no suitable convention exists, use:
 
-- `docs/agent/CONTEXT.md` — stable project facts, goals, terminology, architecture, constraints, important paths, and verified commands.
-- `docs/agent/DECISIONS.md` — significant decisions, dates, rationale, alternatives, and superseded decisions.
-- `docs/agent/WORKING_STATE.md` — the current goal, progress, blockers, changed files, validation performed, open questions, and exact next steps.
+- `.agent/CONTEXT.md` — stable project facts, goals, terminology, architecture, constraints, important paths, and verified commands.
+- `.agent/DECISIONS.md` — significant decisions, dates, rationale, alternatives, and superseded decisions.
+- `.agent/WORKING_STATE.md` — the current goal, progress, blockers, changed files, validation performed, open questions, and exact next steps.
 
 For projectless work, create the same structure inside the current writable workspace.
 

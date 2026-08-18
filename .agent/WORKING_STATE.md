@@ -1,6 +1,9 @@
 # Araco Hexapod — Working State
 
 Updated: 2026-08-18
+Machine: `stevw-s14-Stealth-14Studio-A13VF` (Ubuntu 24.04.4 LTS)
+Location: these continuity files moved from `docs/agent/` to `.agent/` on
+2026-08-18. The move is staged and not committed.
 
 ## Current goal and result
 

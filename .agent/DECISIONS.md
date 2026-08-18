@@ -152,7 +152,7 @@ autonomy, or Isaac complexity to the first simulator milestone.
 Consequences:
 
 - Package responsibility and dependency rules in
-  `docs/agent/REPOSITORY_ARCHITECTURE.md` are now accepted architecture.
+  `.agent/REPOSITORY_ARCHITECTURE.md` are now accepted architecture.
 - ROS interface fields, topic/service/action names, QoS, controller types,
   rates, lifecycle transitions, and fault behavior remain open.
 - This approval does not authorize package scaffolding or implementation.
@@ -186,7 +186,7 @@ from granting themselves continued motion authority.
 
 Consequences:
 
-- Exact fields and semantics in `docs/agent/INTERFACE_CONTRACTS.md` are accepted
+- Exact fields and semantics in `.agent/INTERFACE_CONTRACTS.md` are accepted
   architecture.
 - Feedback, diagnostics, and controller output were resolved by the following
   decision. Safety-state meanings, disposition reason codes, rates, concrete
@@ -237,7 +237,7 @@ accepted 24+1 control boundary.
 Consequences:
 
 - Exact accepted fields, validation rules, controller parameters, and command
-  semantics are maintained in `docs/agent/INTERFACE_CONTRACTS.md`.
+  semantics are maintained in `.agent/INTERFACE_CONTRACTS.md`.
 - Safety states and reason codes are resolved by the following decision. Rates,
   horizons, timeout values, QoS, topic names, provisional simulation limits,
   and physical startup behavior remain open.
@@ -285,7 +285,7 @@ physical hardware cannot provide.
 Consequences:
 
 - The complete accepted contract is maintained in
-  `docs/agent/SAFETY_ARCHITECTURE.md`.
+  `.agent/SAFETY_ARCHITECTURE.md`.
 - Exact rates, timeouts, priorities, stop profiles, hold dwell, simulator
   limits, QoS, and topic names were later accepted in the runtime/timing
   decision. Physical safety and lifecycle behavior remain later design gates.
@@ -335,7 +335,7 @@ objective before implementation begins.
 Consequences:
 
 - The complete accepted contract is maintained in
-  `docs/agent/CONFIGURATION_AND_VALIDATION_ARCHITECTURE.md`.
+  `.agent/CONFIGURATION_AND_VALIDATION_ARCHITECTURE.md`.
 - Exact parameter schemas, values, rates, timeouts, QoS, topic names, test
   tolerances, physical calibration procedures, and implementation mechanisms
   remain later decisions.
@@ -448,7 +448,7 @@ Decision:
 - Use the concrete project topics, source registry, QoS profiles, dual-clock
   rules, rates, horizons, watchdogs, motion envelopes, provisional simulator
   joint/dynamics values, and Gate 0–6 thresholds in
-  `docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md`.
+  `.agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md`.
 - Use `1000 Hz` Gazebo physics, a synchronous `250 Hz` controller manager,
   `100 Hz` arbitration/safety/locomotion, `50 Hz` teleop, and a `0.040 s`
   one-point trajectory horizon for the initial simulator baseline.
@@ -528,7 +528,7 @@ Consequences:
 
 - Exact artifact paths, profile roles, runtime-bundle contents, validation
   layers, and fingerprint semantics are frozen in
-  `docs/agent/PARAMETER_AND_CONFIGURATION_COMPOSITION.md`.
+  `.agent/PARAMETER_AND_CONFIGURATION_COMPOSITION.md`.
 - A motion-affecting change requires controlled hold, lifecycle deactivation,
   process replacement with a newly composed bundle, readiness revalidation,
   and a fresh enable/source edge.
@@ -565,7 +565,7 @@ Consequences:
 
 - Package maturation, phase deliverables, gate exit boundaries, evidence,
   regression invalidation, failure classification, and handoff rules are frozen
-  in `docs/agent/PHASED_DELIVERY_PLAN.md`.
+  in `.agent/PHASED_DELIVERY_PLAN.md`.
 - An affected change invalidates its earliest gate and all later evidence.
 - Acceptance completes the planned simulator architecture sequence but does not
   authorize Phase 0, `src/`, package scaffolding, implementation, commits,
@@ -580,7 +580,7 @@ package manifest.
 Decision:
 
 - The final cross-contract review passes after the reconciliations recorded in
-  `docs/agent/FINAL_ARCHITECTURE_REVIEW.md`.
+  `.agent/FINAL_ARCHITECTURE_REVIEW.md`.
 - License project-authored code, configuration, documentation, tests, and
   original assets under the Apache License 2.0 using SPDX identifier
   `Apache-2.0`.
@@ -689,8 +689,8 @@ Status: authorized explicitly by the user on 2026-08-16.
 Decision:
 
 - Begin only the Phase 0 scope frozen in
-  `docs/agent/FINAL_ARCHITECTURE_REVIEW.md` and
-  `docs/agent/PHASED_DELIVERY_PLAN.md`.
+  `.agent/FINAL_ARCHITECTURE_REVIEW.md` and
+  `.agent/PHASED_DELIVERY_PLAN.md`.
 - Create the nine package skeletons, accepted seven messages and one action,
   package metadata/build/install/test structure, package-local license copies,
   root workspace hygiene and build README, and the required Phase 0 licensing
@@ -779,7 +779,7 @@ Status: authorized explicitly by the user on 2026-08-16.
 Decision:
 
 - Implement only Phase 1 / Gate 0 model-and-configuration integrity as frozen
-  in `docs/agent/PHASED_DELIVERY_PLAN.md`.
+  in `.agent/PHASED_DELIVERY_PLAN.md`.
 - Create the package-owned strict artifacts and schemas, canonical description,
   reproducible generated integration forms, deterministic preflight/runtime
   bundle, and all blocking static/negative/installed-space validation.
@@ -834,7 +834,7 @@ Decision:
 
 - Implement only Phase 2 / Gate 1 spawn, controller ownership, readiness
   sequencing, and stable nominal hold as frozen in
-  `docs/agent/PHASED_DELIVERY_PLAN.md`.
+  `.agent/PHASED_DELIVERY_PLAN.md`.
 - Use the Gate 0 canonical model and generated configuration as the source for
   the Gazebo backend overlay, controller partitions, nominal 24-leg-joint hold,
   and zero gimbal target.
@@ -2055,7 +2055,7 @@ Decision:
   tested Gazebo control baseline.
 - Treat legacy behavior and capability parity as an explicit unfinished work
   stream. Preserve the detailed comparison in
-  `docs/agent/LEGACY_PARITY_AUDIT.md`.
+  `.agent/LEGACY_PARITY_AUDIT.md`.
 - Record a confirmed cross-layer defect: independent `0.20 m/s` joystick axes
   produce a `0.2828427 m/s` diagonal above the `0.24 m/s` hard radial envelope;
   invalid-source quarantine then cannot clear because the no-deadman adapter
@@ -2140,7 +2140,7 @@ Validation:
   `/tmp/araco_legacy_port_joystick_live_20260817_03` produced a selected
   `0.3141592653589793 rad` gimbal request and
   `0.31415926535897787 rad` Gazebo feedback with safety state 4 and no fault.
-- `docs/agent/LEGACY_PARITY_AUDIT.md` supersedes its earlier defect report and
+- `.agent/LEGACY_PARITY_AUDIT.md` supersedes its earlier defect report and
   records the remaining parity boundary.
 
 ## 2026-08-17 — Reclassify axis-4 smoothing parity as unfinished
@@ -2556,3 +2556,41 @@ Tradeoff:
   physical architecture. It is the more accurate and auditable simulator
   baseline under current evidence. Inertial fusion may return only after its
   timestamp path and gimbal policy pass the same controlled trials.
+
+## 2026-08-18 — Move agent continuity files from `docs/agent/` to `.agent/`
+
+Status: implemented and staged; not committed.
+
+Decision:
+
+- Agent continuity files move from `docs/agent/` to `.agent/`. This supersedes
+  the previous `docs/agent/` location convention recorded in `AGENTS.md`.
+- Rationale: keeps working state out of documentation builds and out of
+  human-facing documentation.
+- All 14 files moved with `git mv`, preserving file history as exact renames.
+- `docs/` retains `SIMULATOR_DEVELOPER_RUNBOOK.md`, which is operator-facing
+  documentation and not agent continuity state.
+
+Scope boundary:
+
+- Only prose references were repointed: `README.md`, `AGENTS.md`,
+  `.agent/CONTEXT.md`, and `.agent/DECISIONS.md` (29 references).
+- 48 configuration artifacts under `src/` still carry `docs/agent/...` strings
+  in their `evidence.sources` fields. These are deliberately unchanged.
+  `load_artifact` hashes the whole document, and `_behavior_fingerprint` folds
+  that hash over every artifact whose `deployment_scope` is not `test_only`.
+  Rewriting those strings would change the recorded operational fingerprint
+  `d7d55a9774692baf62ae4f57c1272f782f0b26e59fc612b97c16c5eeb668b03c` and the
+  Gate 6 baseline fingerprints without any behavioral change.
+- Those references are therefore stale until a separate change repoints them
+  with artifact version bumps, a rebuild, and fresh fingerprint evidence.
+
+Tradeoff:
+
+- The stated rationale is only half-applicable today: this repository has no
+  documentation build (no MkDocs, Sphinx, Docusaurus, or CI workflow), so
+  nothing was excluded from publication. The move stands on keeping continuity
+  state out of human-facing `docs/`.
+- Moving the architecture references into a hidden directory reduces their
+  discoverability for a repository intended as a public showcase. `README.md`
+  still points readers to `.agent/`.

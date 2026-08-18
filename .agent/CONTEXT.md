@@ -96,7 +96,7 @@ under `tools/fusion/`; the runtime snapshot is owned by `araco_description`.
 ## Legacy software inventory
 
 The feature-level comparison against the current simulator is maintained in
-`docs/agent/LEGACY_PARITY_AUDIT.md`. The current repository is a simulator
+`.agent/LEGACY_PARITY_AUDIT.md`. The current repository is a simulator
 baseline, not a feature-complete legacy replacement. Gate compliance must not
 be used as evidence of Responsive joystick usability or legacy parity.
 
@@ -222,7 +222,7 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 - `araco_hardware`, `araco_perception`, `araco_navigation`, and `araco_isaac`
   are phased packages added only when their prerequisite milestone begins.
 - The complete accepted responsibility and dependency map is maintained in
-  `docs/agent/REPOSITORY_ARCHITECTURE.md`.
+  `.agent/REPOSITORY_ARCHITECTURE.md`.
 - The accepted command path uses four stage-specific interfaces:
   `MotionIntent`, `CommandCandidate`, `SelectedCommand`, and `SafeCommand`.
 - Candidate sources use separate configured inputs. Source identity, priority,
@@ -233,7 +233,7 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   body-pose offset, and stand/tripod intent. Sources cannot directly command
   joints, the gimbal, controller topics, or safety state.
 - Full field and semantic definitions are maintained in
-  `docs/agent/INTERFACE_CONTRACTS.md`.
+  `.agent/INTERFACE_CONTRACTS.md`.
 - `/joint_states` remains the standard 25-joint state interface. The accepted
   `JointStateProvenance` contract identifies each position/velocity/effort
   channel as unavailable, simulated physics, hardware sensed, command derived,
@@ -267,7 +267,7 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   physical servo power-off is not assumed safe.
 - The accepted safety states, action/status contracts, readiness/fault masks,
   reason codes, handover semantics, and lifecycle ordering are maintained in
-  `docs/agent/SAFETY_ARCHITECTURE.md`.
+  `.agent/SAFETY_ARCHITECTURE.md`.
 - Configuration ownership, evidence classes, motion-affecting immutability,
   named profile composition, and fail-closed validation are accepted. Bringup
   composes values from their owning packages rather than redefining them.
@@ -278,7 +278,7 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   through a reproducible headless control/safety baseline. A pass proves
   functional simulator behavior, not physical safety or sim-to-real fidelity.
 - The complete configuration and validation contract is maintained in
-  `docs/agent/CONFIGURATION_AND_VALIDATION_ARCHITECTURE.md`.
+  `.agent/CONFIGURATION_AND_VALIDATION_ARCHITECTURE.md`.
 - The accepted simulator runtime baseline uses `1000 Hz` physics, a `250 Hz`
   controller manager, a `125 Hz` joint-state broadcaster, `100 Hz`
   arbitration/safety/locomotion loops, and `50 Hz` teleop publication. It uses
@@ -324,13 +324,13 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   physics settings, and quantitative Gate 0–6 thresholds are simulator-only and
   forbidden as physical calibration or safety evidence.
 - The complete accepted numerical contract is maintained in
-  `docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md`.
+  `.agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md`.
 
 ## Accepted configuration composition
 
 - A complete parameter, artifact, profile, override, deterministic-preflight,
   runtime-bundle, and fingerprint contract is accepted in
-  `docs/agent/PARAMETER_AND_CONFIGURATION_COMPOSITION.md`.
+  `.agent/PARAMETER_AND_CONFIGURATION_COMPOSITION.md`.
 - The contract keeps human-reviewed source artifacts in their owning packages,
   uses generated typed ROS parameters for project nodes, and has bringup emit a
   validated immutable runtime bundle for each run.
@@ -346,7 +346,7 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 
 ## Accepted phased simulator delivery
 
-- `docs/agent/PHASED_DELIVERY_PLAN.md` defines one repository-foundation phase
+- `.agent/PHASED_DELIVERY_PLAN.md` defines one repository-foundation phase
   followed by one blocking implementation phase for each accepted Gate 0–6.
 - Gate 1 establishes the real simulator/controller/lifecycle hold path from the
   single nominal standing reference. Gate 2 then replaces transitional
@@ -368,7 +368,7 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 ## Completed architecture closeout and license selection
 
 - The final cross-contract review is complete in
-  `docs/agent/FINAL_ARCHITECTURE_REVIEW.md`. The user subsequently authorized
+  `.agent/FINAL_ARCHITECTURE_REVIEW.md`. The user subsequently authorized
   Phase 0, and its repository foundation is complete.
 - Project-authored code, configuration, documentation, tests, and original
   assets use the MIT License (`MIT`) as of 2026-08-16. This supersedes the
@@ -380,7 +380,7 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   comments.
 - The completed Phase 0 audit records linked/bundled dependency, attribution,
   and source-distribution boundaries in
-  `docs/agent/PHASE_0_LICENSE_AUDIT.md`.
+  `.agent/PHASE_0_LICENSE_AUDIT.md`.
 - Project-authored generated meshes should retain publishable preferred
   editable source and generation tooling. The existing Fusion add-in's
   Autodesk API boundary and the future Isaac adapter's proprietary SDK boundary

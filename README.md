@@ -20,7 +20,7 @@ hardware control is not implemented or authorized. The accepted no-retry
 simulator baseline is retained at `/tmp/araco_gate6_final_20260816_06`.
 
 The accepted architecture, interface contracts, safety model, configuration
-rules, and phased delivery plan are maintained under `docs/agent/`.
+rules, and phased delivery plan are maintained under `.agent/`.
 Verified simulator operation and troubleshooting commands are in
 [`docs/SIMULATOR_DEVELOPER_RUNBOOK.md`](docs/SIMULATOR_DEVELOPER_RUNBOOK.md).
 
