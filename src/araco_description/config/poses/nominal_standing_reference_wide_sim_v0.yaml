@@ -5,7 +5,7 @@
   "artifact_version": "0.3.0",
   "owner_package": "araco_description",
   "deployment_scope": "simulator_only",
-  "evidence": {"class": "simulator_estimate", "sources": ["docs/agent/ROBOT_DESCRIPTION_MANIFEST.md#nominal-standing-pose-evidence"]},
+  "evidence": {"class": "simulator_estimate", "sources": [".agent/ROBOT_DESCRIPTION_MANIFEST.md#nominal-standing-pose-evidence"]},
   "dependencies": [
     {"artifact_id": "araco.description.canonical-model", "artifact_version": "1.0.0"},
     {"artifact_id": "araco.description.provisional-sim-limits", "artifact_version": "0.3.0"}

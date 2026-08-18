@@ -8,8 +8,8 @@
   "evidence": {
     "class": "simulator_estimate",
     "sources": [
-      "docs/agent/CONTEXT.md",
-      "docs/agent/DECISIONS.md"
+      ".agent/CONTEXT.md",
+      ".agent/DECISIONS.md"
     ]
   },
   "dependencies": [

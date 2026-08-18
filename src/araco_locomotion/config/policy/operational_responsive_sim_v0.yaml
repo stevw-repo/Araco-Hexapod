@@ -8,7 +8,7 @@
   "evidence": {
     "class": "operational_policy",
     "sources": [
-      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
+      ".agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
       "user-selected Responsive simulator speed profile on 2026-08-17",
       "offline exact-geometry IK sweep and boundary-lock diagnosis on 2026-08-17",
       "user-approved wide simulator joint envelope based on 270-degree servo travel on 2026-08-17",

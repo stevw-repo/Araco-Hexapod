@@ -7,7 +7,7 @@
   "deployment_scope": "test_only",
   "evidence": {
     "class": "test_contract",
-    "sources": ["docs/agent/PHASED_DELIVERY_PLAN.md"]
+    "sources": [".agent/PHASED_DELIVERY_PLAN.md"]
   },
   "dependencies": [],
   "data": {

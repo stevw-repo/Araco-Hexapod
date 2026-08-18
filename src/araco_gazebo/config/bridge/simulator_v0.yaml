@@ -8,7 +8,7 @@
   "evidence": {
     "class": "operational_policy",
     "sources": [
-      "docs/agent/INTERFACE_CONTRACTS.md"
+      ".agent/INTERFACE_CONTRACTS.md"
     ]
   },
   "dependencies": [],

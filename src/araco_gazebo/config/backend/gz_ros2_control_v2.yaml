@@ -8,7 +8,7 @@
   "evidence": {
     "class": "simulator_estimate",
     "sources": [
-      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+      ".agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
     ]
   },
   "dependencies": [

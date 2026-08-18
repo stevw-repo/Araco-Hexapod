@@ -8,7 +8,7 @@
   "evidence": {
     "class": "test_contract",
     "sources": [
-      "docs/agent/PHASED_DELIVERY_PLAN.md"
+      ".agent/PHASED_DELIVERY_PLAN.md"
     ]
   },
   "dependencies": [

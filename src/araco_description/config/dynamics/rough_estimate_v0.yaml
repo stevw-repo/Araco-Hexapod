@@ -5,7 +5,7 @@
   "artifact_version": "0.1.0",
   "owner_package": "araco_description",
   "deployment_scope": "simulator_only",
-  "evidence": {"class": "simulator_estimate", "sources": ["tools/fusion/araco_rough_dynamics_v0.json", "docs/agent/ROBOT_DESCRIPTION_MANIFEST.md#rough_estimate_v0-simulation-dynamics"]},
+  "evidence": {"class": "simulator_estimate", "sources": ["tools/fusion/araco_rough_dynamics_v0.json", ".agent/ROBOT_DESCRIPTION_MANIFEST.md#rough_estimate_v0-simulation-dynamics"]},
   "dependencies": [{"artifact_id": "araco.description.canonical-model", "artifact_version": "1.0.0"}],
   "generated_from": {
     "source_artifact_sha256": "70735f9c22e2fe74b247b6a7a990a6846b45205409a9b75e5f9783a18cb10763",

@@ -9,7 +9,7 @@
     "class": "operational_policy",
     "sources": [
       "RTAB-Map ROS 2 0.22.1 installed launch contract",
-      "docs/agent/DECISIONS.md"
+      ".agent/DECISIONS.md"
     ]
   },
   "dependencies": [

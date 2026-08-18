@@ -3,7 +3,7 @@
   "artifact_id":"araco.bringup.profile-gazebo-perception-diagnostic-dynamic-imu",
   "artifact_version":"0.1.0","owner_package":"araco_bringup",
   "deployment_scope":"test_only",
-  "evidence":{"class":"test_contract","sources":["docs/agent/WORKING_STATE.md"]},
+  "evidence":{"class":"test_contract","sources":[".agent/WORKING_STATE.md"]},
   "dependencies":[],
   "data": {
     "kind":"profile","profile_id":"gazebo_perception_diagnostic_dynamic_imu_v0",

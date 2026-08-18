@@ -8,7 +8,7 @@
   "evidence": {
     "class": "simulator_estimate",
     "sources": [
-      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
+      ".agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
       "joystick-only wide simulator joint envelope approved on 2026-08-17",
       "Responsive hard-envelope joint-rate validation on 2026-08-17"
     ]

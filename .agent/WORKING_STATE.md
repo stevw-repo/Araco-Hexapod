@@ -93,7 +93,13 @@ triggered `SOURCE_STALE` are also invalid and are not acceptance evidence.
 
 - All operational and diagnostic profiles composed successfully from installed
   artifacts. Operational behavior fingerprint:
-  `d7d55a9774692baf62ae4f57c1272f782f0b26e59fc612b97c16c5eeb668b03c`.
+  `32dd967509420327c135167abefa9b2dfc2f5ef0754c5727d2f37db12f7a7aa2`.
+  This replaces
+  `d7d55a9774692baf62ae4f57c1272f782f0b26e59fc612b97c16c5eeb668b03c`, which was
+  reproduced exactly from the unmodified tree immediately before the
+  2026-08-18 evidence-source repoint and remains the correct value for commit
+  `f1e41af`. Fingerprints are recomputable from source and were not lost with
+  the deleted `/tmp` evidence.
 - `gz sdf -k src/araco_gazebo/worlds/rgbd_validation_v0.sdf`: valid.
 - Focused navigation, profile-composition, and scorer tests pass.
 - `colcon test` for `araco_navigation`, `araco_gazebo`, `araco_bringup`, and
@@ -117,7 +123,23 @@ triggered `SOURCE_STALE` are also invalid and are not acceptance evidence.
 
 ## Exact next step
 
-Run one fresh route 09 using operational visual-only estimation:
+Route 09 is blocked. Commit `f1e41af` changed interface fields, model limits
+and poses, profiles, the composer, gait and controlled stop, and the
+arbitration/safety path. Under the regression rules in
+`PHASED_DELIVERY_PLAN.md` this mandates a rerun of Gate 0 through Gate 5, plus
+Gate 6 because it was already reached. A later pass is invalid if an earlier
+required rerun is missing, so route 09 evidence taken now would be void.
+
+Required order:
+
+1. Rebuild and run the full suite:
+   `colcon build --symlink-install && colcon test && colcon test-result --verbose`.
+2. Run Gates 0 through 6 into `log/`, not `/tmp`. Evidence written to `/tmp`
+   has already been lost once to a reboot. `log/` is git-ignored but durable.
+3. Record the resulting fingerprints and evidence paths here.
+4. Only then run route 09.
+
+Route 09 procedure, once the gates above pass:
 
 ```bash
 source /opt/ros/jazzy/setup.bash

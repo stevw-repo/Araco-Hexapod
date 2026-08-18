@@ -8,8 +8,8 @@
   "evidence": {
     "class": "operational_policy",
     "sources": [
-      "docs/agent/REPOSITORY_ARCHITECTURE.md",
-      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+      ".agent/REPOSITORY_ARCHITECTURE.md",
+      ".agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
     ]
   },
   "dependencies": [],

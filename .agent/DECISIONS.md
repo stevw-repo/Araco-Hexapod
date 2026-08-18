@@ -2571,7 +2571,8 @@ Decision:
 - `docs/` retains `SIMULATOR_DEVELOPER_RUNBOOK.md`, which is operator-facing
   documentation and not agent continuity state.
 
-Scope boundary:
+Scope boundary (the configuration-artifact deferral below is superseded by the
+2026-08-18 evidence-source repoint entry):
 
 - Only prose references were repointed: `README.md`, `AGENTS.md`,
   `.agent/CONTEXT.md`, and `.agent/DECISIONS.md` (29 references).
@@ -2594,3 +2595,54 @@ Tradeoff:
 - Moving the architecture references into a hidden directory reduces their
   discoverability for a repository intended as a public showcase. `README.md`
   still points readers to `.agent/`.
+
+## 2026-08-18 — Repoint configuration evidence sources without version bumps
+
+Status: implemented and verified by composition; staged, not committed.
+Supersedes the configuration-artifact deferral in the preceding entry.
+
+Decision:
+
+- Repoint `evidence.sources` in 48 configuration artifacts from `docs/agent/...`
+  to `.agent/...` (57 strings). No other field changes.
+- Do not bump `artifact_version` for these artifacts. This knowingly relaxes
+  the rule in `PARAMETER_AND_CONFIGURATION_COMPOSITION.md` that any changed
+  value requires a version change, for provenance-only edits that carry no
+  behavioral or numeric change.
+
+Evidence and rationale:
+
+- A version bump is not free here. `composer.py` keys accepted source-authority
+  and safety contracts to exact artifact version strings at lines 684, 689,
+  705, and 719, and three tests assert exact artifact versions
+  (`test_slam_scoring.py`, `test_rtabmap_contract.py`, `test_gate0_bundle.py`).
+  A trial bump of all 48 artifacts made every profile fail composition with
+  `source authority differs from the accepted contract`.
+- Completing the bump would therefore place a documentation-path change inside
+  the composer's accepted-contract tables. That is a poor trade for an edit
+  with no behavioral effect, so the bump was reverted.
+- Artifact identifiers are not unique across files: nine identifiers exist in
+  multiple versioned variants, and `araco.bringup.wiring` has two files at
+  `0.3.0`. Any future bump must therefore update `selected_artifacts` and
+  `dependencies` pins keyed on the exact identifier and version pair.
+
+Fingerprint effect:
+
+- The operational behavior fingerprint moves from
+  `d7d55a9774692baf62ae4f57c1272f782f0b26e59fc612b97c16c5eeb668b03c` to
+  `32dd967509420327c135167abefa9b2dfc2f5ef0754c5727d2f37db12f7a7aa2`.
+- The prior value was reproduced exactly from the unmodified tree before the
+  edit, which confirms the recorded fingerprint was accurate and that
+  fingerprints are recomputable from source at any time. They were never lost
+  with the deleted `/tmp` evidence; only gate run logs were.
+- `gazebo_dev_v0`, `gazebo_ci_v0`, `gazebo_joystick_v0`, `gazebo_perception_v0`,
+  `gazebo_gate3_v0`, `gazebo_gate4_v0`, and `gazebo_gate5_v0` all compose
+  successfully after the change, so development and CI equivalence still holds.
+
+Known defect, not fixed:
+
+- `load_artifact` hashes the whole document, so the provenance `evidence` block
+  sits inside behavior identity and a documentation edit shifts a behavioral
+  fingerprint. Excluding `evidence` from the artifact hash would fix this
+  permanently. It was considered and deliberately not taken in this change
+  because it modifies the composer.

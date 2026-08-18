@@ -8,8 +8,8 @@
   "evidence": {
     "class": "operational_policy",
     "sources": [
-      "docs/agent/DECISIONS.md",
-      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+      ".agent/DECISIONS.md",
+      ".agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
     ]
   },
   "dependencies": [],

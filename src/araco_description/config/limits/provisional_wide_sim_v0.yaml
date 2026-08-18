@@ -9,7 +9,7 @@
     "class": "simulator_estimate",
     "sources": [
       "user-confirmed 270-degree servo travel and low mechanical collision concern on 2026-08-17",
-      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md#provisional-simulator-joint-limits",
+      ".agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md#provisional-simulator-joint-limits",
       "100 Hz exact-geometry Responsive hard-envelope joint-rate sweep with the 50 Hz legacy-equivalent joystick response on 2026-08-17"
     ]
   },

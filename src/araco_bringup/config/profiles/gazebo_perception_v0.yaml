@@ -8,8 +8,8 @@
   "evidence": {
     "class": "operational_policy",
     "sources": [
-      "docs/agent/DECISIONS.md",
-      "docs/agent/WORKING_STATE.md"
+      ".agent/DECISIONS.md",
+      ".agent/WORKING_STATE.md"
     ]
   },
   "dependencies": [],

@@ -7,7 +7,7 @@
   "deployment_scope": "test_only",
   "evidence": {
     "class": "test_contract",
-    "sources": ["docs/agent/WORKING_STATE.md"]
+    "sources": [".agent/WORKING_STATE.md"]
   },
   "dependencies": [
     {

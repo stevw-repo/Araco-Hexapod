@@ -5,7 +5,7 @@
   "artifact_version": "0.3.0",
   "owner_package": "araco_bringup",
   "deployment_scope": "test_only",
-  "evidence": {"class": "test_contract", "sources": ["docs/agent/PHASED_DELIVERY_PLAN.md"]},
+  "evidence": {"class": "test_contract", "sources": [".agent/PHASED_DELIVERY_PLAN.md"]},
   "dependencies": [],
   "data": {
     "kind": "profile",

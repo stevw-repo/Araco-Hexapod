@@ -8,7 +8,7 @@
   "evidence": {
     "class": "operational_policy",
     "sources": [
-      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
+      ".agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
       "headed Gazebo + RViz timing measurement on 2026-08-18"
     ]
   },

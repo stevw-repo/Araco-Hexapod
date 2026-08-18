@@ -8,7 +8,7 @@
   "evidence": {
     "class": "design_fact",
     "sources": [
-      "docs/agent/ROBOT_DESCRIPTION_MANIFEST.md",
+      ".agent/ROBOT_DESCRIPTION_MANIFEST.md",
       "fusion-export-sha256:843974cc090e76d17c691d4e097c602ccd4e966e07e158ba392ae1bef54b7352"
     ]
   },

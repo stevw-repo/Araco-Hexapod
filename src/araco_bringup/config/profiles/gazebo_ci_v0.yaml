@@ -8,7 +8,7 @@
   "evidence": {
     "class": "operational_policy",
     "sources": [
-      "docs/agent/PARAMETER_AND_CONFIGURATION_COMPOSITION.md"
+      ".agent/PARAMETER_AND_CONFIGURATION_COMPOSITION.md"
     ]
   },
   "dependencies": [],
