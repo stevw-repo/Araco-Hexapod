@@ -42,6 +42,7 @@ private:
       {pose.position.x, pose.position.y, pose.position.z},
       {pose.orientation.x, pose.orientation.y,
         pose.orientation.z, pose.orientation.w},
+      message.intent.gimbal_yaw_rad,
     };
   }
 
@@ -57,6 +58,8 @@ private:
       params_.body_envelope.planar_speed_hard_m_s,
       params_.body_envelope.yaw_rate_hard_rad_s,
       params_.body_envelope.yaw_rate_hard_rad_s,
+      params_.body_envelope.gimbal_yaw_hard_rad,
+      params_.body_envelope.gimbal_yaw_hard_rad,
       params_.body_envelope.xy_hard_m,
       params_.body_envelope.z_hard_lower_m,
       params_.body_envelope.z_hard_upper_m,

@@ -1,0 +1,459 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Run one short, synchronized simulator SLAM diagnostic trial."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+import threading
+import time
+from pathlib import Path
+
+from araco_interfaces.action import SafetyTransition
+from araco_interfaces.msg import CommandCandidate
+from araco_interfaces.msg import SafetyStatus
+from araco_system_tests.slam import Pose2D
+from araco_system_tests.slam import closure_error
+from araco_system_tests.slam import quaternion_yaw
+from araco_system_tests.slam import relative_pose
+from nav_msgs.msg import Odometry
+import rclpy
+from rclpy.action import ActionClient
+from rclpy.duration import Duration
+from rclpy.node import Node
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
+from rclpy.qos import qos_profile_sensor_data
+from rclpy.time import Time
+from rtabmap_msgs.msg import Info
+from rtabmap_msgs.msg import OdomInfo
+from sensor_msgs.msg import Imu
+from sensor_msgs.msg import JointState
+from tf2_ros import Buffer
+from tf2_ros import TransformException
+from tf2_ros import TransformListener
+
+
+SCENARIO_DURATION_S = {
+    'stationary': 15.0,
+    'translation': 15.0,
+    'body_yaw': 15.0,
+    'gimbal_yaw': 15.0,
+}
+
+
+def _stamp_s(stamp) -> float:
+    return float(stamp.sec) + float(stamp.nanosec) * 1.0e-9
+
+
+def _odom_pose(message: Odometry) -> Pose2D:
+    pose = message.pose.pose
+    return Pose2D(
+        pose.position.x, pose.position.y,
+        quaternion_yaw(
+            pose.orientation.x, pose.orientation.y,
+            pose.orientation.z, pose.orientation.w),
+    )
+
+
+def _transform_pose(message) -> Pose2D:
+    transform = message.transform
+    return Pose2D(
+        transform.translation.x, transform.translation.y,
+        quaternion_yaw(
+            transform.rotation.x, transform.rotation.y,
+            transform.rotation.z, transform.rotation.w),
+    )
+
+
+class SlamDiagnostic(Node):
+    """Publish one isolated motion and sample truth/SLAM/IMU synchronously."""
+
+    def __init__(self, scenario: str, variant: str):
+        """Initialize subscriptions, command publication, and trial state."""
+        super().__init__('slam_diagnostic', namespace='araco/system_tests')
+        self.scenario = scenario
+        self.variant = variant
+        self.truth = None
+        self.raw = None
+        self.corrected = None
+        self.truth_start = None
+        self.raw_start = None
+        self.corrected_start = None
+        self.truth_stamp_s = None
+        self.imu = None
+        self.gimbal_yaw = None
+        self.odom_lost = None
+        self.odom_inliers = None
+        self.loop_closure_id = 0
+        self.working_memory_nodes = 0
+        self.safety = None
+        self.safety_source_stale_events = 0
+        self._last_safety_reason = None
+        self.sequence = time.time_ns()
+        self.active = False
+        self.scenario_start_s = None
+        self.rows = []
+        self.imu_messages = 0
+        self.imu_timestamp_tf_successes = 0
+        self.imu_timestamp_tf_failures = 0
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(
+            self.tf_buffer, self, spin_thread=False)
+        sensor = qos_profile_sensor_data
+        reliable = QoSProfile(
+            depth=20, reliability=ReliabilityPolicy.RELIABLE)
+        self.publisher = self.create_publisher(
+            CommandCandidate, '/araco/command/candidates/system_test', sensor)
+        self.create_subscription(
+            Odometry, '/araco/simulation/ground_truth/odom',
+            self._on_truth, sensor)
+        self.create_subscription(
+            Odometry, '/araco/perception/odom', self._on_raw, sensor)
+        self.create_subscription(
+            OdomInfo, '/araco/perception/odom_info',
+            self._on_odom_info, sensor)
+        self.create_subscription(
+            Imu, '/araco/camera/imu/data', self._on_imu, sensor)
+        self.create_subscription(
+            JointState, '/joint_states', self._on_joints, sensor)
+        self.create_subscription(
+            Info, '/araco/perception/info', self._on_info, reliable)
+        self.create_subscription(
+            SafetyStatus, '/araco/safety/status', self._on_safety, reliable)
+        self.action = ActionClient(
+            self, SafetyTransition, '/araco/safety/transition')
+        self.create_timer(0.1, self._sample)
+
+    def _on_truth(self, message):
+        self.truth = _odom_pose(message)
+        self.truth_stamp_s = _stamp_s(message.header.stamp)
+
+    def _on_raw(self, message):
+        self.raw = _odom_pose(message)
+
+    def _on_odom_info(self, message):
+        self.odom_lost = bool(message.lost)
+        self.odom_inliers = int(message.inliers)
+
+    def _on_imu(self, message):
+        self.imu = message
+        self.imu_messages += 1
+        try:
+            self.tf_buffer.lookup_transform(
+                'base_link', message.header.frame_id,
+                Time.from_msg(message.header.stamp),
+                timeout=Duration(seconds=0.0))
+            self.imu_timestamp_tf_successes += 1
+        except TransformException:
+            self.imu_timestamp_tf_failures += 1
+
+    def _on_joints(self, message):
+        try:
+            index = message.name.index('gimbal_yaw_joint')
+        except ValueError:
+            return
+        if index < len(message.position):
+            self.gimbal_yaw = float(message.position[index])
+
+    def _on_info(self, message):
+        self.loop_closure_id = max(
+            self.loop_closure_id, int(message.loop_closure_id))
+        self.working_memory_nodes = max(
+            self.working_memory_nodes, len(message.wm_state))
+
+    def _on_safety(self, message):
+        self.safety = message
+        if (
+                int(message.reason_code) == SafetyStatus.REASON_SOURCE_STALE
+                and self._last_safety_reason
+                != SafetyStatus.REASON_SOURCE_STALE):
+            self.safety_source_stale_events += 1
+        self._last_safety_reason = int(message.reason_code)
+
+    def _update_corrected(self):
+        try:
+            transform = self.tf_buffer.lookup_transform(
+                'map', 'base_link', Time())
+        except TransformException:
+            return
+        self.corrected = _transform_pose(transform)
+
+    def ready(self):
+        """Return whether every stream needed by the trial is available."""
+        self._update_corrected()
+        return all(value is not None for value in (
+            self.truth, self.raw, self.corrected, self.truth_stamp_s,
+            self.imu, self.gimbal_yaw, self.odom_lost,
+        ))
+
+    def capture_origin(self):
+        """Capture synchronized truth, raw, and corrected pose origins."""
+        self._update_corrected()
+        self.truth_start = self.truth
+        self.raw_start = self.raw
+        self.corrected_start = self.corrected
+        self.scenario_start_s = self.truth_stamp_s
+
+    def _relative_or_empty(self, pose, origin):
+        if pose is None or origin is None:
+            return (None, None, None)
+        value = relative_pose(pose, origin)
+        return (value.x, value.y, value.yaw)
+
+    def _sample(self):
+        if self.scenario_start_s is None or self.truth_stamp_s is None:
+            return
+        self._update_corrected()
+        truth = self._relative_or_empty(self.truth, self.truth_start)
+        raw = self._relative_or_empty(self.raw, self.raw_start)
+        corrected = self._relative_or_empty(
+            self.corrected, self.corrected_start)
+        imu = self.imu
+        self.rows.append({
+            'sim_time_s': self.truth_stamp_s,
+            'scenario_time_s': self.truth_stamp_s - self.scenario_start_s,
+            'truth_x_m': truth[0],
+            'truth_y_m': truth[1],
+            'truth_yaw_rad': truth[2],
+            'raw_x_m': raw[0], 'raw_y_m': raw[1], 'raw_yaw_rad': raw[2],
+            'corrected_x_m': corrected[0], 'corrected_y_m': corrected[1],
+            'corrected_yaw_rad': corrected[2],
+            'gimbal_yaw_rad': self.gimbal_yaw,
+            'imu_stamp_s': _stamp_s(imu.header.stamp) if imu else None,
+            'imu_angular_x_rad_s': imu.angular_velocity.x if imu else None,
+            'imu_angular_y_rad_s': imu.angular_velocity.y if imu else None,
+            'imu_angular_z_rad_s': imu.angular_velocity.z if imu else None,
+            'odom_lost': self.odom_lost,
+            'odom_inliers': self.odom_inliers,
+            'loop_closure_id': self.loop_closure_id,
+            'working_memory_nodes': self.working_memory_nodes,
+            'safety_state': int(self.safety.state) if self.safety else None,
+            'safety_reason': (
+                int(self.safety.reason_code) if self.safety else None),
+        })
+
+    def command_for(self, elapsed_s):
+        """Return the isolated command for the current scenario time."""
+        gait = CommandCandidate().intent.GAIT_STAND
+        x = yaw_rate = gimbal = 0.0
+        if self.scenario == 'translation':
+            gait = CommandCandidate().intent.GAIT_TRIPOD
+            if 2.0 <= elapsed_s < 10.0:
+                x = 0.08
+        elif self.scenario == 'body_yaw':
+            gait = CommandCandidate().intent.GAIT_TRIPOD
+            if 2.0 <= elapsed_s < 10.0:
+                yaw_rate = 0.5
+        elif self.scenario == 'gimbal_yaw':
+            if 2.0 <= elapsed_s < 6.0:
+                gimbal = 0.28
+            elif 6.0 <= elapsed_s < 10.0:
+                gimbal = -0.28
+        return gait, x, yaw_rate, gimbal
+
+    def publish(self, elapsed_s=0.0):
+        """Publish one fresh system-test command sample."""
+        gait, x, yaw_rate, gimbal = self.command_for(elapsed_s)
+        self.sequence += 1
+        message = CommandCandidate()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.header.frame_id = 'base_link'
+        message.sequence = self.sequence
+        message.active = self.active
+        message.intent.gait = gait
+        message.intent.planar_velocity.linear.x = x
+        message.intent.planar_velocity.angular.z = yaw_rate
+        message.intent.body_pose_offset.orientation.w = 1.0
+        message.intent.gimbal_yaw_rad = gimbal
+        self.publisher.publish(message)
+
+    def spin_wall(self, duration_s, publish=True):
+        """Spin callbacks for a wall-time interval, optionally publishing."""
+        deadline = time.monotonic() + duration_s
+        while time.monotonic() < deadline:
+            elapsed = (
+                max(0.0, self.truth_stamp_s - self.scenario_start_s)
+                if self.truth_stamp_s is not None
+                and self.scenario_start_s is not None else 0.0)
+            if publish:
+                self.publish(elapsed)
+            rclpy.spin_once(self, timeout_sec=0.02)
+
+    def publish_until_stopped(self, stop_event):
+        """Keep command authority fresh while observer callbacks are busy."""
+        while rclpy.ok() and not stop_event.is_set():
+            elapsed = (
+                max(0.0, self.truth_stamp_s - self.scenario_start_s)
+                if self.truth_stamp_s is not None
+                and self.scenario_start_s is not None else 0.0)
+            self.publish(elapsed)
+            stop_event.wait(0.02)
+
+    def transition_to_motion(self):
+        """Request supervised motion authority for an active trial."""
+        if not self.action.wait_for_server(timeout_sec=5.0):
+            return False
+        self.active = False
+        self.spin_wall(0.3, publish=False)
+        goal = SafetyTransition.Goal()
+        goal.request = SafetyTransition.Goal.REQUEST_ENABLE_MOTION
+        future = self.action.send_goal_async(goal)
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline and not future.done():
+            rclpy.spin_once(self, timeout_sec=0.02)
+        if not future.done() or not future.result().accepted:
+            return False
+        self.active = True
+        result = future.result().get_result_async()
+        deadline = time.monotonic() + 5.0
+        while time.monotonic() < deadline and not result.done():
+            rclpy.spin_once(self, timeout_sec=0.02)
+        return (
+            result.done() and result.result().result.accepted
+            and self.safety is not None
+        )
+
+    def result(self):
+        """Summarize estimator error, motion evidence, and stream health."""
+        raw_error = corrected_error = (None, None)
+        if all(value is not None for value in (
+                self.raw_start, self.raw, self.truth_start, self.truth)):
+            raw_error = closure_error(
+                self.raw_start, self.raw, self.truth_start, self.truth)
+        if all(value is not None for value in (
+                self.corrected_start, self.corrected,
+                self.truth_start, self.truth)):
+            corrected_error = closure_error(
+                self.corrected_start, self.corrected,
+                self.truth_start, self.truth)
+        truth_samples = [
+            Pose2D(row['truth_x_m'], row['truth_y_m'], row['truth_yaw_rad'])
+            for row in self.rows if row['truth_x_m'] is not None]
+        maximum_truth_translation = max(
+            (math.hypot(pose.x, pose.y) for pose in truth_samples),
+            default=0.0)
+        maximum_truth_yaw = max(
+            (abs(pose.yaw) for pose in truth_samples), default=0.0)
+        gimbal_samples = [
+            abs(float(row['gimbal_yaw_rad'])) for row in self.rows
+            if row['gimbal_yaw_rad'] is not None]
+        maximum_gimbal_yaw = max(gimbal_samples, default=0.0)
+        return {
+            'schema_version': 1,
+            'scenario': self.scenario,
+            'estimator_variant': self.variant,
+            'samples': len(self.rows),
+            'raw_translation_error_m': raw_error[0],
+            'raw_yaw_error_rad': raw_error[1],
+            'corrected_translation_error_m': corrected_error[0],
+            'corrected_yaw_error_rad': corrected_error[1],
+            'tracking_loss_samples': sum(
+                bool(row['odom_lost']) for row in self.rows),
+            'minimum_odom_inliers': min(
+                (row['odom_inliers'] for row in self.rows
+                 if row['odom_inliers'] is not None), default=None),
+            'imu_messages': self.imu_messages,
+            'imu_timestamp_tf_successes': self.imu_timestamp_tf_successes,
+            'imu_timestamp_tf_failures': self.imu_timestamp_tf_failures,
+            'maximum_working_memory_nodes': self.working_memory_nodes,
+            'maximum_loop_closure_id': self.loop_closure_id,
+            'maximum_truth_translation_m': maximum_truth_translation,
+            'maximum_truth_abs_yaw_rad': maximum_truth_yaw,
+            'maximum_gimbal_abs_yaw_rad': maximum_gimbal_yaw,
+            'safety_source_stale_events': self.safety_source_stale_events,
+        }
+
+    def trial_valid(self):
+        """Reject stale-command trials and trials lacking intended motion."""
+        if self.safety_source_stale_events:
+            return False
+        result = self.result()
+        if self.scenario == 'translation':
+            return result['maximum_truth_translation_m'] >= 0.02
+        if self.scenario == 'body_yaw':
+            return result['maximum_truth_abs_yaw_rad'] >= 0.02
+        if self.scenario == 'gimbal_yaw':
+            return result['maximum_gimbal_abs_yaw_rad'] >= 0.05
+        return True
+
+
+def _arguments():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('output_directory', type=Path)
+    parser.add_argument(
+        '--scenario', required=True, choices=sorted(SCENARIO_DURATION_S))
+    parser.add_argument(
+        '--variant', required=True,
+        choices=('dynamic_imu', 'fixed_gimbal_imu', 'visual_only'))
+    return parser.parse_args()
+
+
+def main():
+    """Execute one diagnostic trial and write its immutable evidence."""
+    arguments = _arguments()
+    output = arguments.output_directory.expanduser().resolve()
+    if output.exists():
+        raise SystemExit(f'output directory already exists: {output}')
+    if (
+            arguments.variant == 'fixed_gimbal_imu'
+            and arguments.scenario == 'gimbal_yaw'):
+        raise SystemExit('fixed_gimbal_imu forbids the gimbal_yaw scenario')
+    output.mkdir(parents=True)
+    rclpy.init()
+    node = SlamDiagnostic(arguments.scenario, arguments.variant)
+    publisher_stop = threading.Event()
+    publisher_thread = threading.Thread(
+        target=node.publish_until_stopped, args=(publisher_stop,), daemon=True)
+    publisher_thread.start()
+    status = 1
+    try:
+        deadline = time.monotonic() + 45.0
+        while time.monotonic() < deadline and not node.ready():
+            rclpy.spin_once(node, timeout_sec=0.05)
+        if not node.ready():
+            raise RuntimeError(
+                'diagnostic observer streams did not become ready')
+        if (
+                arguments.scenario != 'stationary'
+                and not node.transition_to_motion()):
+            raise RuntimeError(
+                'system-test motion authority could not be acquired')
+        node.capture_origin()
+        duration = SCENARIO_DURATION_S[arguments.scenario]
+        while node.truth_stamp_s - node.scenario_start_s < duration:
+            rclpy.spin_once(node, timeout_sec=0.02)
+        node.active = False
+        node.spin_wall(1.0, publish=False)
+        status = 0 if node.trial_valid() else 1
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.active = False
+        publisher_stop.set()
+        publisher_thread.join(timeout=1.0)
+        node.publish()
+        result = node.result()
+        result['completed'] = status == 0
+        (output / 'summary.json').write_text(
+            json.dumps(result, indent=2, sort_keys=True) + '\n',
+            encoding='utf-8')
+        with (output / 'samples.csv').open(
+                'w', newline='', encoding='utf-8') as stream:
+            if node.rows:
+                writer = csv.DictWriter(stream, fieldnames=node.rows[0].keys())
+                writer.writeheader()
+                writer.writerows(node.rows)
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+    return status
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

@@ -79,6 +79,60 @@ device's sequential physical buttons 3/4 to ROS indices 2/3. A live Gazebo
 direction checks preserved forward/reverse, corrected lateral, walking yaw,
 pitch, and posture yaw, and restored the prior height and roll-button signs.
 
+## RGB-D mapping simulator
+
+The dedicated perception profile starts the textured landmark arena, registered
+RGB-D and camera IMU streams, RTAB-Map odometry/SLAM, RViz, and the normal
+joystick control stack:
+
+```bash
+ros2 launch araco_bringup gazebo.launch.py profile:=gazebo_perception_v0
+```
+
+The operational estimator is six-DoF RGB-D visual odometry. The simulated IMU
+is still published, but is not fused because timestamped IMU transforms failed
+in more than 90% of controlled samples. Exact visual-only, dynamic-IMU, and
+fixed-gimbal-IMU diagnostic profiles are retained for comparison. An isolated
+visual-only gimbal sweep produced negligible false motion, but keep the gimbal
+centered for the first scored route. Automatic odometry reset is disabled, so
+a single failed visual frame does not replace the active map. RViz
+uses `map` as its fixed frame and displays the occupancy grid and accumulated
+cloud. The default database is preserved at
+`~/.ros/araco_rgbd_map.db`, so later launches can reuse it.
+
+To make a separate database without overwriting or mixing the default map:
+
+```bash
+ros2 launch araco_bringup gazebo.launch.py \
+  profile:=gazebo_perception_v0 \
+  database_path:=/tmp/araco_rgbd_experiment.db
+```
+
+For the repeatable online-SLAM trial, launch with a fresh database as above.
+Then start the observer in a second terminal with a fresh absent output path:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run araco_system_tests araco_slam_score \
+  /tmp/araco_slam_acceptance_score_09
+```
+
+Wait for `route origin captured`, then drive over the route discs in this exact
+order: east/red, north/blue, west/green, south/yellow, origin/white. At origin,
+align with the visible +X floor arrow and hold still. The scorer requires two
+seconds in the final position/heading gate and then ten seconds of stable,
+tracking-healthy corrected pose. It observes ground truth only to measure route
+and estimation error; ground truth is not an RTAB-Map input. Closure error is
+measured from loop-corrected `map -> base_link`, while raw visual-odometry drift
+and tracking-loss/recovery are reported separately. It writes `metrics.json`
+and passes only if the route, loop closure, cloud continuity, map growth,
+corrected closure-error thresholds, and tracking-at-finish gate all pass. Use a
+new database and score path for every attempt.
+
+This stage qualifies online odometry/map growth and loop closure. It does not
+yet qualify relocalization after restart or Nav2 autonomy.
+
 ## Controlled stop and shutdown
 
 Request a controlled hold:

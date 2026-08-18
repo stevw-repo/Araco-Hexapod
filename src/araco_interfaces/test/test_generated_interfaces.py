@@ -17,6 +17,7 @@ def test_command_interface_fields():
         'gait': 'uint8',
         'planar_velocity': 'geometry_msgs/Twist',
         'body_pose_offset': 'geometry_msgs/Pose',
+        'gimbal_yaw_rad': 'double',
     }
     assert CommandCandidate.get_fields_and_field_types() == {
         'header': 'std_msgs/Header',

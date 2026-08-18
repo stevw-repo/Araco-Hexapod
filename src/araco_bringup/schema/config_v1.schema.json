@@ -167,6 +167,10 @@
               "enum": [
                 "gazebo_dev_v0",
                 "gazebo_joystick_v0",
+                "gazebo_perception_v0",
+                "gazebo_perception_diagnostic_visual_v0",
+                "gazebo_perception_diagnostic_dynamic_imu_v0",
+                "gazebo_perception_diagnostic_fixed_imu_v0",
                 "gazebo_ci_v0",
             "gazebo_gate3_v0",
             "gazebo_gate4_v0",

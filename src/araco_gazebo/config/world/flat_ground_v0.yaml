@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/gazebo/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.gazebo.world-flat-ground",
-  "artifact_version": "0.1.0",
+  "artifact_version": "0.2.0",
   "owner_package": "araco_gazebo",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -24,6 +24,10 @@
     "maximum_step_s": 0.001,
     "real_time_factor": 1.0,
     "seed": 42,
+    "sensor_systems": [
+      "rendering",
+      "imu"
+    ],
     "foot_friction": {
       "mu": 0.9,
       "mu2": 0.9

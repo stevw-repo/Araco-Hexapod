@@ -137,4 +137,23 @@ TEST(SourceArbiter, InvalidSampleQuarantinesOnlyItsSource)
   EXPECT_EQ(lost.reason_code, 10U);
 }
 
+TEST(SourceArbiter, CenteredAdapterReleaseRecoversInvalidNoDeadmanSession)
+{
+  auto policy = arbiter();
+  ASSERT_TRUE(policy.accept(10, 1, false, true, 0.0));
+  ASSERT_TRUE(policy.accept(10, 2, true, true, 0.01));
+  ASSERT_EQ(policy.evaluate(0.01).source_id, 10U);
+  ASSERT_FALSE(policy.accept(10, 3, true, false, 0.02));
+  ASSERT_FALSE(policy.evaluate(0.02).has_selection);
+
+  // The no-deadman adapter emits this one inactive sample only after all
+  // motion controls are centered, then resumes normal always-active reports.
+  ASSERT_TRUE(policy.accept(10, 4, false, true, 0.03));
+  ASSERT_TRUE(policy.accept(10, 5, true, true, 0.04));
+  const auto recovered = policy.evaluate(0.04);
+  EXPECT_TRUE(recovered.has_selection);
+  EXPECT_EQ(recovered.source_id, 10U);
+  EXPECT_TRUE(recovered.quarantined_source_ids.empty());
+}
+
 }  // namespace

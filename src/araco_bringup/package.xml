@@ -17,6 +17,8 @@
   <exec_depend>araco_gazebo</exec_depend>
   <exec_depend>araco_interfaces</exec_depend>
   <exec_depend>araco_locomotion</exec_depend>
+  <exec_depend>araco_navigation</exec_depend>
+  <exec_depend>araco_perception</exec_depend>
   <exec_depend>araco_supervision</exec_depend>
   <exec_depend>araco_teleop</exec_depend>
   <exec_depend>controller_manager</exec_depend>
@@ -32,6 +34,7 @@
   <exec_depend>rclpy</exec_depend>
   <exec_depend>ros_gz_bridge</exec_depend>
   <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>rviz2</exec_depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>ament_lint_auto</test_depend>

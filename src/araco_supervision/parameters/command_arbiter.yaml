@@ -66,6 +66,7 @@ command_arbiter:
   body_envelope:
     planar_speed_hard_m_s: {type: double, description: Hard planar speed magnitude., read_only: true}
     yaw_rate_hard_rad_s: {type: double, description: Hard yaw-rate magnitude., read_only: true}
+    gimbal_yaw_hard_rad: {type: double, description: Hard gimbal-yaw magnitude., read_only: true}
     xy_hard_m: {type: double, description: Hard X/Y body-offset magnitude., read_only: true}
     z_hard_lower_m: {type: double, description: Hard lower Z body offset., read_only: true}
     z_hard_upper_m: {type: double, description: Hard upper Z body offset., read_only: true}

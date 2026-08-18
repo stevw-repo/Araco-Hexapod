@@ -1,0 +1,492 @@
+#!/usr/bin/env python3
+# Copyright 2026 Araco Hexapod contributors
+# SPDX-License-Identifier: MIT
+
+"""Observe and score one operator-driven closed-loop RGB-D SLAM route."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import time
+from pathlib import Path
+
+from ament_index_python.packages import get_package_share_directory
+from araco_system_tests.slam import FinalPoseDwell
+from araco_system_tests.slam import OrderedRoute
+from araco_system_tests.slam import Pose2D
+from araco_system_tests.slam import PoseStabilityWindow
+from araco_system_tests.slam import TrackingLossMonitor
+from araco_system_tests.slam import accumulated_path_length
+from araco_system_tests.slam import closure_error
+from araco_system_tests.slam import is_catastrophic_cloud_drop
+from araco_system_tests.slam import quaternion_yaw
+from araco_system_tests.slam import relative_pose
+from nav_msgs.msg import OccupancyGrid
+from nav_msgs.msg import Odometry
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy
+from rclpy.qos import QoSProfile
+from rclpy.qos import ReliabilityPolicy
+from rclpy.qos import qos_profile_sensor_data
+from rclpy.time import Time
+from rtabmap_msgs.msg import Info
+from rtabmap_msgs.msg import OdomInfo
+from sensor_msgs.msg import PointCloud2
+from tf2_ros import Buffer
+from tf2_ros import TransformException
+from tf2_ros import TransformListener
+
+
+def _pose(message: Odometry) -> Pose2D:
+    position = message.pose.pose.position
+    orientation = message.pose.pose.orientation
+    return Pose2D(
+        position.x,
+        position.y,
+        quaternion_yaw(
+            orientation.x, orientation.y, orientation.z, orientation.w),
+    )
+
+
+def _transform_pose(message) -> Pose2D:
+    translation = message.transform.translation
+    rotation = message.transform.rotation
+    return Pose2D(
+        translation.x,
+        translation.y,
+        quaternion_yaw(
+            rotation.x, rotation.y, rotation.z, rotation.w),
+    )
+
+
+def _load_contract() -> dict:
+    path = (
+        Path(get_package_share_directory('araco_system_tests'))
+        / 'config/perception/slam_acceptance_v0.yaml'
+    )
+    return json.loads(path.read_text(encoding='utf-8'))
+
+
+class SlamScorer(Node):
+    """Score route coverage, map continuity, loop closure, and pose drift."""
+
+    def __init__(self, contract: dict, output_directory: Path):
+        """Initialize observer subscriptions and scoring state."""
+        super().__init__('slam_scorer', namespace='araco/system_tests')
+        self.contract = contract
+        self.config = contract['data']
+        self.route_config = self.config['route']
+        self.thresholds = self.config['thresholds']
+        self.output_directory = output_directory
+        self.started_wall = time.monotonic()
+        self.finished = False
+        self.result = None
+
+        self.raw_odom = None
+        self.corrected = None
+        self.truth = None
+        self.raw_odom_start = None
+        self.corrected_start = None
+        self.truth_start = None
+        self.raw_odom_end = None
+        self.corrected_end = None
+        self.truth_end = None
+        self.truth_poses = []
+        waypoints = self.route_config['waypoints_xy_m']
+        self.route = OrderedRoute(
+            waypoints[:-1],
+            self.route_config['waypoint_tolerance_m'],
+        )
+        self.final_pose = FinalPoseDwell(
+            waypoints[-1],
+            self.route_config['waypoint_tolerance_m'],
+            self.route_config['final_yaw_tolerance_rad'],
+            self.route_config['final_pose_dwell_s'],
+        )
+        self.stability = PoseStabilityWindow(
+            self.thresholds['convergence_window_s'],
+            self.thresholds['maximum_convergence_translation_span_m'],
+            self.thresholds['maximum_convergence_yaw_span_rad'],
+        )
+        self.route_completed_wall = None
+        self.truth_stamp_s = None
+        self.final_position_notice = False
+
+        self.info_seen = False
+        self.odom_info_seen = False
+        self.map_seen = False
+        self.cloud_seen = False
+        self.tracking = TrackingLossMonitor()
+        self.latest_odom_lost = False
+        self.latest_odom_stamp_s = None
+        self.minimum_odom_inliers = None
+        self.maximum_odom_inliers = 0
+        self.maximum_working_memory_nodes = 0
+        self.loop_closure_ids = set()
+        self.maximum_cloud_points = 0
+        self.previous_cloud_points = 0
+        self.cloud_drop_events = 0
+        self.maximum_occupancy_cells = 0
+
+        self.frames = self.config['estimated_frames']
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(
+            self.tf_buffer, self, spin_thread=False)
+
+        topics = self.config['observer_topics']
+        reliable = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
+        map_qos = QoSProfile(
+            depth=1,
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+        )
+        self.create_subscription(
+            Odometry, topics['raw_odom'], self._on_raw_odom,
+            qos_profile_sensor_data)
+        self.create_subscription(
+            OdomInfo, topics['odom_info'], self._on_odom_info,
+            qos_profile_sensor_data)
+        self.create_subscription(
+            Odometry, topics['ground_truth_odom'], self._on_truth,
+            qos_profile_sensor_data)
+        self.create_subscription(
+            Info, topics['rtabmap_info'], self._on_info, reliable)
+        self.create_subscription(
+            OccupancyGrid, topics['occupancy_grid'], self._on_map, map_qos)
+        self.create_subscription(
+            PointCloud2, topics['cloud_map'], self._on_cloud, map_qos)
+        self.create_timer(0.1, self._tick)
+
+        self.get_logger().info(
+            'SLAM acceptance scorer is waiting for six observer topics and '
+            'the loop-corrected map -> base_link transform. '
+            'Keep the gimbal centered and drive the ordered diamond route: '
+            '(+1.2,0), (0,+1.2), (-1.2,0), (0,-1.2), then origin, '
+            'relative to the starting body frame. At origin, align the body '
+            'with the visible +X heading arrow and hold still until graph '
+            'convergence is reported.')
+
+    def _ready(self) -> bool:
+        return (
+            self.raw_odom is not None
+            and self.corrected is not None
+            and self.truth is not None
+            and self.info_seen
+            and self.odom_info_seen
+            and self.map_seen
+            and self.cloud_seen
+        )
+
+    def _initialize_route(self) -> None:
+        if self.truth_start is not None or not self._ready():
+            return
+        self.raw_odom_start = self.raw_odom
+        self.corrected_start = self.corrected
+        self.truth_start = self.truth
+        self.raw_odom_end = self.raw_odom
+        self.corrected_end = self.corrected
+        self.truth_end = self.truth
+        self.truth_poses = [self.truth]
+        self.tracking = TrackingLossMonitor()
+        if self.latest_odom_stamp_s is not None:
+            self.tracking.update(
+                self.latest_odom_lost, self.latest_odom_stamp_s)
+        self.minimum_odom_inliers = None
+        self.maximum_odom_inliers = 0
+        self.get_logger().info(
+            'All observer topics are ready; route origin captured. '
+            'Begin moving.')
+
+    def _on_raw_odom(self, message: Odometry) -> None:
+        self.raw_odom = _pose(message)
+        if self.raw_odom_start is not None:
+            self.raw_odom_end = self.raw_odom
+        self._initialize_route()
+
+    def _on_odom_info(self, message: OdomInfo) -> None:
+        self.odom_info_seen = True
+        stamp = (
+            float(message.header.stamp.sec)
+            + float(message.header.stamp.nanosec) * 1.0e-9
+        )
+        self.latest_odom_lost = bool(message.lost)
+        self.latest_odom_stamp_s = stamp
+        self.tracking.update(message.lost, stamp)
+        self.maximum_odom_inliers = max(
+            self.maximum_odom_inliers, int(message.inliers))
+        if self.minimum_odom_inliers is None:
+            self.minimum_odom_inliers = int(message.inliers)
+        else:
+            self.minimum_odom_inliers = min(
+                self.minimum_odom_inliers, int(message.inliers))
+        self._initialize_route()
+
+    def _on_truth(self, message: Odometry) -> None:
+        self.truth = _pose(message)
+        self.truth_stamp_s = (
+            float(message.header.stamp.sec)
+            + float(message.header.stamp.nanosec) * 1.0e-9
+        )
+        self._initialize_route()
+        if self.truth_start is None:
+            return
+        if not self.truth_poses or math.hypot(
+                self.truth.x - self.truth_poses[-1].x,
+                self.truth.y - self.truth_poses[-1].y) >= 0.005:
+            self.truth_poses.append(self.truth)
+        self.truth_end = self.truth
+        relative = relative_pose(self.truth, self.truth_start)
+        if not self.route.complete and self.route.update(relative):
+            reached = self.route.next_index
+            total = len(self.route_config['waypoints_xy_m'])
+            self.get_logger().info(
+                f'Route waypoint {reached}/{total} reached.')
+            return
+        if not self.route.complete or self.route_completed_wall is not None:
+            return
+        final_xy = self.route_config['waypoints_xy_m'][-1]
+        at_final_position = math.hypot(
+            relative.x - final_xy[0], relative.y - final_xy[1]
+        ) <= self.route_config['waypoint_tolerance_m']
+        if at_final_position and not self.final_pose.contains(relative):
+            if not self.final_position_notice:
+                self.get_logger().info(
+                    'Final position reached; rotate to the starting +X '
+                    'heading '
+                    'shown by the floor arrow, then hold still.')
+                self.final_position_notice = True
+        elif not at_final_position:
+            self.final_position_notice = False
+        if self.final_pose.update(relative, self.truth_stamp_s):
+            self.route_completed_wall = time.monotonic()
+            self.stability.reset()
+            self.get_logger().info(
+                'Final position and starting heading held; waiting for a '
+                'tracking-healthy, stable corrected-pose convergence window.')
+
+    def _on_info(self, message: Info) -> None:
+        self.info_seen = True
+        self.maximum_working_memory_nodes = max(
+            self.maximum_working_memory_nodes, len(message.wm_state))
+        if message.loop_closure_id > 0:
+            self.loop_closure_ids.add(message.loop_closure_id)
+        self._initialize_route()
+
+    def _on_map(self, message: OccupancyGrid) -> None:
+        cells = int(message.info.width) * int(message.info.height)
+        if cells > 0:
+            self.map_seen = True
+            self.maximum_occupancy_cells = max(
+                self.maximum_occupancy_cells, cells)
+        self._initialize_route()
+
+    def _on_cloud(self, message: PointCloud2) -> None:
+        points = int(message.width) * int(message.height)
+        if points <= 0:
+            return
+        self.cloud_seen = True
+        if is_catastrophic_cloud_drop(
+                self.previous_cloud_points,
+                points,
+                self.thresholds['minimum_cloud_points'],
+                self.thresholds['maximum_cloud_drop_fraction']):
+            self.cloud_drop_events += 1
+            self.get_logger().error(
+                'Accumulated cloud was replaced by a much smaller segment: '
+                f'{self.previous_cloud_points} -> {points} points.')
+        self.previous_cloud_points = points
+        self.maximum_cloud_points = max(self.maximum_cloud_points, points)
+        self._initialize_route()
+
+    def _update_corrected_pose(self) -> None:
+        try:
+            transform = self.tf_buffer.lookup_transform(
+                self.frames['map'], self.frames['base'], Time())
+        except TransformException:
+            return
+        self.corrected = _transform_pose(transform)
+        if self.corrected_start is not None:
+            self.corrected_end = self.corrected
+        self._initialize_route()
+
+    def _tick(self) -> None:
+        if self.finished:
+            return
+        self._update_corrected_pose()
+        elapsed = time.monotonic() - self.started_wall
+        if elapsed >= self.thresholds['maximum_wall_duration_s']:
+            self._finish('wall_timeout')
+            return
+        if self.route_completed_wall is None:
+            return
+        if (
+                self.truth_start is None or self.truth is None
+                or self.truth_stamp_s is None or self.corrected is None):
+            self.stability.reset()
+            return
+        truth_relative = relative_pose(self.truth, self.truth_start)
+        if (
+                not self.final_pose.contains(truth_relative)
+                or self.latest_odom_lost):
+            self.stability.reset()
+            return
+        stability = self.stability.update(self.corrected, self.truth_stamp_s)
+        if stability.stable:
+            self._finish('route_complete_and_converged')
+
+    def _finish(self, reason: str) -> None:
+        if self.finished:
+            return
+        self.finished = True
+        corrected_translation_error = None
+        corrected_yaw_error = None
+        raw_translation_error = None
+        raw_yaw_error = None
+        truth_final_translation = None
+        truth_final_yaw = None
+        if self.truth_start is not None and self.truth_end is not None:
+            truth_relative = relative_pose(self.truth_end, self.truth_start)
+            truth_final_translation = math.hypot(
+                truth_relative.x, truth_relative.y)
+            truth_final_yaw = truth_relative.yaw
+        if all(item is not None for item in (
+                self.corrected_start, self.corrected_end,
+                self.truth_start, self.truth_end)):
+            corrected_translation_error, corrected_yaw_error = closure_error(
+                self.corrected_start, self.corrected_end,
+                self.truth_start, self.truth_end)
+        if all(item is not None for item in (
+                self.raw_odom_start, self.raw_odom_end,
+                self.truth_start, self.truth_end)):
+            raw_translation_error, raw_yaw_error = closure_error(
+                self.raw_odom_start, self.raw_odom_end,
+                self.truth_start, self.truth_end)
+
+        path_length = accumulated_path_length(self.truth_poses)
+        tracking = self.tracking.summary()
+        stability = self.stability.summary()
+        route_waypoints_completed = (
+            self.route.next_index + int(self.route_completed_wall is not None))
+        checks = {
+            'all_observer_topics_received': self._ready(),
+            'ordered_route_complete': (
+                route_waypoints_completed
+                == len(self.route_config['waypoints_xy_m'])),
+            'minimum_path_length': (
+                path_length >= self.route_config['minimum_path_length_m']),
+            'final_yaw_returned': (
+                truth_final_yaw is not None
+                and abs(truth_final_yaw)
+                <= self.route_config['final_yaw_tolerance_rad']),
+            'working_memory_grew': (
+                self.maximum_working_memory_nodes
+                >= self.thresholds['minimum_working_memory_nodes']),
+            'cloud_became_substantial': (
+                self.maximum_cloud_points
+                >= self.thresholds['minimum_cloud_points']),
+            'cloud_never_catastrophically_replaced': (
+                self.cloud_drop_events == 0),
+            'loop_closure_observed': (
+                len(self.loop_closure_ids)
+                >= self.thresholds['minimum_loop_closures']),
+            'tracking_available_at_finish': (
+                self.odom_info_seen and not tracking.lost_at_finish),
+            'corrected_pose_converged': stability.stable,
+            'translation_closure_error_bounded': (
+                corrected_translation_error is not None
+                and corrected_translation_error
+                <= self.thresholds['maximum_translation_closure_error_m']),
+            'yaw_closure_error_bounded': (
+                corrected_yaw_error is not None
+                and corrected_yaw_error
+                <= self.thresholds['maximum_yaw_closure_error_rad']),
+        }
+        metrics = {
+            'completion_reason': reason,
+            'wall_duration_s': time.monotonic() - self.started_wall,
+            'route_waypoints_completed': route_waypoints_completed,
+            'ground_truth_path_length_m': path_length,
+            'translation_closure_error_m': corrected_translation_error,
+            'yaw_closure_error_rad': corrected_yaw_error,
+            'raw_odom_translation_drift_m': raw_translation_error,
+            'raw_odom_yaw_drift_rad': raw_yaw_error,
+            'final_ground_truth_translation_m': truth_final_translation,
+            'final_ground_truth_yaw_rad': truth_final_yaw,
+            'final_ground_truth_yaw_error_rad': (
+                abs(truth_final_yaw)
+                if truth_final_yaw is not None else None),
+            'tracking_loss_events': tracking.events,
+            'tracking_recovery_events': tracking.recoveries,
+            'tracking_loss_total_s': tracking.total_duration_s,
+            'maximum_tracking_loss_s': tracking.maximum_duration_s,
+            'tracking_lost_at_finish': tracking.lost_at_finish,
+            'convergence_duration_s': stability.duration_s,
+            'convergence_translation_span_m': (
+                stability.translation_span_m
+                if math.isfinite(stability.translation_span_m) else None),
+            'convergence_yaw_span_rad': (
+                stability.yaw_span_rad
+                if math.isfinite(stability.yaw_span_rad) else None),
+            'minimum_odom_inliers': self.minimum_odom_inliers,
+            'maximum_odom_inliers': self.maximum_odom_inliers,
+            'loop_closure_ids': sorted(self.loop_closure_ids),
+            'maximum_working_memory_nodes': self.maximum_working_memory_nodes,
+            'maximum_occupancy_cells': self.maximum_occupancy_cells,
+            'maximum_cloud_points': self.maximum_cloud_points,
+            'cloud_drop_events': self.cloud_drop_events,
+        }
+        self.result = {
+            'schema_version': 1,
+            'artifact_id': self.contract['artifact_id'],
+            'status': 'PASS' if all(checks.values()) else 'FAIL',
+            'checks': checks,
+            'metrics': metrics,
+        }
+        output = self.output_directory / 'metrics.json'
+        output.write_text(
+            json.dumps(
+                self.result, allow_nan=False, indent=2, sort_keys=True) + '\n',
+            encoding='utf-8')
+        self.get_logger().info(
+            f"SLAM acceptance {self.result['status']}; "
+            f'metrics written to {output}')
+
+
+def _arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description='Score one operator-driven closed-loop SLAM route.')
+    parser.add_argument(
+        'output_directory', type=Path,
+        help='Fresh absent directory for immutable score output.')
+    return parser.parse_args()
+
+
+def main() -> int:
+    """Run until route completion, timeout, or operator interruption."""
+    arguments = _arguments()
+    output_directory = arguments.output_directory.expanduser().resolve()
+    if output_directory.exists():
+        raise SystemExit(
+            f'output directory already exists: {output_directory}')
+    output_directory.mkdir(parents=True)
+
+    contract = _load_contract()
+    rclpy.init()
+    node = SlamScorer(contract, output_directory)
+    try:
+        while rclpy.ok() and not node.finished:
+            rclpy.spin_once(node, timeout_sec=0.2)
+    except KeyboardInterrupt:
+        node._finish('operator_interrupt')
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+    return 0 if node.result and node.result['status'] == 'PASS' else 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

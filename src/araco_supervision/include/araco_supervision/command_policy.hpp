@@ -25,6 +25,7 @@ struct StaticIntent
   std::array<double, 6> twist;
   std::array<double, 3> position_m;
   Quaternion orientation;
+  double gimbal_yaw_rad;
 };
 
 struct BodyEnvelope
@@ -33,6 +34,8 @@ struct BodyEnvelope
   double planar_speed_hard_m_s;
   double yaw_rate_normal_rad_s;
   double yaw_rate_hard_rad_s;
+  double gimbal_yaw_normal_rad;
+  double gimbal_yaw_hard_rad;
   double xy_normal_m;
   double z_normal_lower_m;
   double z_normal_upper_m;

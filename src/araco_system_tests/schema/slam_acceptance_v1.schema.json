@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["kind", "estimator_inputs_forbidden", "observer_topics", "estimated_frames", "route", "thresholds"],
+  "properties": {
+    "kind": {"const": "slam_acceptance"},
+    "estimator_inputs_forbidden": {
+      "const": ["/araco/simulation/ground_truth/odom"]
+    },
+    "observer_topics": {
+      "type": "object",
+      "required": ["raw_odom", "odom_info", "ground_truth_odom", "rtabmap_info", "occupancy_grid", "cloud_map"],
+      "properties": {
+        "raw_odom": {"const": "/araco/perception/odom"},
+        "odom_info": {"const": "/araco/perception/odom_info"},
+        "ground_truth_odom": {"const": "/araco/simulation/ground_truth/odom"},
+        "rtabmap_info": {"const": "/araco/perception/info"},
+        "occupancy_grid": {"const": "/araco/perception/map"},
+        "cloud_map": {"const": "/araco/perception/cloud_map"}
+      },
+      "additionalProperties": false
+    },
+    "estimated_frames": {
+      "type": "object",
+      "required": ["map", "odom", "base"],
+      "properties": {
+        "map": {"const": "map"},
+        "odom": {"const": "odom"},
+        "base": {"const": "base_link"}
+      },
+      "additionalProperties": false
+    },
+    "route": {
+      "type": "object",
+      "required": ["frame", "waypoints_xy_m", "waypoint_tolerance_m", "minimum_path_length_m", "final_yaw_tolerance_rad", "final_pose_dwell_s"],
+      "properties": {
+        "frame": {"const": "initial_ground_truth_base"},
+        "waypoints_xy_m": {
+          "type": "array", "minItems": 5,
+          "items": {
+            "type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}],
+            "items": false, "minItems": 2, "maxItems": 2
+          }
+        },
+        "waypoint_tolerance_m": {"type": "number", "exclusiveMinimum": 0},
+        "minimum_path_length_m": {"type": "number", "exclusiveMinimum": 0},
+        "final_yaw_tolerance_rad": {"type": "number", "exclusiveMinimum": 0, "maximum": 3.141593},
+        "final_pose_dwell_s": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "thresholds": {
+      "type": "object",
+      "required": ["maximum_wall_duration_s", "convergence_window_s", "maximum_convergence_translation_span_m", "maximum_convergence_yaw_span_rad", "minimum_working_memory_nodes", "minimum_cloud_points", "maximum_cloud_drop_fraction", "maximum_translation_closure_error_m", "maximum_yaw_closure_error_rad", "minimum_loop_closures"],
+      "properties": {
+        "maximum_wall_duration_s": {"type": "number", "exclusiveMinimum": 0},
+        "convergence_window_s": {"type": "number", "exclusiveMinimum": 0},
+        "maximum_convergence_translation_span_m": {"type": "number", "exclusiveMinimum": 0},
+        "maximum_convergence_yaw_span_rad": {"type": "number", "exclusiveMinimum": 0, "maximum": 3.141593},
+        "minimum_working_memory_nodes": {"type": "integer", "minimum": 2},
+        "minimum_cloud_points": {"type": "integer", "minimum": 1},
+        "maximum_cloud_drop_fraction": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+        "maximum_translation_closure_error_m": {"type": "number", "exclusiveMinimum": 0},
+        "maximum_yaw_closure_error_rad": {"type": "number", "exclusiveMinimum": 0, "maximum": 3.141593},
+        "minimum_loop_closures": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

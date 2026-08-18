@@ -169,6 +169,8 @@
             "planar_speed_hard_m_s",
             "yaw_rate_normal_rad_s",
             "yaw_rate_hard_rad_s",
+            "gimbal_yaw_normal_rad",
+            "gimbal_yaw_hard_rad",
             "body_xy_normal_m",
             "body_z_normal_lower_m",
             "body_z_normal_upper_m",
@@ -199,6 +201,14 @@
               "minimum": 0
             },
             "yaw_rate_hard_rad_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "gimbal_yaw_normal_rad": {
+              "type": "number",
+              "minimum": 0
+            },
+            "gimbal_yaw_hard_rad": {
               "type": "number",
               "minimum": 0
             },

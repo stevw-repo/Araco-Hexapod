@@ -34,7 +34,9 @@ SafetyMachine::SafetyMachine(SafetyMachineConfig config)
 : config_(config)
 {
   if (!std::isfinite(config.enable_wait_timeout_s) || config.enable_wait_timeout_s <= 0.0 ||
-    !std::isfinite(config.stable_hold_dwell_s) || config.stable_hold_dwell_s < 0.0)
+    !std::isfinite(config.stable_hold_dwell_s) || config.stable_hold_dwell_s < 0.0 ||
+    !std::isfinite(config.startup_readiness_stable_s) ||
+    config.startup_readiness_stable_s < 0.0)
   {
     throw std::invalid_argument("safety machine timing must be finite and non-negative");
   }
@@ -55,6 +57,7 @@ void SafetyMachine::reset(double steady_now_s)
   pending_source_id_ = 0;
   enable_deadline_s_ = steady_now_s;
   stable_hold_since_s_ = -1.0;
+  startup_ready_since_s_ = -1.0;
   ever_ready_ = false;
   automatic_handover_enable_ = false;
   automatic_enable_consumed_ = false;
@@ -190,16 +193,23 @@ SafetyMachineOutput SafetyMachine::update(
   }
 
   if (state_ == SafetyState::kInitializing) {
-    if (input.ready) {
+    transition(SafetyState::kInactive, kReasonInactive);
+    startup_ready_since_s_ = input.ready ? steady_now_s : -1.0;
+    if (input.ready && config_.startup_readiness_stable_s == 0.0) {
       ever_ready_ = true;
       transition(SafetyState::kHolding, kReasonHolding);
-    } else {
-      transition(SafetyState::kInactive, kReasonInactive);
     }
     return output();
   }
   if (state_ == SafetyState::kInactive) {
-    if (input.ready) {
+    if (!input.ready) {
+      startup_ready_since_s_ = -1.0;
+      return output();
+    }
+    if (startup_ready_since_s_ < 0.0) {
+      startup_ready_since_s_ = steady_now_s;
+    }
+    if (steady_now_s - startup_ready_since_s_ >= config_.startup_readiness_stable_s) {
       ever_ready_ = true;
       transition(SafetyState::kHolding, kReasonHolding);
     }

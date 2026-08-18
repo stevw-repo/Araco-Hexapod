@@ -1,0 +1,51 @@
+{
+  "schema_id": "araco://schemas/supervision/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.supervision.safety-policy",
+  "artifact_version": "0.5.0",
+  "owner_package": "araco_supervision",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/SAFETY_ARCHITECTURE.md",
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
+      "headed Gazebo + RViz timing measurement on 2026-08-18"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.supervision.source-registry",
+      "artifact_version": "0.2.0"
+    }
+  ],
+  "data": {
+    "kind": "safety_policy",
+    "startup_state": "BOOTSTRAP",
+    "motion_requires_explicit_enable": true,
+    "resume_after_time_discontinuity": false,
+    "stop_policy": "controlled_then_hold",
+    "startup_readiness_stable_s": 1.0,
+    "controller_manager_validation_period_s": 1.0,
+    "watchdogs_s": {
+      "selected_command": 0.5,
+      "safe_command": 0.5,
+      "joint_state": 0.5,
+      "locomotion_status": 0.5,
+      "controller_state": 0.5,
+      "provenance": 1.5,
+      "clock_progress": 0.5
+    },
+    "maximum_detection_s": {
+      "selected_command": 0.51,
+      "safe_command": 0.51,
+      "joint_state": 0.51,
+      "locomotion_status": 0.51,
+      "controller_state": 0.51,
+      "provenance": 1.51,
+      "clock_progress": 0.51
+    },
+    "fault_reset_requires_readiness": true,
+    "partial_command_policy": "reject"
+  }
+}

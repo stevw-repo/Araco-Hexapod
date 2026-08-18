@@ -107,6 +107,8 @@ if(BUILD_TESTING)
   target_link_libraries(test_tripod_gait tripod_gait)
   ament_add_gtest(test_safe_command_guard test/test_safe_command_guard.cpp)
   target_link_libraries(test_safe_command_guard safe_command_guard)
+  ament_add_gtest(test_steady_heartbeat test/test_steady_heartbeat.cpp)
+  target_include_directories(test_steady_heartbeat PRIVATE include)
 endif()
 
 ament_package()

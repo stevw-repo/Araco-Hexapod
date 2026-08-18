@@ -47,7 +47,10 @@ double legacy_horizontal_scale(double phase)
   // preserving constant supporting-foot velocity across the cycle boundary.
   const double counter = phase * 100.0;
   double value = 0.0;
-  if (counter < 25.0) {
+  if (counter >= -50.0 && counter < -25.0) {
+    value = (-1.0 / 625.0) * std::pow(counter, 3) -
+      (6.0 / 25.0) * std::pow(counter, 2) - 9.0 * counter - 50.0;
+  } else if (counter >= -25.0 && counter < 25.0) {
     value = -2.0 * counter;
   } else if (counter < 50.0) {
     value = (2.0 / 25.0) * std::pow(counter - 25.0, 2) - 50.0;
@@ -67,7 +70,15 @@ double legacy_lift_scale(double phase)
 {
   const double counter = phase * 100.0;
   double value = 0.0;
-  if (counter >= 25.0 && counter < 50.0) {
+  if (counter >= -50.0 && counter < -40.0) {
+    value = -0.3 * std::pow(counter, 2) - 24.0 * counter - 450.0;
+  } else if (counter >= -40.0 && counter < -35.0) {
+    value = 30.0;
+  } else if (counter >= -35.0 && counter < -25.0) {
+    value = (3.0 / 50.0) * std::pow(counter, 3) +
+      (27.0 / 5.0) * std::pow(counter, 2) +
+      (315.0 / 2.0) * counter + 1500.0;
+  } else if (counter >= 25.0 && counter < 50.0) {
     value = 0.00208 * std::pow(counter, 3) -
       0.308 * std::pow(counter, 2) + 15.2 * counter - 220.0;
   } else if (counter >= 50.0 && counter < 60.0) {
@@ -77,6 +88,23 @@ double legacy_lift_scale(double phase)
       (2.0 / 5.0) * std::pow(counter - 60.0, 2) + 30.0;
   }
   return std::clamp(value / 30.0, 0.0, 1.0);
+}
+
+double legacy_rotation_scale(double phase)
+{
+  // This is the separate legacy rotation() curve, normalized from its
+  // original [-50, +50] angular command range to [-0.5, +0.5].
+  const double counter = phase * 100.0;
+  double value = 0.0;
+  if (counter >= 0.0 && counter < 25.0) {
+    value = -2.0 * counter;
+  } else if (counter >= 25.0 && counter < 75.0) {
+    value = (-1.0 / 625.0) * std::pow(counter, 3) +
+      (150.0 / 625.0) * std::pow(counter, 2) - 9.0 * counter + 50.0;
+  } else if (counter >= 75.0 && counter < 100.0) {
+    value = -2.0 * counter + 200.0;
+  }
+  return value / 100.0;
 }
 
 bool finite_feet(const std::array<araco_kinematics::Point3, kLegCount> & feet)
@@ -99,12 +127,100 @@ double maximum_local_speed(
   return maximum;
 }
 
+struct LegacyBlend
+{
+  double translation_weight{1.0};
+  double rotation_weight{0.0};
+  double translation_x_m_s{0.0};
+  double translation_y_m_s{0.0};
+  double yaw_rad_s{0.0};
+  double maximum_local_speed_m_s{0.0};
+};
+
+LegacyBlend legacy_blend(
+  const TripodConfig & config,
+  const PlanarVelocity & velocity,
+  const std::array<araco_kinematics::Point3, kLegCount> & feet)
+{
+  LegacyBlend result;
+  const double translation_magnitude = std::hypot(velocity.x_m_s, velocity.y_m_s);
+  const double translation_normalized =
+    translation_magnitude / config.planar_command_scale_m_s;
+  const double rotation_normalized =
+    std::abs(velocity.yaw_rad_s) / config.yaw_command_scale_rad_s;
+  const double combined = translation_normalized + rotation_normalized;
+  if (combined > 1.0e-12) {
+    result.translation_weight = translation_normalized / combined;
+    result.rotation_weight = rotation_normalized / combined;
+  }
+  const double overall = std::max(translation_normalized, rotation_normalized);
+  if (translation_magnitude > 1.0e-12) {
+    const double translation_speed = config.planar_command_scale_m_s * overall;
+    result.translation_x_m_s =
+      translation_speed * velocity.x_m_s / translation_magnitude;
+    result.translation_y_m_s =
+      translation_speed * velocity.y_m_s / translation_magnitude;
+  }
+  if (std::abs(velocity.yaw_rad_s) > 1.0e-12) {
+    result.yaw_rad_s = std::copysign(
+      config.yaw_command_scale_rad_s * overall, velocity.yaw_rad_s);
+  }
+  for (const auto & foot : feet) {
+    const double local_x = result.translation_weight * result.translation_x_m_s -
+      result.rotation_weight * result.yaw_rad_s * foot.y;
+    const double local_y = result.translation_weight * result.translation_y_m_s +
+      result.rotation_weight * result.yaw_rad_s * foot.x;
+    result.maximum_local_speed_m_s = std::max(
+      result.maximum_local_speed_m_s, std::hypot(local_x, local_y));
+  }
+  return result;
+}
+
 bool crossed_half_boundary(double before, double after)
 {
   if (after < before) {
     return true;
   }
   return before < 0.5 && after >= 0.5;
+}
+
+struct LegacyFootSample
+{
+  double horizontal_scale{0.0};
+  double rotation_scale{0.0};
+  double lift_scale{0.0};
+  bool swing{false};
+};
+
+LegacyFootSample legacy_foot_sample(
+  double repeating_phase, double startup_phase, bool starting,
+  bool rotation_warm_start, bool group_a)
+{
+  if (starting) {
+    const double counter_phase = startup_phase + (group_a ? -0.5 : 0.0);
+    return {
+      legacy_horizontal_scale(counter_phase),
+      legacy_rotation_scale(counter_phase),
+      legacy_lift_scale(counter_phase),
+      group_a,
+    };
+  }
+
+  double local_phase = repeating_phase + (group_a ? 0.0 : 0.5);
+  local_phase = wrap_phase(local_phase);
+  const double curve_phase = legacy_curve_phase(local_phase);
+  // In the legacy negative-counter first step, tripod A remains at zero yaw
+  // offset from counter -25 through 0. The repeating rotation curve would
+  // otherwise introduce a discontinuous +half-yaw offset at the warm-start
+  // handover.
+  const double rotation_scale = rotation_warm_start && group_a && repeating_phase < 0.25 ?
+    0.0 : legacy_rotation_scale(curve_phase);
+  return {
+    legacy_horizontal_scale(curve_phase),
+    rotation_scale,
+    legacy_lift_scale(curve_phase),
+    local_phase >= 0.5,
+  };
 }
 
 }  // namespace
@@ -134,6 +250,10 @@ TripodStep advance_tripod(
     std::abs(config.duty_factor - 0.5) < 1.0e-12 &&
     std::isfinite(config.maximum_stride_m) && config.maximum_stride_m > 0.0 &&
     std::isfinite(config.swing_clearance_m) && config.swing_clearance_m > 0.0 &&
+    std::isfinite(config.planar_command_scale_m_s) &&
+    config.planar_command_scale_m_s > 0.0 &&
+    std::isfinite(config.yaw_command_scale_rad_s) &&
+    config.yaw_command_scale_rad_s > 0.0 &&
     std::isfinite(config.stable_hold_dwell_s) && config.stable_hold_dwell_s >= 0.0 &&
     finite_velocity(requested_velocity) && finite_velocity(previous.velocity) &&
     finite_feet(nominal_feet);
@@ -151,16 +271,28 @@ TripodStep advance_tripod(
     config.translation_stop_deceleration_m_s2 : config.translation_acceleration_m_s2;
   const double yaw_acceleration = stopping ?
     config.yaw_stop_deceleration_rad_s2 : config.yaw_acceleration_rad_s2;
-  output.state.velocity.x_m_s = approach(
-    previous.velocity.x_m_s, target.x_m_s, linear_acceleration * dt_s);
-  output.state.velocity.y_m_s = approach(
-    previous.velocity.y_m_s, target.y_m_s, linear_acceleration * dt_s);
-  output.state.velocity.yaw_rad_s = approach(
-    previous.velocity.yaw_rad_s, target.yaw_rad_s, yaw_acceleration * dt_s);
+  if (config.operator_input_pre_filtered && effective_walk_request) {
+    // The joystick adapter already applies the legacy response once to every
+    // operator control. Do not distort it with a second acceleration filter.
+    output.state.velocity = target;
+  } else {
+    output.state.velocity.x_m_s = approach(
+      previous.velocity.x_m_s, target.x_m_s, linear_acceleration * dt_s);
+    output.state.velocity.y_m_s = approach(
+      previous.velocity.y_m_s, target.y_m_s, linear_acceleration * dt_s);
+    output.state.velocity.yaw_rad_s = approach(
+      previous.velocity.yaw_rad_s, target.yaw_rad_s, yaw_acceleration * dt_s);
+  }
 
-  const double shaped_local_speed = maximum_local_speed(output.state.velocity, nominal_feet);
+  const auto shaped_blend = legacy_blend(config, output.state.velocity, nominal_feet);
+  const double shaped_local_speed = shaped_blend.maximum_local_speed_m_s;
   const bool shaped_moving = shaped_local_speed > 1.0e-12;
   if (effective_walk_request) {
+    if (!previous.walking && !previous.stopping) {
+      output.state.starting = true;
+      output.state.startup_phase = 0.0;
+      output.state.phase = 0.0;
+    }
     output.state.walking = true;
     output.state.stopping = false;
     output.state.hold_dwell_s = 0.0;
@@ -189,7 +321,22 @@ TripodStep advance_tripod(
       config.swing_clearance_m * output.state.maximum_stride_scale;
 
     const double old_phase = previous.phase;
-    output.state.phase += dt_s * output.state.cadence_hz;
+    const double phase_advance = dt_s * output.state.cadence_hz;
+    if (output.state.starting) {
+      output.state.startup_phase += phase_advance;
+      if (output.state.startup_phase >= 0.25 - 1.0e-12) {
+        output.state.phase = std::max(0.0, output.state.startup_phase - 0.25);
+        output.state.startup_phase = 0.25;
+        output.state.starting = false;
+      }
+    } else {
+      output.state.phase += phase_advance;
+      if (output.state.startup_phase >= 0.25 - 1.0e-12 &&
+        output.state.phase >= 0.25 - 1.0e-12)
+      {
+        output.state.startup_phase = 0.0;
+      }
+    }
     if (output.state.phase >= 1.0 - 1.0e-12) {
       const auto completed_cycles = static_cast<std::uint64_t>(
         std::floor(output.state.phase + 1.0e-12));
@@ -202,6 +349,8 @@ TripodStep advance_tripod(
     {
       output.state.walking = false;
       output.state.stopping = false;
+      output.state.starting = false;
+      output.state.startup_phase = 0.0;
       output.state.phase = 0.0;
       output.state.hold_dwell_s = dt_s;
       output.state.cadence_hz = 0.0;
@@ -231,28 +380,32 @@ TripodStep advance_tripod(
   }
 
   output.mode = output.state.stopping ? GaitMode::kStopping :
-    (output.state.cycle == 0 ? GaitMode::kStarting : GaitMode::kWalking);
+    (output.state.starting ? GaitMode::kStarting : GaitMode::kWalking);
   constexpr std::array<bool, kLegCount> kGroupA{true, false, true, false, true, false};
   for (std::size_t leg = 0; leg < kLegCount; ++leg) {
-    double local_phase = output.state.phase + (kGroupA[leg] ? 0.0 : 0.5);
-    local_phase -= std::floor(local_phase);
-    const bool swing = local_phase >= config.duty_factor;
-    output.swing[leg] = swing;
-    const double local_x = output.state.velocity.x_m_s -
-      output.state.velocity.yaw_rad_s * nominal_feet[leg].y;
-    const double local_y = output.state.velocity.y_m_s +
-      output.state.velocity.yaw_rad_s * nominal_feet[leg].x;
+    const auto foot_sample = legacy_foot_sample(
+      output.state.phase, output.state.startup_phase,
+      output.state.starting, output.state.startup_phase > 0.0, kGroupA[leg]);
+    output.swing[leg] = foot_sample.swing;
     const double stance_time = config.duty_factor / output.state.cadence_hz;
-    const double stride_x = local_x * stance_time * output.state.applied_velocity_scale;
-    const double stride_y = local_y * stance_time * output.state.applied_velocity_scale;
-    const double stride_scale = std::min(
-      1.0, std::hypot(stride_x, stride_y) / config.maximum_stride_m);
-    const double curve_phase = legacy_curve_phase(local_phase);
-    const double offset_scale = legacy_horizontal_scale(curve_phase);
-    const double lift = config.swing_clearance_m * stride_scale *
-      legacy_lift_scale(curve_phase);
-    output.foot_targets_base_m[leg].x += offset_scale * stride_x;
-    output.foot_targets_base_m[leg].y += offset_scale * stride_y;
+    const double stride_time = stance_time * output.state.applied_velocity_scale;
+    const double stride_x = shaped_blend.translation_x_m_s * stride_time;
+    const double stride_y = shaped_blend.translation_y_m_s * stride_time;
+    const double rotation_angle =
+      foot_sample.rotation_scale * shaped_blend.yaw_rad_s * stride_time;
+    const double cosine = std::cos(rotation_angle);
+    const double sine = std::sin(rotation_angle);
+    const double rotated_x = cosine * nominal_feet[leg].x -
+      sine * nominal_feet[leg].y - nominal_feet[leg].x;
+    const double rotated_y = sine * nominal_feet[leg].x +
+      cosine * nominal_feet[leg].y - nominal_feet[leg].y;
+    const double lift = output.state.maximum_clearance_m * foot_sample.lift_scale;
+    output.foot_targets_base_m[leg].x +=
+      shaped_blend.translation_weight * foot_sample.horizontal_scale * stride_x +
+      shaped_blend.rotation_weight * rotated_x;
+    output.foot_targets_base_m[leg].y +=
+      shaped_blend.translation_weight * foot_sample.horizontal_scale * stride_y +
+      shaped_blend.rotation_weight * rotated_y;
     output.foot_targets_base_m[leg].z += lift;
   }
   output.valid = true;
@@ -290,11 +443,14 @@ TripodStep retreat_tripod_to_nominal(
   output.state.velocity.yaw_rad_s = approach(
     previous.velocity.yaw_rad_s, 0.0,
     config.yaw_stop_deceleration_rad_s2 * dt_s);
-  const double local_speed = maximum_local_speed(output.state.velocity, nominal_feet);
+  const auto shaped_blend = legacy_blend(config, output.state.velocity, nominal_feet);
+  const double local_speed = shaped_blend.maximum_local_speed_m_s;
   if (local_speed <= 1.0e-12) {
     output.state.velocity = {};
     output.state.walking = false;
     output.state.stopping = false;
+    output.state.starting = false;
+    output.state.startup_phase = 0.0;
     output.state.phase = 0.0;
     output.state.cadence_hz = 0.0;
     output.state.maximum_stride_scale = 0.0;
@@ -327,24 +483,29 @@ TripodStep retreat_tripod_to_nominal(
 
   constexpr std::array<bool, kLegCount> kGroupA{true, false, true, false, true, false};
   for (std::size_t leg = 0; leg < kLegCount; ++leg) {
-    double local_phase = output.state.phase + (kGroupA[leg] ? 0.0 : 0.5);
-    local_phase -= std::floor(local_phase);
-    output.swing[leg] = local_phase >= config.duty_factor;
-    const double local_x = output.state.velocity.x_m_s -
-      output.state.velocity.yaw_rad_s * nominal_feet[leg].y;
-    const double local_y = output.state.velocity.y_m_s +
-      output.state.velocity.yaw_rad_s * nominal_feet[leg].x;
+    const auto foot_sample = legacy_foot_sample(
+      output.state.phase, output.state.startup_phase,
+      output.state.starting, output.state.startup_phase > 0.0, kGroupA[leg]);
+    output.swing[leg] = foot_sample.swing;
     const double stance_time = config.duty_factor / output.state.cadence_hz;
-    const double stride_x = local_x * stance_time * output.state.applied_velocity_scale;
-    const double stride_y = local_y * stance_time * output.state.applied_velocity_scale;
-    const double stride_scale = std::min(
-      1.0, std::hypot(stride_x, stride_y) / config.maximum_stride_m);
-    const double curve_phase = legacy_curve_phase(local_phase);
-    const double offset_scale = legacy_horizontal_scale(curve_phase);
-    const double lift = config.swing_clearance_m * stride_scale *
-      legacy_lift_scale(curve_phase);
-    output.foot_targets_base_m[leg].x += offset_scale * stride_x;
-    output.foot_targets_base_m[leg].y += offset_scale * stride_y;
+    const double stride_time = stance_time * output.state.applied_velocity_scale;
+    const double stride_x = shaped_blend.translation_x_m_s * stride_time;
+    const double stride_y = shaped_blend.translation_y_m_s * stride_time;
+    const double rotation_angle =
+      foot_sample.rotation_scale * shaped_blend.yaw_rad_s * stride_time;
+    const double cosine = std::cos(rotation_angle);
+    const double sine = std::sin(rotation_angle);
+    const double rotated_x = cosine * nominal_feet[leg].x -
+      sine * nominal_feet[leg].y - nominal_feet[leg].x;
+    const double rotated_y = sine * nominal_feet[leg].x +
+      cosine * nominal_feet[leg].y - nominal_feet[leg].y;
+    const double lift = output.state.maximum_clearance_m * foot_sample.lift_scale;
+    output.foot_targets_base_m[leg].x +=
+      shaped_blend.translation_weight * foot_sample.horizontal_scale * stride_x +
+      shaped_blend.rotation_weight * rotated_x;
+    output.foot_targets_base_m[leg].y +=
+      shaped_blend.translation_weight * foot_sample.horizontal_scale * stride_y +
+      shaped_blend.rotation_weight * rotated_y;
     output.foot_targets_base_m[leg].z += lift;
   }
   output.valid = true;

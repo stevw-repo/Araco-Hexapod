@@ -1,0 +1,27 @@
+{
+  "schema_id": "araco://schemas/description/artifacts/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.description.nominal-standing-reference",
+  "artifact_version": "0.3.0",
+  "owner_package": "araco_description",
+  "deployment_scope": "simulator_only",
+  "evidence": {"class": "simulator_estimate", "sources": ["docs/agent/ROBOT_DESCRIPTION_MANIFEST.md#nominal-standing-pose-evidence"]},
+  "dependencies": [
+    {"artifact_id": "araco.description.canonical-model", "artifact_version": "1.0.0"},
+    {"artifact_id": "araco.description.provisional-sim-limits", "artifact_version": "0.3.0"}
+  ],
+  "data": {
+    "kind": "nominal_pose",
+    "base_pose": {"frame": "base_link", "position_xyz_m": [0.0, 0.0, 0.10675], "orientation_xyzw": [0.0, 0.0, 0.0, 1.0]},
+    "joint_positions_rad": {
+      "left_front_coxa_joint": 0.166907, "left_front_femur_joint": 0.749681, "left_front_tibia_joint": -1.947935, "left_front_foot_joint": -0.372542,
+      "left_middle_coxa_joint": 0.0, "left_middle_femur_joint": 0.694188, "left_middle_tibia_joint": -1.791009, "left_middle_foot_joint": -0.473975,
+      "left_rear_coxa_joint": -0.166907, "left_rear_femur_joint": 0.749681, "left_rear_tibia_joint": -1.947935, "left_rear_foot_joint": -0.372542,
+      "right_front_coxa_joint": -0.166907, "right_front_femur_joint": 0.749681, "right_front_tibia_joint": -1.947935, "right_front_foot_joint": -0.372542,
+      "right_middle_coxa_joint": 0.0, "right_middle_femur_joint": 0.694188, "right_middle_tibia_joint": -1.791009, "right_middle_foot_joint": -0.473975,
+      "right_rear_coxa_joint": 0.166907, "right_rear_femur_joint": 0.749681, "right_rear_tibia_joint": -1.947935, "right_rear_foot_joint": -0.372542,
+      "gimbal_yaw_joint": 0.0
+    },
+    "hardware_startup_authorized": false
+  }
+}

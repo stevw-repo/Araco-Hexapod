@@ -1,0 +1,53 @@
+{
+  "schema_id": "araco://schemas/navigation/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.navigation.rtabmap-rgbd-fixed-gimbal-imu-sim",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_navigation",
+  "deployment_scope": "test_only",
+  "evidence": {
+    "class": "test_contract",
+    "sources": ["docs/agent/WORKING_STATE.md"]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.perception.gemini-335-registered-sim",
+      "artifact_version": "0.1.0"
+    }
+  ],
+  "data": {
+    "kind":"rgbd_slam","backend":"rtabmap","mode":"six_dof_rgbd_inertial",
+    "frames":{"map":"map","odom":"odom","base":"base_link","imu":"camera_link"},
+    "inputs": {
+      "rgb":"/araco/camera/color/image_raw","depth":"/araco/camera/depth/image_raw",
+      "camera_info":"/araco/camera/color/camera_info","imu":"/araco/camera/imu/data"
+    },
+    "synchronization": {
+      "registered_depth_required":true,"approximate":true,
+      "maximum_interval_s":0.04,"queue_size":10,"sensor_qos":"best_effort"
+    },
+    "odometry": {
+      "strategy":"frame_to_map_visual","publish_tf":true,
+      "imu_enabled":true,"wait_for_imu":true,
+      "always_check_imu_tf":false,"gimbal_policy":"locked_center",
+      "minimum_inliers":15,"maximum_features":1000,"reset_countdown":0
+    },
+    "mapping": {
+      "detection_rate_hz":2.0,"six_dof":true,"incremental_memory":true,
+      "gravity_sigma":0.3,
+      "grid": {
+        "from_depth":true,"three_d":true,"cell_size_m":0.05,
+        "depth_decimation":4,"minimum_range_m":0.35,"maximum_range_m":5.0,
+        "footprint_length_m":0.9,"footprint_width_m":0.8,"footprint_height_m":0.55
+      }
+    },
+    "outputs": {
+      "rgbd":"/araco/perception/rgbd_image","odom":"/araco/perception/odom",
+      "odom_info":"/araco/perception/odom_info","map":"/araco/perception/map",
+      "cloud_map":"/araco/perception/cloud_map",
+      "cloud_obstacles":"/araco/perception/cloud_obstacles",
+      "cloud_ground":"/araco/perception/cloud_ground"
+    },
+    "ground_truth_input":false
+  }
+}

@@ -9,7 +9,10 @@ from __future__ import annotations
 import json
 import math
 
+from araco_interfaces.msg import ArbitrationStatus
 from araco_interfaces.msg import CommandCandidate
+from araco_interfaces.msg import LocomotionStatus
+from araco_interfaces.msg import SafetyStatus
 from araco_teleop.joystick import JoystickIntent, JoystickState
 from araco_teleop.joystick_adapter_parameters import joystick_adapter
 import rclpy
@@ -33,6 +36,11 @@ class JoystickAdapter(LifecycleNode):
         self._timer = None
         self._sequence = 0
         self._startup_release_pending = True
+        self._source_quarantined = False
+        self._recovery_release_sent = False
+        self._last_arbitration_status = None
+        self._last_safety_status = None
+        self._last_locomotion_status = None
 
     def on_configure(self, _state):
         try:
@@ -55,6 +63,14 @@ class JoystickAdapter(LifecycleNode):
                 CommandCandidate, 'command/candidates/teleop', candidate_qos)
             self._subscription = self.create_subscription(
                 Joy, self._mapping['joy_topic'], self._accept_joy, 10)
+            self._arbitration_subscription = self.create_subscription(
+                ArbitrationStatus, 'command/arbitration_status',
+                self._accept_arbitration_status, 10)
+            self._safety_subscription = self.create_subscription(
+                SafetyStatus, 'safety/status', self._accept_safety_status, 10)
+            self._locomotion_subscription = self.create_subscription(
+                LocomotionStatus, 'locomotion/status',
+                self._accept_locomotion_status, 10)
         except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
             self.get_logger().error(f'joystick mapping validation failed: {error}')
             return TransitionCallbackReturn.FAILURE
@@ -84,11 +100,67 @@ class JoystickAdapter(LifecycleNode):
         except ValueError as error:
             self.get_logger().warning(f'rejected joystick report: {error}')
 
+    @staticmethod
+    def _reason_name(reason: int) -> str:
+        names = {
+            value: name.removeprefix('REASON_')
+            for name, value in vars(SafetyStatus).items()
+            if name.startswith('REASON_') and isinstance(value, int)
+        }
+        return names.get(reason, f'UNKNOWN_{reason}')
+
+    def _accept_arbitration_status(self, message: ArbitrationStatus) -> None:
+        quarantined = int(self._mapping['source_id']) in message.quarantined_source_ids
+        current = (quarantined, message.reason_code)
+        if current != self._last_arbitration_status:
+            state = 'QUARANTINED' if quarantined else 'READY'
+            status = 'OPERATOR STATUS: source=%s reason=%s%s' % (
+                state, self._reason_name(message.reason_code),
+                '; center controls for automatic recovery' if quarantined else '')
+            # rclpy keys logger severity by call site, so warning and info must
+            # remain on distinct source lines as the source state changes.
+            if quarantined:
+                self.get_logger().warning(status)
+            else:
+                self.get_logger().info(status)
+            self._last_arbitration_status = current
+        self._source_quarantined = quarantined
+        if not quarantined:
+            self._recovery_release_sent = False
+
+    def _accept_safety_status(self, message: SafetyStatus) -> None:
+        current = (message.state, message.reason_code)
+        if current != self._last_safety_status:
+            self.get_logger().info(
+                'OPERATOR STATUS: safety_state=%d reason=%s' % (
+                    message.state, self._reason_name(message.reason_code)))
+            self._last_safety_status = current
+
+    def _accept_locomotion_status(self, message: LocomotionStatus) -> None:
+        current = (message.mode, message.reason_code)
+        if current != self._last_locomotion_status:
+            status = 'OPERATOR STATUS: locomotion_mode=%d reason=%s' % (
+                message.mode, self._reason_name(message.reason_code))
+            if message.reason_code:
+                self.get_logger().warning(status)
+            else:
+                self.get_logger().info(status)
+            self._last_locomotion_status = current
+
     def _tick(self) -> None:
         intent = self._state.sample()
         if self._startup_release_pending:
             intent = JoystickIntent()
             self._startup_release_pending = False
+        elif (self._source_quarantined and not self._recovery_release_sent
+              and self._state.raw_controls_centered()):
+            # One deliberate inactive sample opens a new source session. The
+            # following fresh report reacquires normal no-deadman authority.
+            self._state.reset_motion_response()
+            intent = JoystickIntent()
+            self._recovery_release_sent = True
+            self.get_logger().info(
+                'OPERATOR STATUS: centered controls sent a source recovery release')
         output = CommandCandidate()
         output.header.stamp = self.get_clock().now().to_msg()
         output.header.frame_id = 'base_link'
@@ -103,6 +175,7 @@ class JoystickAdapter(LifecycleNode):
         output.intent.planar_velocity.linear.y = intent.vy
         output.intent.planar_velocity.angular.z = intent.wz
         output.intent.body_pose_offset.position.z = intent.body_z
+        output.intent.gimbal_yaw_rad = intent.gimbal_yaw
         half_roll = 0.5 * intent.body_roll
         half_pitch = 0.5 * intent.body_pitch
         half_yaw = 0.5 * intent.body_yaw

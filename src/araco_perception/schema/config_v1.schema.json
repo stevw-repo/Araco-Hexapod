@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["kind", "suite_name", "mount_frame", "gimbal_policy", "color", "depth", "imu"],
+  "properties": {
+    "kind": {"const": "simulated_rgbd_imu"},
+    "suite_name": {"const": "gemini_335_sim"},
+    "mount_frame": {"const": "camera_link"},
+    "gimbal_policy": {"const": "fixed_for_initial_validation"},
+    "color": {"$ref": "#/$defs/color"},
+    "depth": {"$ref": "#/$defs/depth"},
+    "imu": {"$ref": "#/$defs/imu"}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "cameraCommon": {
+      "type": "object",
+      "properties": {
+        "sensor_name": {"type": "string", "minLength": 1},
+        "optical_frame": {"type": "string", "pattern": "_optical_frame$"},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "update_rate_hz": {"type": "number", "exclusiveMinimum": 0},
+        "horizontal_fov_rad": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 3.141592653589793},
+        "near_clip_m": {"type": "number", "exclusiveMinimum": 0},
+        "far_clip_m": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "color": {
+      "allOf": [
+        {"$ref": "#/$defs/cameraCommon"},
+        {
+          "type": "object",
+          "required": ["sensor_name", "optical_frame", "gz_image_topic", "gz_camera_info_topic", "ros_image_topic", "ros_camera_info_topic", "width", "height", "update_rate_hz", "horizontal_fov_rad", "near_clip_m", "far_clip_m"],
+          "properties": {
+            "gz_image_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "gz_camera_info_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "ros_image_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "ros_camera_info_topic": {"type": "string", "pattern": "^/araco/camera/"}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "depth": {
+      "allOf": [
+        {"$ref": "#/$defs/cameraCommon"},
+        {
+          "type": "object",
+          "required": ["sensor_name", "optical_frame", "point_cloud_frame", "gz_base_topic", "gz_camera_info_topic", "gz_depth_image_topic", "gz_points_topic", "ros_depth_image_topic", "ros_camera_info_topic", "ros_points_topic", "width", "height", "update_rate_hz", "horizontal_fov_rad", "near_clip_m", "far_clip_m"],
+          "properties": {
+            "point_cloud_frame": {"const": "camera_link"},
+            "gz_base_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "gz_camera_info_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "gz_depth_image_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "gz_points_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "ros_depth_image_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "ros_camera_info_topic": {"type": "string", "pattern": "^/araco/camera/"},
+            "ros_points_topic": {"type": "string", "pattern": "^/araco/camera/"}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "imu": {
+      "type": "object",
+      "required": ["sensor_name", "frame", "gz_topic", "ros_topic", "update_rate_hz"],
+      "properties": {
+        "sensor_name": {"type": "string", "minLength": 1},
+        "frame": {"const": "camera_link"},
+        "gz_topic": {"type": "string", "pattern": "^/araco/camera/"},
+        "ros_topic": {"type": "string", "pattern": "^/araco/camera/"},
+        "update_rate_hz": {"type": "number", "exclusiveMinimum": 0}
+      },
+      "additionalProperties": false
+    }
+  }
+}

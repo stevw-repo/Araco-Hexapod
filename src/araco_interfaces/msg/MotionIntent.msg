@@ -9,3 +9,7 @@ uint8 GAIT_TRIPOD=1
 uint8 gait
 geometry_msgs/Twist planar_velocity
 geometry_msgs/Pose body_pose_offset
+# Independently controlled camera-gimbal yaw target. It remains inside the
+# supervised command transaction and is never smuggled through a reserved
+# Twist or Pose component.
+float64 gimbal_yaw_rad

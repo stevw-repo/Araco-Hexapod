@@ -30,10 +30,13 @@ struct TripodConfig
   double duty_factor{0.5};
   double maximum_stride_m{0.06};
   double swing_clearance_m{0.03};
+  double planar_command_scale_m_s{0.05};
+  double yaw_command_scale_rad_s{0.3};
   double translation_acceleration_m_s2{0.1};
   double translation_stop_deceleration_m_s2{0.15};
   double yaw_acceleration_rad_s2{0.6};
   double yaw_stop_deceleration_rad_s2{0.9};
+  bool operator_input_pre_filtered{false};
   double stable_hold_dwell_s{0.25};
 };
 
@@ -48,10 +51,16 @@ enum class GaitMode : std::uint8_t
 struct TripodState
 {
   double phase{0.0};
+  // A newly admitted walk begins with the legacy counter interval [-0.5,
+  // -0.25] for tripod A while tripod B advances [0.0, 0.25].  This dedicated
+  // quarter-cycle starts every foot at the nominal stance before joining the
+  // repeating trajectory at phase zero.
+  double startup_phase{0.0};
   std::uint64_t cycle{0};
   PlanarVelocity velocity{};
   bool walking{false};
   bool stopping{false};
+  bool starting{false};
   double hold_dwell_s{0.0};
   double cadence_hz{0.0};
   double maximum_stride_scale{0.0};

@@ -52,6 +52,12 @@ private:
     return value != TimePoint{} && SteadyClock::now() - value <= limit;
   }
 
+  static std::chrono::milliseconds timeout(double seconds)
+  {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::duration<double>(seconds));
+  }
+
   template<typename ValuesT>
   static bool finite_values(const ValuesT & values)
   {
@@ -81,6 +87,7 @@ private:
       {pose.position.x, pose.position.y, pose.position.z},
       {pose.orientation.x, pose.orientation.y,
         pose.orientation.z, pose.orientation.w},
+      message.intent.gimbal_yaw_rad,
     };
   }
 
@@ -91,6 +98,8 @@ private:
       params_.body_envelope.planar_speed_hard_m_s,
       params_.body_envelope.yaw_rate_normal_rad_s,
       params_.body_envelope.yaw_rate_hard_rad_s,
+      params_.body_envelope.gimbal_yaw_normal_rad,
+      params_.body_envelope.gimbal_yaw_hard_rad,
       params_.body_envelope.xy_normal_m,
       params_.body_envelope.z_normal_lower_m,
       params_.body_envelope.z_normal_upper_m,
@@ -122,6 +131,7 @@ private:
     output.body_pose_offset.orientation.y = policy.intent.orientation.y;
     output.body_pose_offset.orientation.z = policy.intent.orientation.z;
     output.body_pose_offset.orientation.w = policy.intent.orientation.w;
+    output.gimbal_yaw_rad = policy.intent.gimbal_yaw_rad;
   }
 
   CallbackReturn on_configure(const rclcpp_lifecycle::State &) override
@@ -245,7 +255,8 @@ private:
     provenance_publisher_->on_activate();
     machine_ = std::make_unique<SafetyMachine>(SafetyMachineConfig{
         5.0, params_.stable_hold_dwell_s,
-        params_.auto_enable_once_from_neutral_standing_source});
+        params_.auto_enable_once_from_neutral_standing_source,
+        params_.startup_readiness_stable_s});
     machine_->reset(steady_now_s());
     sync_machine_output();
     tick_count_ = 0;
@@ -505,17 +516,21 @@ private:
   void evaluate()
   {
     ++tick_count_;
+    const auto clock_timeout = timeout(params_.clock_progress_timeout_s);
+    const auto joint_timeout = timeout(params_.joint_state_timeout_s);
+    const auto controller_timeout = timeout(params_.controller_state_timeout_s);
+    const auto locomotion_timeout = timeout(params_.locomotion_status_timeout_s);
     uint64_t readiness = araco_interfaces::msg::SafetyStatus::READY_MODEL;
     const bool time_ready = have_clock_ && clock_progressed_ &&
-      fresh(clock_receipt_, std::chrono::milliseconds(250));
-    const bool joint_ready = joint_valid_ && fresh(joint_receipt_, std::chrono::milliseconds(100));
+      fresh(clock_receipt_, clock_timeout);
+    const bool joint_ready = joint_valid_ && fresh(joint_receipt_, joint_timeout);
     const bool controller_ready = controller_service_valid_ &&
       controller_client_->service_is_ready() && leg_state_valid_ && gimbal_state_valid_ &&
-      fresh(leg_state_receipt_, std::chrono::milliseconds(100)) &&
-      fresh(gimbal_state_receipt_, std::chrono::milliseconds(100));
+      fresh(leg_state_receipt_, controller_timeout) &&
+      fresh(gimbal_state_receipt_, controller_timeout);
     const bool backend_ready = backend_service_valid_ && hardware_client_->service_is_ready();
     const bool locomotion_ready = locomotion_valid_ &&
-      fresh(locomotion_receipt_, std::chrono::milliseconds(100));
+      fresh(locomotion_receipt_, locomotion_timeout);
     if (backend_ready) {readiness |= araco_interfaces::msg::SafetyStatus::READY_BACKEND;}
     if (joint_ready) {readiness |= araco_interfaces::msg::SafetyStatus::READY_JOINT_STATE;}
     if (controller_ready) {readiness |= araco_interfaces::msg::SafetyStatus::READY_CONTROLLERS;}
@@ -526,11 +541,15 @@ private:
     if (time_ready) {readiness |= araco_interfaces::msg::SafetyStatus::READY_TIME;}
     readiness_mask_ = readiness;
     if (readiness_mask_ != last_logged_readiness_mask_) {
+      const double locomotion_age_ms = locomotion_receipt_ == TimePoint{} ? -1.0 :
+      std::chrono::duration<double, std::milli>(
+        SteadyClock::now() - locomotion_receipt_).count();
       RCLCPP_INFO(
         get_logger(),
-        "readiness=%lu/%lu backend=%d joints=%d controllers=%d locomotion=%d time=%d",
+        "readiness=%lu/%lu backend=%d joints=%d controllers=%d locomotion=%d "
+        "locomotion_age_ms=%.3f time=%d",
         readiness_mask_, kRequiredReadiness, backend_ready, joint_ready, controller_ready,
-        locomotion_ready, time_ready);
+        locomotion_ready, locomotion_age_ms, time_ready);
       last_logged_readiness_mask_ = readiness_mask_;
     }
 
@@ -545,8 +564,11 @@ private:
 
   SafetyMachineInput machine_input() const
   {
-    const auto selected_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::duration<double>(params_.selected_command_timeout_s));
+    const auto selected_timeout = timeout(params_.selected_command_timeout_s);
+    const auto clock_timeout = timeout(params_.clock_progress_timeout_s);
+    const auto joint_timeout = timeout(params_.joint_state_timeout_s);
+    const auto controller_timeout = timeout(params_.controller_state_timeout_s);
+    const auto locomotion_timeout = timeout(params_.locomotion_status_timeout_s);
     SafetyMachineInput input;
     input.ready = readiness_mask_ == kRequiredReadiness;
     input.selected_stream_armed = selected_receipt_ != TimePoint{};
@@ -571,6 +593,8 @@ private:
       std::abs(selected_policy_.rpy_rad[1]) <=
       params_.body_envelope.stand_velocity_tolerance &&
       std::abs(selected_policy_.rpy_rad[2]) <=
+      params_.body_envelope.stand_velocity_tolerance &&
+      std::abs(selected_policy_.intent.gimbal_yaw_rad) <=
       params_.body_envelope.stand_velocity_tolerance;
     input.selected_source_id = selected_.has_selection ? selected_.source_id : 0;
     input.selection_epoch = selected_.selection_epoch;
@@ -585,14 +609,14 @@ private:
       (locomotion_mode_ == araco_interfaces::msg::LocomotionStatus::MODE_HOLDING ||
       locomotion_mode_ == araco_interfaces::msg::LocomotionStatus::MODE_STANDING);
     const bool time_ready = have_clock_ && clock_progressed_ &&
-      fresh(clock_receipt_, std::chrono::milliseconds(250));
+      fresh(clock_receipt_, clock_timeout);
     const bool controller_ready = controller_service_valid_ &&
       controller_client_->service_is_ready() && leg_state_valid_ && gimbal_state_valid_ &&
-      fresh(leg_state_receipt_, std::chrono::milliseconds(100)) &&
-      fresh(gimbal_state_receipt_, std::chrono::milliseconds(100));
+      fresh(leg_state_receipt_, controller_timeout) &&
+      fresh(gimbal_state_receipt_, controller_timeout);
     const bool backend_ready = backend_service_valid_ && hardware_client_->service_is_ready();
     const bool locomotion_ready = locomotion_valid_ &&
-      fresh(locomotion_receipt_, std::chrono::milliseconds(100));
+      fresh(locomotion_receipt_, locomotion_timeout);
     input.controlled_stop_available =
       time_ready && controller_ready && backend_ready && locomotion_ready;
 
@@ -600,7 +624,7 @@ private:
       state_ != araco_interfaces::msg::SafetyStatus::STATE_INACTIVE &&
       state_ != araco_interfaces::msg::SafetyStatus::STATE_SHUTTING_DOWN)
     {
-      if (!(joint_valid_ && fresh(joint_receipt_, std::chrono::milliseconds(100)))) {
+      if (!(joint_valid_ && fresh(joint_receipt_, joint_timeout))) {
         input.condition_fault_mask |= araco_interfaces::msg::SafetyStatus::FAULT_JOINT_STATE;
         input.condition_reason = joint_valid_ ?
           araco_interfaces::msg::SafetyStatus::REASON_JOINT_STATE_STALE :
@@ -608,8 +632,8 @@ private:
       }
       if (!(controller_service_valid_ && controller_client_->service_is_ready() &&
         leg_state_valid_ && gimbal_state_valid_ &&
-        fresh(leg_state_receipt_, std::chrono::milliseconds(100)) &&
-        fresh(gimbal_state_receipt_, std::chrono::milliseconds(100))))
+        fresh(leg_state_receipt_, controller_timeout) &&
+        fresh(gimbal_state_receipt_, controller_timeout)))
       {
         input.condition_fault_mask |= araco_interfaces::msg::SafetyStatus::FAULT_CONTROLLER;
         input.condition_reason = araco_interfaces::msg::SafetyStatus::REASON_CONTROLLER_NOT_READY;
@@ -618,7 +642,7 @@ private:
         input.condition_fault_mask |= araco_interfaces::msg::SafetyStatus::FAULT_BACKEND;
         input.condition_reason = araco_interfaces::msg::SafetyStatus::REASON_BACKEND_FAULT;
       }
-      if (fresh(locomotion_receipt_, std::chrono::milliseconds(100)) &&
+      if (fresh(locomotion_receipt_, locomotion_timeout) &&
         (locomotion_reason_ ==
         araco_interfaces::msg::SafetyStatus::REASON_KINEMATICS_INVALID ||
         locomotion_reason_ == araco_interfaces::msg::SafetyStatus::REASON_JOINT_LIMIT))
@@ -627,14 +651,14 @@ private:
         input.condition_reason = locomotion_reason_;
       } else {
         if (!(locomotion_valid_ &&
-          fresh(locomotion_receipt_, std::chrono::milliseconds(100))))
+          fresh(locomotion_receipt_, locomotion_timeout)))
         {
           input.condition_fault_mask |= araco_interfaces::msg::SafetyStatus::FAULT_LOCOMOTION;
           input.condition_reason = araco_interfaces::msg::SafetyStatus::REASON_LOCOMOTION_STALE;
         }
       }
       if (!(have_clock_ && clock_progressed_ &&
-        fresh(clock_receipt_, std::chrono::milliseconds(250))))
+        fresh(clock_receipt_, clock_timeout)))
       {
         input.condition_fault_mask |= araco_interfaces::msg::SafetyStatus::FAULT_TIME;
         input.condition_reason = araco_interfaces::msg::SafetyStatus::REASON_TIME_DISCONTINUITY;
@@ -691,8 +715,7 @@ private:
     if (state_ == araco_interfaces::msg::SafetyStatus::STATE_STOPPING) {
       output.disposition = araco_interfaces::msg::SafeCommand::DISPOSITION_CONTROLLED_STOP;
     }
-    const auto selected_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::duration<double>(params_.selected_command_timeout_s));
+    const auto selected_timeout = timeout(params_.selected_command_timeout_s);
     const bool synchronized = arbitration_synchronized(selected_timeout);
     const bool executable =
       state_ == araco_interfaces::msg::SafetyStatus::STATE_MOTION_ENABLED &&
@@ -730,8 +753,7 @@ private:
     if (state_ == araco_interfaces::msg::SafetyStatus::STATE_STOPPING) {
       output.disposition = araco_interfaces::msg::SafeCommand::DISPOSITION_CONTROLLED_STOP;
     }
-    const auto selected_timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::duration<double>(params_.selected_command_timeout_s));
+    const auto selected_timeout = timeout(params_.selected_command_timeout_s);
     const bool synchronized = arbitration_synchronized(selected_timeout);
     if (state_ == araco_interfaces::msg::SafetyStatus::STATE_MOTION_ENABLED &&
       selected_valid_ && selected_.has_selection && synchronized)

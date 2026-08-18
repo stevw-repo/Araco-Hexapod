@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/supervision/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.supervision.safety-policy",
-  "artifact_version": "0.2.0",
+  "artifact_version": "0.3.0",
   "owner_package": "araco_supervision",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -24,6 +24,7 @@
     "motion_requires_explicit_enable": true,
     "resume_after_time_discontinuity": false,
     "stop_policy": "controlled_then_hold",
+    "startup_readiness_stable_s": 1.0,
     "controller_manager_validation_period_s": 1.0,
     "watchdogs_s": {
       "selected_command": 0.05,

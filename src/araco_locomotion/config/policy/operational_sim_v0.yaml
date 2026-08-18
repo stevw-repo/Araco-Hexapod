@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/locomotion/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.locomotion.operational-policy",
-  "artifact_version": "0.1.0",
+  "artifact_version": "0.2.0",
   "owner_package": "araco_locomotion",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -72,6 +72,8 @@
       "planar_speed_hard_m_s": 0.08,
       "yaw_rate_normal_rad_s": 0.3,
       "yaw_rate_hard_rad_s": 0.5,
+      "gimbal_yaw_normal_rad": 0.3141592653589793,
+      "gimbal_yaw_hard_rad": 0.4,
       "body_xy_normal_m": 0.02,
       "body_z_normal_lower_m": -0.03,
       "body_z_normal_upper_m": 0.02,

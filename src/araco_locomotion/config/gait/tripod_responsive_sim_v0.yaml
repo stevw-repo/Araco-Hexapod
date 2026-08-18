@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/locomotion/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.locomotion.gait-tripod-slow",
-  "artifact_version": "0.5.0",
+  "artifact_version": "0.8.0",
   "owner_package": "araco_locomotion",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -10,7 +10,9 @@
     "sources": [
       "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
       "user-selected Responsive simulator speed profile on 2026-08-17",
-      "user-requested true double stride on 2026-08-17"
+      "user-requested true double stride on 2026-08-17",
+      "legacy Araco algo.py negative-counter first-step trajectory",
+      "user-requested modest stride and speed increase on 2026-08-17"
     ]
   },
   "dependencies": [
@@ -21,15 +23,15 @@
   ],
   "data": {
     "kind": "gait",
-    "gait_id": "tripod_legacy_curve_responsive_scheduler",
+    "gait_id": "tripod_legacy_translation_rotation_blend_responsive_scheduler",
     "base_cadence_hz": 1.5,
     "maximum_cadence_hz": 2.5,
     "cadence_rate_hz_s": 2.0,
-    "preferred_maximum_stride_scale": 0.5,
+    "preferred_maximum_stride_scale": 0.6,
     "motion_deadband_m_s": 0.005,
     "duty_factor": 0.5,
     "maximum_stride_m": 0.12,
-    "swing_clearance_m": 0.03,
+    "swing_clearance_m": 0.06,
     "trajectory_horizon_s": 0.04,
     "phase_groups": [
       [

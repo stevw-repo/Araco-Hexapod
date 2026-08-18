@@ -1,0 +1,42 @@
+{
+  "schema_id": "araco://schemas/gazebo/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.gazebo.world-rgbd-validation",
+  "artifact_version": "0.3.0",
+  "owner_package": "araco_gazebo",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/DECISIONS.md",
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+    ]
+  },
+  "dependencies": [],
+  "data": {
+    "kind": "world",
+    "world_uri": "package://araco_gazebo/worlds/rgbd_validation_v0.sdf",
+    "physics_engine": "dart",
+    "gravity_m_s2": [
+      0.0,
+      0.0,
+      -9.80665
+    ],
+    "maximum_step_s": 0.001,
+    "real_time_factor": 1.0,
+    "seed": 42,
+    "sensor_systems": [
+      "rendering",
+      "imu"
+    ],
+    "foot_friction": {
+      "mu": 0.9,
+      "mu2": 0.9
+    },
+    "nonfoot_friction": {
+      "mu": 0.4,
+      "mu2": 0.4
+    },
+    "restitution": 0.0
+  }
+}

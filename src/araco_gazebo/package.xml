@@ -15,6 +15,7 @@
   <depend>araco_description</depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>ros_gz_interfaces</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>ament_lint_auto</test_depend>

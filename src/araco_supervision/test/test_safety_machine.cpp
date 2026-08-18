@@ -65,6 +65,27 @@ TEST(SafetyMachine, StartupAndEpochsCoverInactiveHoldingAndMotion)
   EXPECT_EQ(machine.output().safety_epoch, 4U);
 }
 
+TEST(SafetyMachine, StartupRequiresContinuousReadinessButFaultsRemainActiveAfterward)
+{
+  SafetyMachine machine({5.0, 0.25, false, 1.0});
+  machine.reset(0.0);
+  auto input = ready_released();
+  EXPECT_EQ(machine.update(input, 0.01).state, SafetyState::kInactive);
+  EXPECT_EQ(machine.update(input, 0.50).state, SafetyState::kInactive);
+
+  input.ready = false;
+  EXPECT_EQ(machine.update(input, 0.60).state, SafetyState::kInactive);
+  input.ready = true;
+  EXPECT_EQ(machine.update(input, 0.70).state, SafetyState::kInactive);
+  EXPECT_EQ(machine.update(input, 1.69).state, SafetyState::kInactive);
+  EXPECT_EQ(machine.update(input, 1.71).state, SafetyState::kHolding);
+
+  input.ready = false;
+  input.condition_fault_mask = kFaultTime;
+  input.condition_reason = 23;
+  EXPECT_EQ(machine.update(input, 1.72).state, SafetyState::kFaultHold);
+}
+
 TEST(SafetyMachine, EnableRequiresReleaseAndFreshPostEnableSelectionEdge)
 {
   SafetyMachine machine({0.5, 0.25});
@@ -311,6 +332,9 @@ TEST(SafetyMachine, LatchedHoldAndShutdownUseAcceptedTargets)
 TEST(SafetyMachine, InvalidTimingAndTimeAreRejected)
 {
   EXPECT_THROW(SafetyMachine(SafetyMachineConfig{0.0, 0.25}), std::invalid_argument);
+  EXPECT_THROW(
+    SafetyMachine(SafetyMachineConfig{5.0, 0.25, false, -0.01}),
+    std::invalid_argument);
   SafetyMachine machine({5.0, 0.25});
   const auto nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_THROW(machine.reset(nan), std::invalid_argument);

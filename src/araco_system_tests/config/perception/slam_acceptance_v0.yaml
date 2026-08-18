@@ -1,0 +1,66 @@
+{
+  "schema_id": "araco://schemas/system_tests/slam_acceptance/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.system-tests.slam-acceptance",
+  "artifact_version": "0.4.0",
+  "owner_package": "araco_system_tests",
+  "deployment_scope": "test_only",
+  "evidence": {
+    "class": "test_contract",
+    "sources": [
+      "docs/agent/DECISIONS.md",
+      "docs/agent/WORKING_STATE.md"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.navigation.rtabmap-rgbd-sim",
+      "artifact_version": "0.4.0"
+    }
+  ],
+  "data": {
+    "kind": "slam_acceptance",
+    "estimator_inputs_forbidden": [
+      "/araco/simulation/ground_truth/odom"
+    ],
+    "observer_topics": {
+      "raw_odom": "/araco/perception/odom",
+      "odom_info": "/araco/perception/odom_info",
+      "ground_truth_odom": "/araco/simulation/ground_truth/odom",
+      "rtabmap_info": "/araco/perception/info",
+      "occupancy_grid": "/araco/perception/map",
+      "cloud_map": "/araco/perception/cloud_map"
+    },
+    "estimated_frames": {
+      "map": "map",
+      "odom": "odom",
+      "base": "base_link"
+    },
+    "route": {
+      "frame": "initial_ground_truth_base",
+      "waypoints_xy_m": [
+        [1.2, 0.0],
+        [0.0, 1.2],
+        [-1.2, 0.0],
+        [0.0, -1.2],
+        [0.0, 0.0]
+      ],
+      "waypoint_tolerance_m": 0.35,
+      "minimum_path_length_m": 5.0,
+      "final_yaw_tolerance_rad": 0.35,
+      "final_pose_dwell_s": 2.0
+    },
+    "thresholds": {
+      "maximum_wall_duration_s": 300.0,
+      "convergence_window_s": 10.0,
+      "maximum_convergence_translation_span_m": 0.03,
+      "maximum_convergence_yaw_span_rad": 0.03,
+      "minimum_working_memory_nodes": 20,
+      "minimum_cloud_points": 5000,
+      "maximum_cloud_drop_fraction": 0.75,
+      "maximum_translation_closure_error_m": 0.35,
+      "maximum_yaw_closure_error_rad": 0.35,
+      "minimum_loop_closures": 1
+    }
+  }
+}

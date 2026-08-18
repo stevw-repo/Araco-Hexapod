@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/bringup/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.bringup.profile-gazebo-dev",
-  "artifact_version": "0.1.0",
+  "artifact_version": "0.3.0",
   "owner_package": "araco_bringup",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -15,7 +15,7 @@
   "data": {
     "kind": "profile",
     "profile_id": "gazebo_dev_v0",
-    "profile_version": "0.1.0",
+    "profile_version": "0.3.0",
     "deployment_class": "simulator_only",
     "selected_artifacts": [
       {
@@ -29,6 +29,12 @@
         "path": "config/limits/provisional_sim_v0.yaml",
         "artifact_id": "araco.description.provisional-sim-limits",
         "artifact_version": "0.1.0"
+      },
+      {
+        "package": "araco_perception",
+        "path": "config/sensors/gemini_335_sim_v0.yaml",
+        "artifact_id": "araco.perception.gemini-335-sim",
+        "artifact_version": "0.2.0"
       },
       {
         "package": "araco_description",
@@ -58,13 +64,13 @@
         "package": "araco_locomotion",
         "path": "config/gait/tripod_slow_sim_v0.yaml",
         "artifact_id": "araco.locomotion.gait-tripod-slow",
-        "artifact_version": "0.3.0"
+        "artifact_version": "0.7.0"
       },
       {
         "package": "araco_locomotion",
         "path": "config/policy/operational_sim_v0.yaml",
         "artifact_id": "araco.locomotion.operational-policy",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.2.0"
       },
       {
         "package": "araco_supervision",
@@ -76,7 +82,7 @@
         "package": "araco_supervision",
         "path": "config/policy/simulator_v0.yaml",
         "artifact_id": "araco.supervision.safety-policy",
-        "artifact_version": "0.2.0"
+        "artifact_version": "0.3.0"
       },
       {
         "package": "araco_supervision",
@@ -94,7 +100,7 @@
         "package": "araco_gazebo",
         "path": "config/world/flat_ground_v0.yaml",
         "artifact_id": "araco.gazebo.world-flat-ground",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.2.0"
       },
       {
         "package": "araco_gazebo",
@@ -106,7 +112,7 @@
         "package": "araco_gazebo",
         "path": "config/bridge/simulator_v0.yaml",
         "artifact_id": "araco.gazebo.bridge",
-        "artifact_version": "0.1.0"
+        "artifact_version": "0.3.0"
       },
       {
         "package": "araco_bringup",

@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/gazebo/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.gazebo.bridge",
-  "artifact_version": "0.1.0",
+  "artifact_version": "0.3.0",
   "owner_package": "araco_gazebo",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -79,17 +79,46 @@
         "direction": "GZ_TO_ROS"
       },
       {
-        "ros_topic": "camera/color/image_raw",
+        "ros_topic": "/araco/camera/color/image_raw",
         "gz_topic": "/araco/camera/color/image",
         "ros_type": "sensor_msgs/msg/Image",
         "gz_type": "gz.msgs.Image",
         "direction": "GZ_TO_ROS"
       },
       {
-        "ros_topic": "camera/depth/image_raw",
-        "gz_topic": "/araco/camera/depth/image",
+        "ros_topic": "/araco/camera/color/camera_info",
+        "gz_topic": "/araco/camera/color/camera_info",
+        "ros_type": "sensor_msgs/msg/CameraInfo",
+        "gz_type": "gz.msgs.CameraInfo",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/camera/depth/image_raw",
+        "gz_topic": "/araco/camera/depth/depth_image",
         "ros_type": "sensor_msgs/msg/Image",
         "gz_type": "gz.msgs.Image",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/camera/depth/camera_info",
+        "gz_topic": "/araco/camera/depth/camera_info",
+        "ros_type": "sensor_msgs/msg/CameraInfo",
+        "gz_type": "gz.msgs.CameraInfo",
+        "direction": "GZ_TO_ROS"
+      },
+      {
+        "ros_topic": "/araco/camera/depth/points",
+        "gz_topic": "/araco/camera/depth/points",
+        "ros_type": "sensor_msgs/msg/PointCloud2",
+        "gz_type": "gz.msgs.PointCloudPacked",
+        "direction": "GZ_TO_ROS",
+        "frame_id": "camera_link"
+      },
+      {
+        "ros_topic": "/araco/camera/imu/data",
+        "gz_topic": "/araco/camera/imu",
+        "ros_type": "sensor_msgs/msg/Imu",
+        "gz_type": "gz.msgs.IMU",
         "direction": "GZ_TO_ROS"
       }
     ],

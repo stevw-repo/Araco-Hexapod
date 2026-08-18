@@ -109,6 +109,21 @@ def test_canonical_tree_roles_axes_and_pose_margin():
     assert abs(np.linalg.norm(pose['base_pose']['orientation_xyzw']) - 1.0) <= 1e-9
 
 
+def test_wide_simulator_limits_preserve_270_degree_leg_spans_and_nominal_pose():
+    limits = _artifact('config/limits/provisional_wide_sim_v0.yaml')
+    pose = _artifact('config/poses/nominal_standing_reference_wide_sim_v0.yaml')
+    expected_span = math.radians(270.0)
+    for joint_class in ('coxa', 'femur', 'tibia', 'foot'):
+        selected = limits['classes'][joint_class]
+        assert abs(
+            selected['upper_rad'] - selected['lower_rad'] - expected_span
+        ) <= 1e-12
+    for joint_name, target in pose['joint_positions_rad'].items():
+        selected = limits['classes'][limits['assignments'][joint_name]]
+        assert selected['lower_rad'] < target < selected['upper_rad']
+    assert limits['physical_profile_eligible'] is False
+
+
 def test_proxy_inclusive_mass_and_inertia_are_valid():
     dynamics = _artifact('config/dynamics/rough_estimate_v0.yaml')
     total_mass = sum(link['mass_kg'] for link in dynamics['links'].values())

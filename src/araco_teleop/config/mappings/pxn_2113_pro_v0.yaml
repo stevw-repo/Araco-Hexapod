@@ -2,7 +2,7 @@
   "schema_id": "araco://schemas/teleop/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.teleop.pxn-2113-pro-mapping",
-  "artifact_version": "0.9.0",
+  "artifact_version": "0.13.0",
   "owner_package": "araco_teleop",
   "deployment_scope": "simulator_only",
   "evidence": {
@@ -15,12 +15,15 @@
       "live Gazebo correction on 2026-08-17: restore the previous body-height and dedicated roll polarities",
       "user-selected Responsive simulator speed profile on 2026-08-17",
       "user clarified that doubled stride is intended to double planar speed on 2026-08-17"
+      ,"legacy Araco radial translation normalization and directly coupled gimbal yaw restored on 2026-08-17",
+      "legacy Araco algo.py P-only control response: Kp 0.02 for normal controls and 0.01 for height at a 0.005 s reference period",
+      "user-requested modest stride and speed increase on 2026-08-17"
     ]
   },
   "dependencies": [
     {
       "artifact_id": "araco.supervision.source-registry",
-      "artifact_version": "0.1.0"
+      "artifact_version": "0.2.0"
     }
   ],
   "data": {
@@ -34,8 +37,14 @@
     "button_count": 12,
     "source_id": 10,
     "publication_rate_hz": 50,
-    "heartbeat_timeout_s": 0.12,
+    "heartbeat_timeout_s": 0.5,
     "deadzone": 0.08,
+    "control_response": {
+      "kind": "legacy_p_only_time_invariant",
+      "reference_period_s": 0.005,
+      "normal_error_fraction": 0.02,
+      "height_error_fraction": 0.01
+    },
     "activation_policy": "auto_enable_once_from_fresh_neutral_standing_selection",
     "roll_left_button": 2,
     "roll_left_physical_label": "physical button 3",
@@ -44,12 +53,13 @@
     "roll_button_scale_rad": 0.15,
     "release_publishes_inactive": true,
     "axes": {
-      "forward": {"index": 1, "invert": false, "scale": 0.2},
-      "lateral": {"index": 0, "invert": false, "scale": 0.2},
+      "forward": {"index": 1, "invert": false, "scale": 0.24},
+      "lateral": {"index": 0, "invert": false, "scale": 0.24},
       "walking_yaw": {"index": 3, "invert": false, "scale": 1.2},
       "body_height": {"index": 2, "positive_end_is_zero": true, "range_m": 0.03},
       "body_pitch": {"index": 5, "invert": true, "scale": 0.15},
       "posture_yaw": {"index": 4, "invert": false, "scale": 0.2}
+      ,"gimbal_yaw": {"index": 4, "invert": false, "scale": 0.3141592653589793}
     },
     "frame_id": "base_link"
   }

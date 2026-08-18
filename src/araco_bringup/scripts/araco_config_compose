@@ -16,6 +16,10 @@ def main():
     parser.add_argument(
         'profile', choices=(
             'gazebo_dev_v0', 'gazebo_ci_v0', 'gazebo_joystick_v0',
+            'gazebo_perception_v0',
+            'gazebo_perception_diagnostic_visual_v0',
+            'gazebo_perception_diagnostic_dynamic_imu_v0',
+            'gazebo_perception_diagnostic_fixed_imu_v0',
             'gazebo_gate3_v0', 'gazebo_gate4_v0', 'gazebo_gate5_v0'))
     parser.add_argument('output_directory')
     parser.add_argument('--robot-namespace', default='araco')

@@ -45,6 +45,24 @@ locomotion:
     type: string_array
     description: Canonical ordered 24-joint leg controller partition.
     read_only: true
+  gimbal_joint_name:
+    type: string
+    description: Canonical dedicated gimbal controller joint.
+    read_only: true
+  gimbal_lower_rad:
+    type: double
+    description: Model lower limit for the gimbal target.
+    read_only: true
+  gimbal_upper_rad:
+    type: double
+    description: Model upper limit for the gimbal target.
+    read_only: true
+  gimbal_command_rate_cap_rad_s:
+    type: double
+    description: Maximum supervised gimbal target change per second.
+    read_only: true
+    validation:
+      gt<>: [0.0]
   nominal_positions_rad:
     type: double_array
     description: Canonical ordered standing oracle; never copied directly to output.
@@ -93,6 +111,10 @@ locomotion:
     read_only: true
     validation:
       gt<>: [0.0]
+  operator_input_pre_filtered:
+    type: bool
+    description: Operator intent already has the versioned legacy response; bypass duplicate feel shaping while retaining checked IK and recovery limits.
+    read_only: true
   safe_command_timeout_s:
     type: double
     description: Steady timeout after the first accepted SafeCommand.
@@ -180,6 +202,18 @@ locomotion:
   gait_swing_clearance_m:
     type: double
     description: Maximum swing-foot lift above the planned stance target.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  gait_planar_command_scale_m_s:
+    type: double
+    description: Full-scale translation used by legacy magnitude blending.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  gait_yaw_command_scale_rad_s:
+    type: double
+    description: Full-scale walking yaw used by legacy magnitude blending.
     read_only: true
     validation:
       gt<>: [0.0]

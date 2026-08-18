@@ -53,9 +53,39 @@ safety_supervisor:
     read_only: true
     validation:
       gt<>: [0.0]
+  joint_state_timeout_s:
+    type: double
+    description: Steady timeout for the complete canonical joint-state stream.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  locomotion_status_timeout_s:
+    type: double
+    description: Steady timeout for the locomotion health heartbeat.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  controller_state_timeout_s:
+    type: double
+    description: Steady timeout for both trajectory-controller state streams.
+    read_only: true
+    validation:
+      gt<>: [0.0]
+  clock_progress_timeout_s:
+    type: double
+    description: Steady timeout for advancing simulation clock samples.
+    read_only: true
+    validation:
+      gt<>: [0.0]
   stable_hold_dwell_s:
     type: double
     description: Required locomotion holding dwell before STOPPING completes.
+    read_only: true
+    validation:
+      gt_eq<>: [0.0]
+  startup_readiness_stable_s:
+    type: double
+    description: Continuous full-readiness dwell required before startup may enter HOLDING.
     read_only: true
     validation:
       gt_eq<>: [0.0]
@@ -68,6 +98,8 @@ safety_supervisor:
     planar_speed_hard_m_s: {type: double, description: Hard planar speed magnitude., read_only: true}
     yaw_rate_normal_rad_s: {type: double, description: Normal yaw-rate magnitude., read_only: true}
     yaw_rate_hard_rad_s: {type: double, description: Hard yaw-rate magnitude., read_only: true}
+    gimbal_yaw_normal_rad: {type: double, description: Normal gimbal-yaw magnitude., read_only: true}
+    gimbal_yaw_hard_rad: {type: double, description: Hard gimbal-yaw magnitude., read_only: true}
     xy_normal_m: {type: double, description: Normal X/Y body-offset magnitude., read_only: true}
     z_normal_lower_m: {type: double, description: Normal lower Z body offset., read_only: true}
     z_normal_upper_m: {type: double, description: Normal upper Z body offset., read_only: true}

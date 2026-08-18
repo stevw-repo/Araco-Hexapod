@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "kind", "backend", "mode", "frames", "inputs", "synchronization",
+    "odometry", "mapping", "outputs", "ground_truth_input"
+  ],
+  "properties": {
+    "kind": {"const": "rgbd_slam"},
+    "backend": {"const": "rtabmap"},
+    "mode": {"enum": ["six_dof_rgbd_inertial", "six_dof_rgbd_visual"]},
+    "frames": {
+      "type": "object",
+      "required": ["map", "odom", "base", "imu"],
+      "properties": {
+        "map": {"const": "map"},
+        "odom": {"const": "odom"},
+        "base": {"const": "base_link"},
+        "imu": {"const": "camera_link"}
+      },
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["rgb", "depth", "camera_info", "imu"],
+      "properties": {
+        "rgb": {"const": "/araco/camera/color/image_raw"},
+        "depth": {"const": "/araco/camera/depth/image_raw"},
+        "camera_info": {"const": "/araco/camera/color/camera_info"},
+        "imu": {"const": "/araco/camera/imu/data"}
+      },
+      "additionalProperties": false
+    },
+    "synchronization": {
+      "type": "object",
+      "required": ["registered_depth_required", "approximate", "maximum_interval_s", "queue_size", "sensor_qos"],
+      "properties": {
+        "registered_depth_required": {"const": true},
+        "approximate": {"const": true},
+        "maximum_interval_s": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.067},
+        "queue_size": {"type": "integer", "minimum": 2},
+        "sensor_qos": {"const": "best_effort"}
+      },
+      "additionalProperties": false
+    },
+    "odometry": {
+      "type": "object",
+      "required": ["strategy", "publish_tf", "imu_enabled", "wait_for_imu", "always_check_imu_tf", "gimbal_policy", "minimum_inliers", "maximum_features", "reset_countdown"],
+      "properties": {
+        "strategy": {"const": "frame_to_map_visual"},
+        "publish_tf": {"const": true},
+        "imu_enabled": {"type": "boolean"},
+        "wait_for_imu": {"type": "boolean"},
+        "always_check_imu_tf": {"type": "boolean"},
+        "gimbal_policy": {"enum": ["dynamic", "locked_center", "not_applicable"]},
+        "minimum_inliers": {"type": "integer", "minimum": 8},
+        "maximum_features": {"type": "integer", "minimum": 100},
+        "reset_countdown": {"const": 0}
+      },
+      "additionalProperties": false
+    },
+    "mapping": {
+      "type": "object",
+      "required": ["detection_rate_hz", "six_dof", "incremental_memory", "gravity_sigma", "grid"],
+      "properties": {
+        "detection_rate_hz": {"type": "number", "exclusiveMinimum": 0},
+        "six_dof": {"const": true},
+        "incremental_memory": {"const": true},
+        "gravity_sigma": {"type": "number", "minimum": 0},
+        "grid": {
+          "type": "object",
+          "required": ["from_depth", "three_d", "cell_size_m", "depth_decimation", "minimum_range_m", "maximum_range_m", "footprint_length_m", "footprint_width_m", "footprint_height_m"],
+          "properties": {
+            "from_depth": {"const": true},
+            "three_d": {"const": true},
+            "cell_size_m": {"type": "number", "exclusiveMinimum": 0},
+            "depth_decimation": {"type": "integer", "minimum": 1},
+            "minimum_range_m": {"type": "number", "minimum": 0},
+            "maximum_range_m": {"type": "number", "exclusiveMinimum": 0},
+            "footprint_length_m": {"type": "number", "exclusiveMinimum": 0},
+            "footprint_width_m": {"type": "number", "exclusiveMinimum": 0},
+            "footprint_height_m": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["rgbd", "odom", "odom_info", "map", "cloud_map", "cloud_obstacles", "cloud_ground"],
+      "properties": {
+        "rgbd": {"type": "string", "pattern": "^/araco/perception/"},
+        "odom": {"type": "string", "pattern": "^/araco/perception/"},
+        "odom_info": {"type": "string", "pattern": "^/araco/perception/"},
+        "map": {"type": "string", "pattern": "^/araco/perception/"},
+        "cloud_map": {"type": "string", "pattern": "^/araco/perception/"},
+        "cloud_obstacles": {"type": "string", "pattern": "^/araco/perception/"},
+        "cloud_ground": {"type": "string", "pattern": "^/araco/perception/"}
+      },
+      "additionalProperties": false
+    },
+    "ground_truth_input": {"const": false}
+  },
+  "additionalProperties": false
+}

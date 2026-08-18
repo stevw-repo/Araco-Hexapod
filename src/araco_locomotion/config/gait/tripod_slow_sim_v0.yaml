@@ -2,13 +2,14 @@
   "schema_id": "araco://schemas/locomotion/config/v1",
   "schema_version": 1,
   "artifact_id": "araco.locomotion.gait-tripod-slow",
-  "artifact_version": "0.3.0",
+  "artifact_version": "0.7.0",
   "owner_package": "araco_locomotion",
   "deployment_scope": "simulator_only",
   "evidence": {
     "class": "operational_policy",
     "sources": [
-      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md"
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
+      "legacy Araco algo.py negative-counter first-step trajectory"
     ]
   },
   "dependencies": [
@@ -19,7 +20,7 @@
   ],
   "data": {
     "kind": "gait",
-    "gait_id": "tripod_legacy_curve_responsive_scheduler",
+    "gait_id": "tripod_legacy_translation_rotation_blend_responsive_scheduler",
     "base_cadence_hz": 1.0,
     "maximum_cadence_hz": 1.5,
     "cadence_rate_hz_s": 1.0,

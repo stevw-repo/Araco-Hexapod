@@ -35,6 +35,13 @@ class CompositionError(RuntimeError):
 PROFILE_PATHS = {
     'gazebo_dev_v0': 'config/profiles/gazebo_dev_v0.yaml',
     'gazebo_joystick_v0': 'config/profiles/gazebo_joystick_v0.yaml',
+    'gazebo_perception_v0': 'config/profiles/gazebo_perception_v0.yaml',
+    'gazebo_perception_diagnostic_visual_v0': (
+        'config/profiles/gazebo_perception_diagnostic_visual_v0.yaml'),
+    'gazebo_perception_diagnostic_dynamic_imu_v0': (
+        'config/profiles/gazebo_perception_diagnostic_dynamic_imu_v0.yaml'),
+    'gazebo_perception_diagnostic_fixed_imu_v0': (
+        'config/profiles/gazebo_perception_diagnostic_fixed_imu_v0.yaml'),
     'gazebo_ci_v0': 'config/profiles/gazebo_ci_v0.yaml',
     'gazebo_gate3_v0': 'config/profiles/gazebo_gate3_v0.yaml',
     'gazebo_gate4_v0': 'config/profiles/gazebo_gate4_v0.yaml',
@@ -188,9 +195,55 @@ def _semantic_validate(artifact: Artifact) -> None:
         'source_registry': _validate_sources,
         'qos': _validate_qos,
         'profile': _validate_profile,
+        'simulated_rgbd_imu': _validate_simulated_rgbd_imu,
+        'rgbd_slam': _validate_rgbd_slam,
     }.get(kind)
     if validator:
         validator(artifact)
+
+
+def _validate_simulated_rgbd_imu(artifact: Artifact) -> None:
+    data = artifact.document['data']
+    for camera_name in ('color', 'depth'):
+        camera = data[camera_name]
+        if float(camera['near_clip_m']) >= float(camera['far_clip_m']):
+            raise CompositionError(f'{camera_name} camera clip interval is empty')
+    ros_topics = [
+        data['color']['ros_image_topic'],
+        data['color']['ros_camera_info_topic'],
+        data['depth']['ros_depth_image_topic'],
+        data['depth']['ros_camera_info_topic'],
+        data['depth']['ros_points_topic'],
+        data['imu']['ros_topic'],
+    ]
+    _unique(ros_topics, 'simulated sensor ROS topic')
+
+
+def _validate_rgbd_slam(artifact: Artifact) -> None:
+    data = artifact.document['data']
+    _unique(list(data['outputs'].values()), 'RGB-D SLAM output topic')
+    if data['ground_truth_input']:
+        raise CompositionError('ground truth cannot be an RGB-D SLAM input')
+    odometry = data['odometry']
+    policy = odometry['gimbal_policy']
+    if policy == 'not_applicable' and (
+            odometry['imu_enabled'] or odometry['wait_for_imu']
+            or data['mode'] != 'six_dof_rgbd_visual'
+            or data['mapping']['gravity_sigma'] != 0.0):
+        raise CompositionError(
+            'visual-only SLAM must disable IMU initialization and gravity')
+    if policy == 'dynamic' and (
+            not odometry['imu_enabled'] or not odometry['wait_for_imu']
+            or not odometry['always_check_imu_tf']
+            or data['mode'] != 'six_dof_rgbd_inertial'):
+        raise CompositionError(
+            'dynamic-gimbal IMU must use timestamped transform checks')
+    if policy == 'locked_center' and (
+            not odometry['imu_enabled'] or not odometry['wait_for_imu']
+            or odometry['always_check_imu_tf']
+            or data['mode'] != 'six_dof_rgbd_inertial'):
+        raise CompositionError(
+            'latest IMU transform is allowed only by the locked-gimbal contract')
 
 
 def _validate_model(artifact: Artifact) -> None:
@@ -465,13 +518,23 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
     operational = _kind(artifacts, 'operational_policy').document['data']
     controllers = _kind(artifacts, 'controllers').document['data']
     gait = _kind(artifacts, 'gait').document['data']
-    sources = _kind(artifacts, 'source_registry').document['data']
-    safety = _kind(artifacts, 'safety_policy').document['data']
+    source_registry_artifact = _kind(artifacts, 'source_registry')
+    sources = source_registry_artifact.document['data']
+    safety_artifact = _kind(artifacts, 'safety_policy')
+    safety = safety_artifact.document['data']
     qos = _kind(artifacts, 'qos').document['data']
     mapping = _kind(artifacts, 'teleop_mapping').document['data']
     world = _kind(artifacts, 'world').document['data']
     backend = _kind(artifacts, 'gazebo_backend').document['data']
     bridge = _kind(artifacts, 'bridge').document['data']
+    sensors = _kind(artifacts, 'simulated_rgbd_imu').document['data']
+    slam_artifacts = [
+        artifact for artifact in artifacts.values()
+        if artifact.document['data']['kind'] == 'rgbd_slam'
+    ]
+    if len(slam_artifacts) > 1:
+        raise CompositionError('expected at most one selected RGB-D SLAM artifact')
+    slam = slam_artifacts[0].document['data'] if slam_artifacts else None
     wiring = _kind(artifacts, 'wiring').document['data']
     joints = model['joints']
     names = [joint['name'] for joint in joints]
@@ -536,11 +599,13 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         'body_z_normal_upper_m': 0.02,
         'body_roll_pitch_normal_rad': 0.15,
         'body_yaw_normal_rad': 0.2,
+        'gimbal_yaw_normal_rad': 0.3141592653589793,
         'body_xy_hard_m': 0.035,
         'body_z_hard_lower_m': -0.045,
         'body_z_hard_upper_m': 0.035,
         'body_roll_pitch_hard_rad': 0.25,
         'body_yaw_hard_rad': 0.35,
+        'gimbal_yaw_hard_rad': 0.4,
         'quaternion_norm_tolerance': 1e-6,
         'reserved_twist_tolerance': 1e-12,
         'stand_velocity_tolerance': 1e-9,
@@ -558,7 +623,7 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         operational['command_envelope']['yaw_rate_hard_rad_s'],
     )
     baseline_speed_envelope = (0.05, 0.08, 0.3, 0.5)
-    responsive_speed_envelope = (0.2, 0.24, 1.2, 1.5)
+    responsive_speed_envelope = (0.24, 0.288, 1.2, 1.5)
     if speed_envelope not in {
         baseline_speed_envelope, responsive_speed_envelope
     }:
@@ -603,22 +668,29 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         shaping['body_angular_rate_rad_s'],
     )
     baseline_gait_contract = (
-        'tripod_legacy_curve_responsive_scheduler', 1.0, 1.5, 1.0,
+        'tripod_legacy_translation_rotation_blend_responsive_scheduler', 1.0, 1.5, 1.0,
         0.5, 0.005, 0.5, 0.06, 0.03, 0.04,
         0.1, 0.15, 0.6, 0.9, 0.03, 0.3,
     )
     responsive_gait_contract = (
-        'tripod_legacy_curve_responsive_scheduler', 1.5, 2.5, 2.0,
-        0.5, 0.005, 0.5, 0.12, 0.03, 0.04,
+        'tripod_legacy_translation_rotation_blend_responsive_scheduler', 1.5, 2.5, 2.0,
+        0.6, 0.005, 0.5, 0.12, 0.06, 0.04,
         0.4, 0.6, 2.4, 3.6, 0.03, 0.3,
     )
     if gait_contract not in {baseline_gait_contract, responsive_gait_contract}:
         raise CompositionError(
             'gait identity, timing, or envelope differs from the accepted contract')
-    expected_sources = {
-        'teleop': (10, 100, 50, 0.15, True),
-        'navigation': (20, 50, 20, 0.3, False),
-        'system_test': (250, 200, 100, 0.1, False),
+    accepted_sources = {
+        '0.1.0': {
+            'teleop': (10, 100, 50, 0.15, True),
+            'navigation': (20, 50, 20, 0.3, False),
+            'system_test': (250, 200, 100, 0.1, False),
+        },
+        '0.2.0': {
+            'teleop': (10, 100, 50, 0.5, True),
+            'navigation': (20, 50, 20, 0.3, False),
+            'system_test': (250, 200, 100, 0.1, False),
+        },
     }
     actual_sources = {
         item['name']: (
@@ -627,15 +699,43 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         )
         for item in sources['sources']
     }
-    if actual_sources != expected_sources:
+    if actual_sources != accepted_sources.get(source_registry_artifact.version):
         raise CompositionError('source authority differs from the accepted contract')
-    expected_watchdogs = {
-        'selected_command': 0.05, 'safe_command': 0.05,
-        'joint_state': 0.1, 'locomotion_status': 0.1,
-        'controller_state': 0.1, 'provenance': 1.5,
-        'clock_progress': 0.25,
+    accepted_safety_timing = {
+        '0.3.0': {
+            'watchdogs_s': {
+                'selected_command': 0.05, 'safe_command': 0.05,
+                'joint_state': 0.1, 'locomotion_status': 0.1,
+                'controller_state': 0.1, 'provenance': 1.5,
+                'clock_progress': 0.25,
+            },
+            'maximum_detection_s': {
+                'selected_command': 0.06, 'safe_command': 0.06,
+                'joint_state': 0.11, 'locomotion_status': 0.11,
+                'controller_state': 0.11, 'provenance': 1.51,
+                'clock_progress': 0.26,
+            },
+        },
+        '0.5.0': {
+            'watchdogs_s': {
+                'selected_command': 0.5, 'safe_command': 0.5,
+                'joint_state': 0.5, 'locomotion_status': 0.5,
+                'controller_state': 0.5, 'provenance': 1.5,
+                'clock_progress': 0.5,
+            },
+            'maximum_detection_s': {
+                'selected_command': 0.51, 'safe_command': 0.51,
+                'joint_state': 0.51, 'locomotion_status': 0.51,
+                'controller_state': 0.51, 'provenance': 1.51,
+                'clock_progress': 0.51,
+            },
+        },
     }
-    if safety['watchdogs_s'] != expected_watchdogs:
+    expected_safety_timing = accepted_safety_timing.get(safety_artifact.version)
+    if expected_safety_timing is None or any(
+        safety[key] != expected_safety_timing[key]
+        for key in ('watchdogs_s', 'maximum_detection_s')
+    ):
         raise CompositionError('safety watchdogs differ from the accepted contract')
     if set(qos['profiles']) != {
         'candidate_latest', 'trusted_command_latest', 'controller_command',
@@ -646,10 +746,11 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
     common_mapping_valid = (
         mapping['source_id'] == 10
         and mapping['publication_rate_hz'] == 50
-        and mapping['heartbeat_timeout_s'] == 0.12
         and mapping['release_publishes_inactive']
     )
     keyboard_mapping_valid = mapping['adapter'] == 'keyboard' and (
+        mapping['heartbeat_timeout_s'] == 0.12
+        and
         mapping['frontend'] == 'tk_key_state_window'
         and mapping['state_protocol'] == 'araco.keyboard-state.v1'
         and mapping['state_topic'] == 'teleop/key_state'
@@ -657,12 +758,20 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         and mapping['deadman_neutral_keeps_source_active']
     )
     joystick_mapping_valid = mapping['adapter'] == 'joystick' and (
+        mapping['heartbeat_timeout_s'] == 0.5
+        and
         mapping['device_name'] == 'LiteStar PXN-2113 Pro'
         and mapping['usb_id'] == '11ff:0837'
         and mapping['axis_count'] == 6
         and mapping['button_count'] == 12
         and mapping['activation_policy'] ==
         'auto_enable_once_from_fresh_neutral_standing_selection'
+        and mapping['control_response'] == {
+            'kind': 'legacy_p_only_time_invariant',
+            'reference_period_s': 0.005,
+            'normal_error_fraction': 0.02,
+            'height_error_fraction': 0.01,
+        }
         and not any(key in mapping for key in (
             'deadman_button', 'deadman_physical_label',
             'deadman_neutral_keeps_source_active'))
@@ -672,13 +781,15 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         and mapping['roll_right_physical_label'] == 'physical button 4'
         and mapping['roll_button_scale_rad'] == 0.15
         and mapping['axes'] == {
-            'forward': {'index': 1, 'invert': False, 'scale': 0.2},
-            'lateral': {'index': 0, 'invert': False, 'scale': 0.2},
+            'forward': {'index': 1, 'invert': False, 'scale': 0.24},
+            'lateral': {'index': 0, 'invert': False, 'scale': 0.24},
             'walking_yaw': {'index': 3, 'invert': False, 'scale': 1.2},
             'body_height': {
                 'index': 2, 'positive_end_is_zero': True, 'range_m': 0.03},
             'body_pitch': {'index': 5, 'invert': True, 'scale': 0.15},
             'posture_yaw': {'index': 4, 'invert': False, 'scale': 0.2},
+            'gimbal_yaw': {
+                'index': 4, 'invert': False, 'scale': 0.3141592653589793},
         }
     )
     if not common_mapping_valid or not (
@@ -701,10 +812,10 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         ('foot', -0.85, 0.1, 1.2),
     )
     responsive_operational_class_contract = (
-        ('coxa', -0.7, 0.7, 2.0),
-        ('femur', 0.15, 1.35, 2.0),
-        ('tibia', -2.65, -0.75, 2.0),
-        ('foot', -1.25, 0.35, 2.0),
+        ('coxa', -2.356194490192345, 2.356194490192345, 5.5),
+        ('femur', -1.636194490192345, 3.076194490192345, 10.0),
+        ('tibia', -4.256194490192345, 0.456194490192345, 12.5),
+        ('foot', -2.766194490192345, 1.946194490192345, 9.0),
     )
     responsive_contract_selected = (
         gait_contract == responsive_gait_contract
@@ -727,6 +838,7 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         or world['maximum_step_s'] != 0.001
         or world['real_time_factor'] != 1.0
         or world['seed'] != 42
+        or world['sensor_systems'] != ['rendering', 'imu']
     ):
         raise CompositionError('Gazebo world determinism contract differs')
     if (
@@ -737,6 +849,85 @@ def _cross_validate(artifacts: dict[str, Artifact]) -> dict[str, Any]:
         raise CompositionError('Gazebo backend contract differs')
     if not any(endpoint['ros_topic'] == '/clock' for endpoint in bridge['endpoints']):
         raise CompositionError('Gazebo bridge does not provide /clock')
+    fixed_frame_names = {frame['child'] for frame in model['fixed_frames']}
+    if (
+        sensors['mount_frame'] not in fixed_frame_names
+        or sensors['color']['optical_frame'] not in fixed_frame_names
+        or sensors['depth']['optical_frame'] not in fixed_frame_names
+        or sensors['depth']['point_cloud_frame'] not in fixed_frame_names
+        or sensors['imu']['frame'] not in fixed_frame_names
+    ):
+        raise CompositionError('simulated RGB-D/IMU frame is absent from canonical model')
+    bridge_pairs = {
+        (endpoint['ros_topic'], endpoint['gz_topic'], endpoint['ros_type'])
+        for endpoint in bridge['endpoints']
+    }
+    expected_sensor_bridges = {
+        (
+            sensors['color']['ros_image_topic'],
+            sensors['color']['gz_image_topic'],
+            'sensor_msgs/msg/Image',
+        ),
+        (
+            sensors['color']['ros_camera_info_topic'],
+            sensors['color']['gz_camera_info_topic'],
+            'sensor_msgs/msg/CameraInfo',
+        ),
+        (
+            sensors['depth']['ros_depth_image_topic'],
+            sensors['depth']['gz_depth_image_topic'],
+            'sensor_msgs/msg/Image',
+        ),
+        (
+            sensors['depth']['ros_camera_info_topic'],
+            sensors['depth']['gz_camera_info_topic'],
+            'sensor_msgs/msg/CameraInfo',
+        ),
+        (
+            sensors['depth']['ros_points_topic'],
+            sensors['depth']['gz_points_topic'],
+            'sensor_msgs/msg/PointCloud2',
+        ),
+        (
+            sensors['imu']['ros_topic'],
+            sensors['imu']['gz_topic'],
+            'sensor_msgs/msg/Imu',
+        ),
+    }
+    if not expected_sensor_bridges <= bridge_pairs:
+        raise CompositionError('Gazebo bridge does not cover the RGB-D/IMU contract')
+    point_cloud_bridges = [
+        endpoint for endpoint in bridge['endpoints']
+        if endpoint['ros_topic'] == sensors['depth']['ros_points_topic']
+    ]
+    if (
+        len(point_cloud_bridges) != 1
+        or point_cloud_bridges[0].get('frame_id') != sensors['depth']['point_cloud_frame']
+    ):
+        raise CompositionError(
+            'Gazebo point cloud must use its +X-forward camera frame, not an optical frame')
+    if slam is not None:
+        registered_fields = ('width', 'height', 'horizontal_fov_rad', 'update_rate_hz')
+        if any(
+            sensors['color'][field] != sensors['depth'][field]
+            for field in registered_fields
+        ):
+            raise CompositionError(
+                'RGB-D SLAM requires registered color and depth intrinsics')
+        if slam['inputs'] != {
+            'rgb': sensors['color']['ros_image_topic'],
+            'depth': sensors['depth']['ros_depth_image_topic'],
+            'camera_info': sensors['color']['ros_camera_info_topic'],
+            'imu': sensors['imu']['ros_topic'],
+        }:
+            raise CompositionError('RGB-D SLAM inputs differ from selected sensors')
+        if slam['frames'] != {
+            'map': 'map', 'odom': 'odom', 'base': 'base_link',
+            'imu': sensors['imu']['frame'],
+        }:
+            raise CompositionError('RGB-D SLAM frame chain differs from contract')
+        if not slam['synchronization']['registered_depth_required']:
+            raise CompositionError('RGB-D SLAM must require registered depth')
     expected_input_nodes = (
         {'keyboard_teleop_ui', 'teleop_adapter'} if mapping['adapter'] == 'keyboard'
         else {'joy_node', 'joystick_adapter'}
@@ -788,6 +979,7 @@ def _render_urdf(
     pose = _kind(artifacts, 'nominal_pose').document['data']
     backend = _kind(artifacts, 'gazebo_backend').document['data']
     world = _kind(artifacts, 'world').document['data']
+    sensors = _kind(artifacts, 'simulated_rgbd_imu').document['data']
     template = next(
         resource for resource in resources['resources']
         if resource['id'] == 'robot_xacro_macros'
@@ -918,6 +1110,57 @@ def _render_urdf(
             f'    <mu2>{friction["mu2"]:.15g}</mu2>',
             '  </gazebo>',
         ])
+    color = sensors['color']
+    depth = sensors['depth']
+    imu = sensors['imu']
+    lines.extend([
+        f'  <gazebo reference="{sensors["mount_frame"]}">',
+        f'    <sensor name="{color["sensor_name"]}" type="camera">',
+        '      <always_on>true</always_on>',
+        f'      <update_rate>{color["update_rate_hz"]:.15g}</update_rate>',
+        f'      <topic>{color["gz_image_topic"]}</topic>',
+        '      <camera>',
+        f'        <camera_info_topic>{color["gz_camera_info_topic"]}</camera_info_topic>',
+        f'        <horizontal_fov>{color["horizontal_fov_rad"]:.15g}</horizontal_fov>',
+        '        <image>',
+        f'          <width>{color["width"]}</width>',
+        f'          <height>{color["height"]}</height>',
+        '          <format>R8G8B8</format>',
+        '        </image>',
+        '        <clip>',
+        f'          <near>{color["near_clip_m"]:.15g}</near>',
+        f'          <far>{color["far_clip_m"]:.15g}</far>',
+        '        </clip>',
+        f'        <optical_frame_id>{color["optical_frame"]}</optical_frame_id>',
+        '      </camera>',
+        '    </sensor>',
+        f'    <sensor name="{depth["sensor_name"]}" type="rgbd_camera">',
+        '      <always_on>true</always_on>',
+        f'      <update_rate>{depth["update_rate_hz"]:.15g}</update_rate>',
+        f'      <topic>{depth["gz_base_topic"]}</topic>',
+        '      <camera>',
+        f'        <camera_info_topic>{depth["gz_camera_info_topic"]}</camera_info_topic>',
+        f'        <horizontal_fov>{depth["horizontal_fov_rad"]:.15g}</horizontal_fov>',
+        '        <image>',
+        f'          <width>{depth["width"]}</width>',
+        f'          <height>{depth["height"]}</height>',
+        '          <format>R8G8B8</format>',
+        '        </image>',
+        '        <clip>',
+        f'          <near>{depth["near_clip_m"]:.15g}</near>',
+        f'          <far>{depth["far_clip_m"]:.15g}</far>',
+        '        </clip>',
+        f'        <optical_frame_id>{depth["optical_frame"]}</optical_frame_id>',
+        '      </camera>',
+        '    </sensor>',
+        f'    <sensor name="{imu["sensor_name"]}" type="imu">',
+        '      <always_on>true</always_on>',
+        f'      <update_rate>{imu["update_rate_hz"]:.15g}</update_rate>',
+        f'      <topic>{imu["gz_topic"]}</topic>',
+        f'      <gz_frame_id>{imu["frame"]}</gz_frame_id>',
+        '    </sensor>',
+        '  </gazebo>',
+    ])
     for link in model['links']:
         link_name = link['name']
         contact_topic = (
@@ -1117,6 +1360,9 @@ def _node_parameters(
     envelope = operational['command_envelope']
     shaping = gait.document['data']['shaping']
     watchdogs = safety.document['data']['watchdogs_s']
+    gimbal_joint = next(
+        joint for joint in model['joints'] if 'gimbal_command' in joint['roles'])
+    gimbal_limit = limits['classes'][limits['assignments'][gimbal_joint['name']]]
     definitions = {
         '/araco/teleop_adapter': {
             **common,
@@ -1152,6 +1398,8 @@ def _node_parameters(
                 envelope['planar_speed_hard_m_s']),
             'body_envelope.yaw_rate_hard_rad_s': float(
                 envelope['yaw_rate_hard_rad_s']),
+            'body_envelope.gimbal_yaw_hard_rad': float(
+                envelope['gimbal_yaw_hard_rad']),
             'body_envelope.xy_hard_m': float(envelope['body_xy_hard_m']),
             'body_envelope.z_hard_lower_m': float(envelope['body_z_hard_lower_m']),
             'body_envelope.z_hard_upper_m': float(envelope['body_z_hard_upper_m']),
@@ -1183,7 +1431,13 @@ def _node_parameters(
                 joint['name'] for joint in model['joints'] if 'gimbal_command' in joint['roles']
             ],
             'selected_command_timeout_s': float(watchdogs['selected_command']),
+            'joint_state_timeout_s': float(watchdogs['joint_state']),
+            'locomotion_status_timeout_s': float(watchdogs['locomotion_status']),
+            'controller_state_timeout_s': float(watchdogs['controller_state']),
+            'clock_progress_timeout_s': float(watchdogs['clock_progress']),
             'stable_hold_dwell_s': float(envelope['stable_hold_dwell_s']),
+            'startup_readiness_stable_s': float(
+                safety.document['data']['startup_readiness_stable_s']),
             'auto_enable_once_from_neutral_standing_source': bool(
                 mapping_data['adapter'] == 'joystick' and
                 mapping_data.get('activation_policy') ==
@@ -1196,6 +1450,10 @@ def _node_parameters(
                 envelope['yaw_rate_normal_rad_s']),
             'body_envelope.yaw_rate_hard_rad_s': float(
                 envelope['yaw_rate_hard_rad_s']),
+            'body_envelope.gimbal_yaw_normal_rad': float(
+                envelope['gimbal_yaw_normal_rad']),
+            'body_envelope.gimbal_yaw_hard_rad': float(
+                envelope['gimbal_yaw_hard_rad']),
             'body_envelope.xy_normal_m': float(envelope['body_xy_normal_m']),
             'body_envelope.z_normal_lower_m': float(envelope['body_z_normal_lower_m']),
             'body_envelope.z_normal_upper_m': float(envelope['body_z_normal_upper_m']),
@@ -1223,6 +1481,10 @@ def _node_parameters(
             'leg_joint_names': [
                 joint['name'] for joint in model['joints'] if 'leg_command' in joint['roles']
             ],
+            'gimbal_joint_name': gimbal_joint['name'],
+            'gimbal_lower_rad': float(gimbal_limit['lower_rad']),
+            'gimbal_upper_rad': float(gimbal_limit['upper_rad']),
+            'gimbal_command_rate_cap_rad_s': float(gimbal_limit['velocity_rad_s']),
             'nominal_positions_rad': [
                 pose['joint_positions_rad'][joint['name']]
                 for joint in model['joints'] if 'leg_command' in joint['roles']
@@ -1241,6 +1503,10 @@ def _node_parameters(
             'gait_duty_factor': float(gait.document['data']['duty_factor']),
             'gait_maximum_stride_m': float(gait.document['data']['maximum_stride_m']),
             'gait_swing_clearance_m': float(gait.document['data']['swing_clearance_m']),
+            'gait_planar_command_scale_m_s': float(
+                envelope['planar_speed_normal_m_s']),
+            'gait_yaw_command_scale_rad_s': float(
+                envelope['yaw_rate_normal_rad_s']),
             'translation_acceleration_m_s2': float(
                 shaping['translation_acceleration_m_s2']),
             'translation_stop_deceleration_m_s2': float(
@@ -1251,6 +1517,9 @@ def _node_parameters(
             'stable_hold_dwell_s': float(envelope['stable_hold_dwell_s']),
             'body_translation_rate_m_s': float(shaping['body_translation_rate_m_s']),
             'body_angular_rate_rad_s': float(shaping['body_angular_rate_rad_s']),
+            'operator_input_pre_filtered': bool(
+                mapping_data.get('control_response', {}).get('kind') ==
+                'legacy_p_only_time_invariant'),
             'safe_command_timeout_s': float(watchdogs['safe_command']),
         },
     }
@@ -1352,6 +1621,7 @@ def _emit_bundle(
             'ros_type_name': endpoint['ros_type'],
             'gz_type_name': endpoint['gz_type'],
             'direction': endpoint['direction'],
+            **({'frame_id': endpoint['frame_id']} if 'frame_id' in endpoint else {}),
         }
         for endpoint in bridge['endpoints']
     ])

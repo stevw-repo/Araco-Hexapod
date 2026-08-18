@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import xml.etree.ElementTree as ET
 
 from ament_index_python.packages import get_package_share_directory
 from araco_bringup.composer import compose_profile
@@ -40,6 +41,15 @@ def _lifecycle(node_name, transition):
     )
 
 
+def _single_world_name(world_path: Path) -> str:
+    """Return the sole SDF world name used by ros_gz_sim create."""
+    worlds = ET.parse(world_path).getroot().findall('world')
+    if len(worlds) != 1 or not worlds[0].get('name'):
+        raise RuntimeError(
+            f'{world_path} must contain exactly one named SDF world')
+    return worlds[0].get('name')
+
+
 def _runtime_actions(context):
     profile = LaunchConfiguration('profile').perform(context)
     requested_bundle = LaunchConfiguration('runtime_bundle').perform(context)
@@ -57,6 +67,27 @@ def _runtime_actions(context):
     base_pose = pose_document['data']['base_pose']
     x, y, z = (str(value) for value in base_pose['position_xyz_m'])
     gui = bool(manifest['accepted_overrides']['gui'])
+    use_rviz = bool(manifest['accepted_overrides']['rviz'])
+    world_name = _single_world_name(bundle / 'gazebo/resolved_world.sdf')
+    perception_profiles = {
+        'gazebo_perception_v0',
+        'gazebo_perception_diagnostic_visual_v0',
+        'gazebo_perception_diagnostic_dynamic_imu_v0',
+        'gazebo_perception_diagnostic_fixed_imu_v0',
+    }
+    navigation_artifacts = [
+        artifact for artifact in manifest['artifacts']
+        if artifact['package'] == 'araco_navigation'
+    ]
+    navigation_config = None
+    if profile in perception_profiles:
+        if len(navigation_artifacts) != 1:
+            raise RuntimeError(
+                'perception profile must select exactly one navigation artifact')
+        navigation_config = (
+            bundle / 'normalized_artifacts' /
+            (navigation_artifacts[0]['artifact_id'].replace('.', '_') + '.json')
+        )
 
     description_share_parent = str(
         Path(get_package_share_directory('araco_description')).parent
@@ -83,6 +114,25 @@ def _runtime_actions(context):
         package='robot_state_publisher', executable='robot_state_publisher',
         name='robot_state_publisher', output='screen',
         parameters=[{'robot_description': description, 'use_sim_time': True}],
+    )
+    rviz = Node(
+        package='rviz2', executable='rviz2', name='rviz2', output='screen',
+        arguments=['-d', str(
+            Path(get_package_share_directory('araco_perception'))
+            / ('rviz/rtabmap_rgbd_v0.rviz'
+               if profile in perception_profiles
+               else 'rviz/gemini_rgbd_v0.rviz')
+        )],
+        parameters=[{'use_sim_time': True}],
+    )
+    navigation = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(str(
+            Path(get_package_share_directory('araco_navigation'))
+            / 'launch/rtabmap_rgbd.launch.py')),
+        launch_arguments={
+            'database_path': LaunchConfiguration('database_path'),
+            'config_path': str(navigation_config),
+        }.items(),
     )
     bridge = Node(
         package='ros_gz_bridge', executable='parameter_bridge', name='simulation_bridge',
@@ -127,7 +177,7 @@ def _runtime_actions(context):
     )
     spawn = Node(
         package='ros_gz_sim', executable='create', output='screen',
-        arguments=['-world', 'araco_flat_ground', '-topic', 'robot_description',
+        arguments=['-world', world_name, '-topic', 'robot_description',
                    '-name', 'araco', '-allow_renaming', 'false',
                    '-x', x, '-y', y, '-z', z],
     )
@@ -178,7 +228,7 @@ def _runtime_actions(context):
             _continue_on_success(
                 activate_teleop, [keyboard_ui], 'teleop activate'),
         ])
-    elif profile == 'gazebo_joystick_v0':
+    elif profile in {'gazebo_joystick_v0', 'gazebo_perception_v0'}:
         chain.extend([
             _continue_on_success(
                 activate_arbiter, [configure_joystick], 'arbiter activate'),
@@ -189,11 +239,14 @@ def _runtime_actions(context):
     optional_nodes = []
     if profile == 'gazebo_dev_v0':
         optional_nodes = [teleop]
-    elif profile == 'gazebo_joystick_v0':
+    elif profile in {'gazebo_joystick_v0', 'gazebo_perception_v0'}:
         optional_nodes = [joy, joystick]
+    perception_nodes = [navigation] if profile in perception_profiles else []
+    presentation_nodes = [rviz] if use_rviz else []
     return [
         gazebo_resource_path, gazebo, bridge, robot_state_publisher, contact_filter,
-        locomotion, safety, arbiter, *optional_nodes, spawn,
+        *perception_nodes, *presentation_nodes, locomotion, safety, arbiter,
+        *optional_nodes, spawn,
         *[RegisterEventHandler(item) for item in chain],
     ]
 
@@ -204,10 +257,18 @@ def generate_launch_description():
             'profile', default_value='gazebo_dev_v0',
             choices=[
                 'gazebo_dev_v0', 'gazebo_ci_v0',
-                'gazebo_joystick_v0', 'gazebo_gate3_v0', 'gazebo_gate4_v0',
+                'gazebo_joystick_v0', 'gazebo_perception_v0',
+                'gazebo_perception_diagnostic_visual_v0',
+                'gazebo_perception_diagnostic_dynamic_imu_v0',
+                'gazebo_perception_diagnostic_fixed_imu_v0',
+                'gazebo_gate3_v0', 'gazebo_gate4_v0',
                 'gazebo_gate5_v0']),
         DeclareLaunchArgument(
             'runtime_bundle', default_value='',
             description='Fresh absent path for the immutable effective configuration.'),
+        DeclareLaunchArgument(
+            'database_path',
+            default_value=str(Path.home() / '.ros/araco_rgbd_map.db'),
+            description='RTAB-Map database used by gazebo_perception_v0.'),
         OpaqueFunction(function=_runtime_actions),
     ])

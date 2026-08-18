@@ -35,6 +35,7 @@ struct SafetyMachineConfig
   double enable_wait_timeout_s{5.0};
   double stable_hold_dwell_s{0.25};
   bool auto_enable_once_from_neutral_standing_source{false};
+  double startup_readiness_stable_s{0.0};
 };
 
 struct SafetyMachineInput
@@ -108,6 +109,7 @@ private:
   std::uint32_t pending_source_id_{0};
   double enable_deadline_s_{0.0};
   double stable_hold_since_s_{-1.0};
+  double startup_ready_since_s_{-1.0};
   bool ever_ready_{false};
   bool automatic_handover_enable_{false};
   bool automatic_enable_consumed_{false};

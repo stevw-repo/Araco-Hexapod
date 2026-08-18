@@ -1,0 +1,37 @@
+{
+  "schema_id": "araco://schemas/description/artifacts/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.description.provisional-sim-limits",
+  "artifact_version": "0.3.0",
+  "owner_package": "araco_description",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "simulator_estimate",
+    "sources": [
+      "user-confirmed 270-degree servo travel and low mechanical collision concern on 2026-08-17",
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md#provisional-simulator-joint-limits",
+      "100 Hz exact-geometry Responsive hard-envelope joint-rate sweep with the 50 Hz legacy-equivalent joystick response on 2026-08-17"
+    ]
+  },
+  "dependencies": [{"artifact_id": "araco.description.canonical-model", "artifact_version": "1.0.0"}],
+  "data": {
+    "kind": "joint_limits",
+    "classes": {
+      "coxa": {"lower_rad": -2.356194490192345, "upper_rad": 2.356194490192345, "velocity_rad_s": 5.5, "effort_nm": 3.0, "damping_nms_rad": 0.05, "friction_nm": 0.01},
+      "femur": {"lower_rad": -1.636194490192345, "upper_rad": 3.076194490192345, "velocity_rad_s": 10.0, "effort_nm": 5.0, "damping_nms_rad": 0.08, "friction_nm": 0.02},
+      "tibia": {"lower_rad": -4.256194490192345, "upper_rad": 0.456194490192345, "velocity_rad_s": 12.5, "effort_nm": 3.0, "damping_nms_rad": 0.05, "friction_nm": 0.01},
+      "foot": {"lower_rad": -2.766194490192345, "upper_rad": 1.946194490192345, "velocity_rad_s": 9.0, "effort_nm": 3.0, "damping_nms_rad": 0.03, "friction_nm": 0.01},
+      "gimbal": {"lower_rad": -1.571, "upper_rad": 1.571, "velocity_rad_s": 1.5, "effort_nm": 3.0, "damping_nms_rad": 0.02, "friction_nm": 0.005}
+    },
+    "assignments": {
+      "left_front_coxa_joint": "coxa", "left_front_femur_joint": "femur", "left_front_tibia_joint": "tibia", "left_front_foot_joint": "foot",
+      "left_middle_coxa_joint": "coxa", "left_middle_femur_joint": "femur", "left_middle_tibia_joint": "tibia", "left_middle_foot_joint": "foot",
+      "left_rear_coxa_joint": "coxa", "left_rear_femur_joint": "femur", "left_rear_tibia_joint": "tibia", "left_rear_foot_joint": "foot",
+      "right_front_coxa_joint": "coxa", "right_front_femur_joint": "femur", "right_front_tibia_joint": "tibia", "right_front_foot_joint": "foot",
+      "right_middle_coxa_joint": "coxa", "right_middle_femur_joint": "femur", "right_middle_tibia_joint": "tibia", "right_middle_foot_joint": "foot",
+      "right_rear_coxa_joint": "coxa", "right_rear_femur_joint": "femur", "right_rear_tibia_joint": "tibia", "right_rear_foot_joint": "foot",
+      "gimbal_yaw_joint": "gimbal"
+    },
+    "physical_profile_eligible": false
+  }
+}

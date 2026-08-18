@@ -21,6 +21,8 @@ install(
     scripts/araco_gate5_score
     scripts/araco_gate6_evidence
     scripts/araco_joint_state_relay
+    scripts/araco_slam_score
+    scripts/araco_slam_diagnose
   DESTINATION "lib/${PROJECT_NAME}"
 )
 
@@ -97,6 +99,10 @@ if(BUILD_TESTING)
   ament_add_pytest_test(
     test_gate6
     test/test_gate6.py
+  )
+  ament_add_pytest_test(
+    test_slam_scoring
+    test/test_slam_scoring.py
   )
 endif()
 

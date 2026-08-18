@@ -19,6 +19,15 @@ yaw, and bounded forward/reverse/lateral/yaw/combined walking. Physical
 hardware control is not implemented or authorized. The accepted no-retry
 simulator baseline is retained at `/tmp/araco_gate6_final_20260816_06`.
 
+The simulator also provides a performance-safe Gemini-like RGB-D/IMU baseline:
+color and depth images, both camera-info streams, an organized point cloud, and
+camera IMU data. A dedicated perception profile adds a deterministic landmark
+arena, registered RGB-D, six-DoF visual odometry, RTAB-Map pose-graph
+SLAM, a 5 cm occupancy grid, and an accumulated 3D cloud. These remain
+provisional simulation streams, not physical Gemini calibration or driver
+integration. The IMU remains available for diagnostics but is not fused by the
+operational simulator estimator until its timestamped transform path is fixed.
+
 The accepted architecture, interface contracts, safety model, configuration
 rules, and phased delivery plan are maintained under `.agent/`.
 Verified simulator operation and troubleshooting commands are in
@@ -35,6 +44,8 @@ Verified simulator operation and troubleshooting commands are in
 | `araco_supervision` | Command arbitration and software safety supervision |
 | `araco_teleop` | Operator-input adapters and mappings |
 | `araco_gazebo` | Gazebo-specific worlds and integration |
+| `araco_perception` | Simulated Gemini RGB-D/IMU and RViz configuration |
+| `araco_navigation` | RTAB-Map odometry/SLAM contracts and launch wiring |
 | `araco_bringup` | Profile composition and lifecycle ordering |
 | `araco_system_tests` | Installed-space integration and simulator tests |
 

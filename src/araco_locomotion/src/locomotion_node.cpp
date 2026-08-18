@@ -15,6 +15,7 @@
 #include "araco_interfaces/msg/safe_command.hpp"
 #include "araco_locomotion/locomotion_parameters.hpp"
 #include "araco_locomotion/safe_command_guard.hpp"
+#include "araco_locomotion/steady_heartbeat.hpp"
 #include "araco_locomotion/standing_target.hpp"
 #include "araco_locomotion/tripod_gait.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
@@ -63,6 +64,10 @@ private:
       params_.joint_lower_rad.size() != kLegJointCount ||
       params_.joint_upper_rad.size() != kLegJointCount ||
       params_.joint_command_rate_cap_rad_s.size() != kLegJointCount ||
+      params_.gimbal_joint_name != "gimbal_yaw_joint" ||
+      !std::isfinite(params_.gimbal_lower_rad) ||
+      !std::isfinite(params_.gimbal_upper_rad) ||
+      params_.gimbal_lower_rad >= params_.gimbal_upper_rad ||
       !std::all_of(oracle.begin(), oracle.end(), [](double value) {return std::isfinite(value);}))
     {
       RCLCPP_ERROR(get_logger(), "standing/body-pose inputs have invalid dimensions or values");
@@ -122,15 +127,21 @@ private:
     gait_config_.duty_factor = params_.gait_duty_factor;
     gait_config_.maximum_stride_m = params_.gait_maximum_stride_m;
     gait_config_.swing_clearance_m = params_.gait_swing_clearance_m;
+    gait_config_.planar_command_scale_m_s = params_.gait_planar_command_scale_m_s;
+    gait_config_.yaw_command_scale_rad_s = params_.gait_yaw_command_scale_rad_s;
     gait_config_.translation_acceleration_m_s2 = params_.translation_acceleration_m_s2;
     gait_config_.translation_stop_deceleration_m_s2 =
       params_.translation_stop_deceleration_m_s2;
     gait_config_.yaw_acceleration_rad_s2 = params_.yaw_acceleration_rad_s2;
     gait_config_.yaw_stop_deceleration_rad_s2 = params_.yaw_stop_deceleration_rad_s2;
+    gait_config_.operator_input_pre_filtered = params_.operator_input_pre_filtered;
     gait_config_.stable_hold_dwell_s = params_.stable_hold_dwell_s;
 
     trajectory_publisher_ = create_publisher<trajectory_msgs::msg::JointTrajectory>(
       "/leg_trajectory_controller/joint_trajectory", rclcpp::QoS(1).reliable());
+    gimbal_trajectory_publisher_ =
+      create_publisher<trajectory_msgs::msg::JointTrajectory>(
+      "/gimbal_trajectory_controller/joint_trajectory", rclcpp::QoS(1).reliable());
     status_publisher_ = create_publisher<araco_interfaces::msg::LocomotionStatus>(
       "/araco/locomotion/status", rclcpp::QoS(1).reliable());
     foot_targets_publisher_ = create_publisher<geometry_msgs::msg::PoseArray>(
@@ -154,12 +165,16 @@ private:
     trajectory_.joint_names = names;
     trajectory_.header.frame_id = "";
     update_trajectory(standing_result_);
+    gimbal_trajectory_.joint_names = {params_.gimbal_joint_name};
+    gimbal_trajectory_.header.frame_id = "";
+    update_gimbal_trajectory(false);
     return CallbackReturn::SUCCESS;
   }
 
   CallbackReturn on_activate(const rclcpp_lifecycle::State &) override
   {
     trajectory_publisher_->on_activate();
+    gimbal_trajectory_publisher_->on_activate();
     status_publisher_->on_activate();
     foot_targets_publisher_->on_activate();
     sequence_ = 0;
@@ -167,10 +182,18 @@ private:
     kinematics_fault_ = false;
     workspace_limited_ = false;
     workspace_recovery_latched_ = false;
+    walking_posture_suppressed_ = false;
     gait_state_ = TripodState{};
     gait_mode_ = GaitMode::kHolding;
+    applied_gimbal_yaw_rad_ = 0.0;
     safe_guard_->reset();
     guard_result_ = SafeGuardResult{};
+    status_heartbeat_.reset();
+    last_motion_tick_s_ = -1.0;
+    last_timing_warning_s_ = -1.0;
+    maximum_motion_gap_s_ = 0.0;
+    maximum_motion_execution_s_ = 0.0;
+    maximum_heartbeat_gap_s_ = 0.0;
     const auto period = std::chrono::duration<double>(1.0 / params_.loop_rate_hz);
     timer_ = rclcpp::create_timer(
       get_node_base_interface(), get_node_timers_interface(), get_clock(), period,
@@ -191,7 +214,14 @@ private:
   {
     timer_.reset();
     watchdog_timer_.reset();
+    RCLCPP_INFO(
+      get_logger(),
+      "locomotion timing summary: maximum motion gap=%.3f ms, "
+      "maximum motion execution=%.3f ms, maximum heartbeat gap=%.3f ms",
+      maximum_motion_gap_s_ * 1000.0, maximum_motion_execution_s_ * 1000.0,
+      maximum_heartbeat_gap_s_ * 1000.0);
     trajectory_publisher_->on_deactivate();
+    gimbal_trajectory_publisher_->on_deactivate();
     status_publisher_->on_deactivate();
     foot_targets_publisher_->on_deactivate();
     return CallbackReturn::SUCCESS;
@@ -203,6 +233,7 @@ private:
     watchdog_timer_.reset();
     safe_subscription_.reset();
     trajectory_publisher_.reset();
+    gimbal_trajectory_publisher_.reset();
     status_publisher_.reset();
     foot_targets_publisher_.reset();
     param_listener_.reset();
@@ -234,6 +265,19 @@ private:
     return {{pose.position.x, pose.position.y, pose.position.z}, rpy[0], rpy[1], rpy[2]};
   }
 
+  bool requested_pose_is_neutral() const
+  {
+    const auto pose = requested_pose();
+    constexpr double kPositionToleranceM = 1.0e-4;
+    constexpr double kAngleToleranceRad = 1.0e-3;
+    return std::abs(pose.translation_m.x) <= kPositionToleranceM &&
+           std::abs(pose.translation_m.y) <= kPositionToleranceM &&
+           std::abs(pose.translation_m.z) <= kPositionToleranceM &&
+           std::abs(pose.roll_rad) <= kAngleToleranceRad &&
+           std::abs(pose.pitch_rad) <= kAngleToleranceRad &&
+           std::abs(pose.yaw_rad) <= kAngleToleranceRad;
+  }
+
   static BodyPoseOffset interpolate(
     const BodyPoseOffset & from, const BodyPoseOffset & to, double scale)
   {
@@ -249,8 +293,12 @@ private:
     };
   }
 
-  BodyPoseOffset shaped_pose(const BodyPoseOffset & target) const
+  BodyPoseOffset shaped_pose(
+    const BodyPoseOffset & target, bool allow_pre_filtered = true) const
   {
+    if (params_.operator_input_pre_filtered && allow_pre_filtered) {
+      return target;
+    }
     const double linear_step = params_.body_translation_rate_m_s / params_.loop_rate_hz;
     const double angular_step = params_.body_angular_rate_rad_s / params_.loop_rate_hz;
     const double dx = target.translation_m.x - applied_pose_.translation_m.x;
@@ -332,7 +380,8 @@ private:
       safe_command_.intent.planar_velocity.linear.y,
       safe_command_.intent.planar_velocity.angular.z,
     };
-    const BodyPoseOffset target_pose = request_walk ? requested_pose() : applied_pose_;
+    const BodyPoseOffset target_pose = request_walk ?
+      (walking_posture_suppressed_ ? BodyPoseOffset{} : requested_pose()) : applied_pose_;
     const BodyPoseOffset proposed_pose = shaped_pose(target_pose);
     TripodStep best_gait;
     StandingResult best_candidate = standing_result_;
@@ -378,7 +427,7 @@ private:
   bool advance_workspace_recovery()
   {
     const BodyPoseOffset neutral_pose{};
-    const BodyPoseOffset proposed_pose = shaped_pose(neutral_pose);
+    const BodyPoseOffset proposed_pose = shaped_pose(neutral_pose, false);
     TripodStep best_gait;
     StandingResult best_candidate = standing_result_;
     BodyPoseOffset best_pose = applied_pose_;
@@ -428,6 +477,28 @@ private:
     trajectory_.points = {point};
   }
 
+  void update_gimbal_trajectory(bool executing)
+  {
+    const double requested = executing ? safe_command_.intent.gimbal_yaw_rad : 0.0;
+    const double target = std::clamp(
+      requested, params_.gimbal_lower_rad, params_.gimbal_upper_rad);
+    if (executing && params_.operator_input_pre_filtered) {
+      // Body posture and gimbal are derived from the same filtered axis-4
+      // state. Preserve that synchronization instead of independently slewing
+      // the gimbal a second time.
+      applied_gimbal_yaw_rad_ = target;
+    } else {
+      const double maximum_step =
+        params_.gimbal_command_rate_cap_rad_s / params_.loop_rate_hz;
+      applied_gimbal_yaw_rad_ += std::clamp(
+        target - applied_gimbal_yaw_rad_, -maximum_step, maximum_step);
+    }
+    trajectory_msgs::msg::JointTrajectoryPoint point;
+    point.positions = {applied_gimbal_yaw_rad_};
+    point.time_from_start = rclcpp::Duration::from_seconds(params_.trajectory_horizon_s);
+    gimbal_trajectory_.points = {point};
+  }
+
   bool safe_command_executable() const
   {
     return guard_result_.executable &&
@@ -436,20 +507,61 @@ private:
            safe_command_.intent.gait <= 1;
   }
 
-  void tick()
+  bool tripod_requested(bool executing) const
   {
-    guard_result_ = safe_guard_->evaluate(steady_now_s());
-    const bool executing = safe_command_executable();
-    const bool tripod_requested = executing && safe_command_.intent.gait == 1 &&
-      (std::hypot(
+    return executing && safe_command_.intent.gait == 1 &&
+           (std::hypot(
       safe_command_.intent.planar_velocity.linear.x,
       safe_command_.intent.planar_velocity.linear.y) > 1.0e-9 ||
-      std::abs(safe_command_.intent.planar_velocity.angular.z) > 1.0e-9);
+           std::abs(safe_command_.intent.planar_velocity.angular.z) > 1.0e-9);
+  }
+
+  void warn_timing_delay(
+    const char * source, double gap_s, double execution_s, double steady_now_s)
+  {
+    if (last_timing_warning_s_ >= 0.0 && steady_now_s - last_timing_warning_s_ < 1.0) {
+      return;
+    }
+    last_timing_warning_s_ = steady_now_s;
+    RCLCPP_WARN(
+      get_logger(),
+      "locomotion timing delay source=%s gap=%.3f ms execution=%.3f ms; "
+      "motion uses ROS time and health heartbeat uses steady time",
+      source, gap_s * 1000.0, execution_s * 1000.0);
+  }
+
+  void tick()
+  {
+    const double tick_started_s = steady_now_s();
+    if (last_motion_tick_s_ >= 0.0) {
+      const double motion_gap_s = tick_started_s - last_motion_tick_s_;
+      maximum_motion_gap_s_ = std::max(maximum_motion_gap_s_, motion_gap_s);
+      if (motion_gap_s > 0.05) {
+        warn_timing_delay("motion_timer", motion_gap_s, 0.0, tick_started_s);
+      }
+    }
+    last_motion_tick_s_ = tick_started_s;
+
+    guard_result_ = safe_guard_->evaluate(tick_started_s);
+    const bool executing = safe_command_executable();
+    const bool request_tripod = tripod_requested(executing);
     const bool gait_active = gait_state_.walking || gait_state_.stopping ||
       (gait_state_.hold_dwell_s > 0.0 &&
       gait_state_.hold_dwell_s < gait_config_.stable_hold_dwell_s);
-    if (workspace_recovery_latched_ && !tripod_requested && !gait_active) {
+    if (walking_posture_suppressed_ &&
+      (!request_tripod || requested_pose_is_neutral()))
+    {
+      walking_posture_suppressed_ = false;
+    }
+    if (workspace_recovery_latched_ && !gait_active) {
       workspace_recovery_latched_ = false;
+      walking_posture_suppressed_ = request_tripod && !requested_pose_is_neutral();
+      if (walking_posture_suppressed_) {
+        RCLCPP_WARN(
+          get_logger(),
+          "workspace retreat completed; resuming planar gait at neutral body posture; "
+          "center posture controls to re-enable walking posture offsets");
+      }
     }
     if (!standing_result_.committed) {
       // Losing the last complete 24-joint commit is an internal invariant
@@ -465,18 +577,18 @@ private:
           "workspace retreat could not make an inward rate-limited step; "
           "holding the last complete valid trajectory");
       }
-    } else if (tripod_requested || gait_active) {
+    } else if (request_tripod || gait_active) {
       kinematics_fault_ = false;
-      if (!advance_gait(tripod_requested, !tripod_requested)) {
+      if (!advance_gait(request_tripod, !request_tripod)) {
         workspace_recovery_latched_ = true;
         workspace_limited_ = true;
         static_cast<void>(advance_workspace_recovery());
         RCLCPP_WARN_THROTTLE(
           get_logger(), *get_clock(), 1000,
           "gait/posture request reached the IK workspace boundary; "
-          "retreating to nominal stance; center planar controls to re-arm");
+          "retreating to nominal stance before automatic planar-gait retry");
       } else {
-        workspace_limited_ = false;
+        workspace_limited_ = walking_posture_suppressed_;
       }
     } else if (executing) {
       kinematics_fault_ = false;
@@ -496,10 +608,17 @@ private:
 
     trajectory_.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
     trajectory_publisher_->publish(trajectory_);
+    update_gimbal_trajectory(executing);
+    gimbal_trajectory_.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
+    gimbal_trajectory_publisher_->publish(gimbal_trajectory_);
     ++tick_count_;
     if ((tick_count_ % 2U) == 0U) {
-      publish_status(executing, tripod_requested);
       publish_foot_targets();
+    }
+    const double execution_s = steady_now_s() - tick_started_s;
+    maximum_motion_execution_s_ = std::max(maximum_motion_execution_s_, execution_s);
+    if (execution_s > 0.01) {
+      warn_timing_delay("motion_execution", 0.0, execution_s, steady_now_s());
     }
   }
 
@@ -552,15 +671,16 @@ private:
       SteadyClock::now().time_since_epoch()).count();
   }
 
-  static bool valid_safe_command(const araco_interfaces::msg::SafeCommand & message)
+  bool valid_safe_command(const araco_interfaces::msg::SafeCommand & message) const
   {
     const auto & twist = message.intent.planar_velocity;
     const auto & pose = message.intent.body_pose_offset;
-    const std::array<double, 13> values{
+    const std::array<double, 14> values{
       twist.linear.x, twist.linear.y, twist.linear.z,
       twist.angular.x, twist.angular.y, twist.angular.z,
       pose.position.x, pose.position.y, pose.position.z,
-      pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w};
+      pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w,
+      message.intent.gimbal_yaw_rad};
     const double quaternion_norm = std::sqrt(
       pose.orientation.x * pose.orientation.x +
       pose.orientation.y * pose.orientation.y +
@@ -572,6 +692,8 @@ private:
     return message.header.frame_id == "base_link" && message.disposition <= 3 &&
            message.reason_code <= 30 && message.intent.gait <= 1 &&
            (!execute || message.source_id != 0) &&
+           message.intent.gimbal_yaw_rad >= params_.gimbal_lower_rad &&
+           message.intent.gimbal_yaw_rad <= params_.gimbal_upper_rad &&
            std::all_of(values.begin(), values.end(), [](double value) {
                return std::isfinite(value);
            }) && std::abs(quaternion_norm - 1.0) <= 1.0e-6;
@@ -579,13 +701,23 @@ private:
 
   void check_safe_watchdog()
   {
+    const double steady_s = steady_now_s();
+    const auto heartbeat = status_heartbeat_.update(steady_s);
+    maximum_heartbeat_gap_s_ = std::max(
+      maximum_heartbeat_gap_s_, heartbeat.callback_gap_s);
+    if (heartbeat.callback_delayed) {
+      warn_timing_delay("health_heartbeat", heartbeat.callback_gap_s, 0.0, steady_s);
+    }
     const auto previous_reason = guard_result_.reason;
-    guard_result_ = safe_guard_->evaluate(steady_now_s());
+    guard_result_ = safe_guard_->evaluate(steady_s);
     if (guard_result_.reason != 0 && guard_result_.reason != previous_reason) {
       RCLCPP_WARN(
         get_logger(), "safe-command authority revoked locally; reason=%u",
         guard_result_.reason);
       publish_status(false, false);
+    } else if (heartbeat.publish) {
+      const bool executing = safe_command_executable();
+      publish_status(executing, tripod_requested(executing));
     }
   }
 
@@ -608,6 +740,8 @@ private:
   locomotion::Params params_;
   rclcpp_lifecycle::LifecyclePublisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr
     trajectory_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr
+    gimbal_trajectory_publisher_;
   rclcpp_lifecycle::LifecyclePublisher<araco_interfaces::msg::LocomotionStatus>::SharedPtr
     status_publisher_;
   rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseArray>::SharedPtr
@@ -615,7 +749,9 @@ private:
   rclcpp::Subscription<araco_interfaces::msg::SafeCommand>::SharedPtr safe_subscription_;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::TimerBase::SharedPtr watchdog_timer_;
+  SteadyHeartbeat status_heartbeat_{0.02, 0.05};
   trajectory_msgs::msg::JointTrajectory trajectory_;
+  trajectory_msgs::msg::JointTrajectory gimbal_trajectory_;
   araco_interfaces::msg::SafeCommand safe_command_;
   StandingRequest request_;
   StandingResult standing_result_;
@@ -628,6 +764,13 @@ private:
   bool kinematics_fault_{false};
   bool workspace_limited_{false};
   bool workspace_recovery_latched_{false};
+  bool walking_posture_suppressed_{false};
+  double applied_gimbal_yaw_rad_{0.0};
+  double last_motion_tick_s_{-1.0};
+  double last_timing_warning_s_{-1.0};
+  double maximum_motion_gap_s_{0.0};
+  double maximum_motion_execution_s_{0.0};
+  double maximum_heartbeat_gap_s_{0.0};
   uint64_t sequence_{0};
   uint64_t processed_safety_epoch_{0};
   uint64_t processed_selection_epoch_{0};

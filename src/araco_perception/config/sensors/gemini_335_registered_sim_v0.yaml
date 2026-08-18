@@ -1,0 +1,66 @@
+{
+  "schema_id": "araco://schemas/perception/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.perception.gemini-335-registered-sim",
+  "artifact_version": "0.1.0",
+  "owner_package": "araco_perception",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "simulator_estimate",
+    "sources": [
+      "docs/agent/DECISIONS.md",
+      "RTAB-Map registered RGB-D input contract"
+    ]
+  },
+  "dependencies": [
+    {
+      "artifact_id": "araco.description.canonical-model",
+      "artifact_version": "1.0.0"
+    }
+  ],
+  "data": {
+    "kind": "simulated_rgbd_imu",
+    "suite_name": "gemini_335_sim",
+    "mount_frame": "camera_link",
+    "gimbal_policy": "fixed_for_initial_validation",
+    "color": {
+      "sensor_name": "gemini_color",
+      "optical_frame": "camera_color_optical_frame",
+      "gz_image_topic": "/araco/camera/color/image",
+      "gz_camera_info_topic": "/araco/camera/color/camera_info",
+      "ros_image_topic": "/araco/camera/color/image_raw",
+      "ros_camera_info_topic": "/araco/camera/color/camera_info",
+      "width": 424,
+      "height": 240,
+      "update_rate_hz": 15.0,
+      "horizontal_fov_rad": 1.570796326794897,
+      "near_clip_m": 0.15,
+      "far_clip_m": 20.0
+    },
+    "depth": {
+      "sensor_name": "gemini_rgbd",
+      "optical_frame": "camera_depth_optical_frame",
+      "point_cloud_frame": "camera_link",
+      "gz_base_topic": "/araco/camera/depth",
+      "gz_camera_info_topic": "/araco/camera/depth/camera_info",
+      "gz_depth_image_topic": "/araco/camera/depth/depth_image",
+      "gz_points_topic": "/araco/camera/depth/points",
+      "ros_depth_image_topic": "/araco/camera/depth/image_raw",
+      "ros_camera_info_topic": "/araco/camera/depth/camera_info",
+      "ros_points_topic": "/araco/camera/depth/points",
+      "width": 424,
+      "height": 240,
+      "update_rate_hz": 15.0,
+      "horizontal_fov_rad": 1.570796326794897,
+      "near_clip_m": 0.15,
+      "far_clip_m": 20.0
+    },
+    "imu": {
+      "sensor_name": "gemini_imu",
+      "frame": "camera_link",
+      "gz_topic": "/araco/camera/imu",
+      "ros_topic": "/araco/camera/imu/data",
+      "update_rate_hz": 100.0
+    }
+  }
+}

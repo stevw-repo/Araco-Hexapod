@@ -35,6 +35,17 @@
     "axis_count": {"const": 6},
     "button_count": {"const": 12},
     "deadzone": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+    "control_response": {
+      "type": "object",
+      "required": ["kind", "reference_period_s", "normal_error_fraction", "height_error_fraction"],
+      "properties": {
+        "kind": {"const": "legacy_p_only_time_invariant"},
+        "reference_period_s": {"const": 0.005},
+        "normal_error_fraction": {"const": 0.02},
+        "height_error_fraction": {"const": 0.01}
+      },
+      "additionalProperties": false
+    },
     "activation_policy": {"const": "auto_enable_once_from_fresh_neutral_standing_selection"},
     "deadman_button": {"type": "integer", "minimum": 0, "maximum": 11},
     "deadman_physical_label": {"type": "string", "minLength": 1},
@@ -45,7 +56,7 @@
     "roll_button_scale_rad": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.15},
     "axes": {
       "type": "object",
-      "required": ["forward", "lateral", "walking_yaw", "body_height", "body_pitch", "posture_yaw"],
+      "required": ["forward", "lateral", "walking_yaw", "body_height", "body_pitch", "posture_yaw", "gimbal_yaw"],
       "properties": {
         "forward": {"$ref": "#/$defs/scaled_axis"},
         "lateral": {"$ref": "#/$defs/scaled_axis"},
@@ -61,7 +72,8 @@
           "additionalProperties": false
         },
         "body_pitch": {"$ref": "#/$defs/scaled_axis"},
-        "posture_yaw": {"$ref": "#/$defs/scaled_axis"}
+        "posture_yaw": {"$ref": "#/$defs/scaled_axis"},
+        "gimbal_yaw": {"$ref": "#/$defs/scaled_axis"}
       },
       "additionalProperties": false
     }
@@ -86,7 +98,7 @@
     {
       "if": {"properties": {"adapter": {"const": "joystick"}}},
       "then": {
-        "required": ["device_name", "usb_id", "sdl_guid", "joy_topic", "axis_count", "button_count", "heartbeat_timeout_s", "deadzone", "activation_policy", "roll_left_button", "roll_left_physical_label", "roll_right_button", "roll_right_physical_label", "roll_button_scale_rad", "axes"],
+        "required": ["device_name", "usb_id", "sdl_guid", "joy_topic", "axis_count", "button_count", "heartbeat_timeout_s", "deadzone", "control_response", "activation_policy", "roll_left_button", "roll_left_physical_label", "roll_right_button", "roll_right_physical_label", "roll_button_scale_rad", "axes"],
         "not": {
           "anyOf": [
             {"required": ["deadman_button"]},

@@ -11,14 +11,16 @@ namespace araco_supervision
 namespace
 {
 
+constexpr double kNormalBoundaryTolerance = 1.0e-12;
+
 bool finite_intent(const StaticIntent & intent)
 {
-  const std::array<double, 13> values{
+  const std::array<double, 14> values{
     intent.twist[0], intent.twist[1], intent.twist[2],
     intent.twist[3], intent.twist[4], intent.twist[5],
     intent.position_m[0], intent.position_m[1], intent.position_m[2],
     intent.orientation.x, intent.orientation.y,
-    intent.orientation.z, intent.orientation.w,
+    intent.orientation.z, intent.orientation.w, intent.gimbal_yaw_rad,
   };
   return std::all_of(values.begin(), values.end(), [](double value) {
              return std::isfinite(value);
@@ -105,7 +107,8 @@ PolicyResult validate_and_limit_static_intent(
     outside(intent.position_m[2], envelope.z_hard_lower_m, envelope.z_hard_upper_m) ||
     std::abs(result.rpy_rad[0]) > envelope.roll_pitch_hard_rad ||
     std::abs(result.rpy_rad[1]) > envelope.roll_pitch_hard_rad ||
-    std::abs(result.rpy_rad[2]) > envelope.yaw_hard_rad)
+    std::abs(result.rpy_rad[2]) > envelope.yaw_hard_rad ||
+    std::abs(intent.gimbal_yaw_rad) > envelope.gimbal_yaw_hard_rad)
   {
     return result;
   }
@@ -116,7 +119,7 @@ PolicyResult validate_and_limit_static_intent(
   }
   auto clamp = [&result](double value, double lower, double upper) {
       const double limited = std::clamp(value, lower, upper);
-      if (limited != value) {
+      if (std::abs(limited - value) > kNormalBoundaryTolerance) {
         result.validity = CommandValidity::kLimited;
       }
       return limited;
@@ -125,7 +128,11 @@ PolicyResult validate_and_limit_static_intent(
     const double scale = envelope.planar_speed_normal_m_s / planar_speed;
     result.intent.twist[0] *= scale;
     result.intent.twist[1] *= scale;
-    result.validity = CommandValidity::kLimited;
+    if (planar_speed - envelope.planar_speed_normal_m_s >
+      kNormalBoundaryTolerance)
+    {
+      result.validity = CommandValidity::kLimited;
+    }
   }
   result.intent.twist[5] = clamp(
     intent.twist[5], -envelope.yaw_rate_normal_rad_s,
@@ -143,6 +150,9 @@ PolicyResult validate_and_limit_static_intent(
   }
   result.rpy_rad[2] = clamp(
     result.rpy_rad[2], -envelope.yaw_normal_rad, envelope.yaw_normal_rad);
+  result.intent.gimbal_yaw_rad = clamp(
+    result.intent.gimbal_yaw_rad, -envelope.gimbal_yaw_normal_rad,
+    envelope.gimbal_yaw_normal_rad);
   result.intent.orientation = quaternion_from_rpy(
     result.rpy_rad[0], result.rpy_rad[1], result.rpy_rad[2]);
   return result;

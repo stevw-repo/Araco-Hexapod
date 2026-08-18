@@ -27,7 +27,7 @@ import jsonschema
 PACKAGES = (
     'araco_interfaces', 'araco_description', 'araco_kinematics',
     'araco_locomotion', 'araco_supervision', 'araco_teleop',
-    'araco_gazebo', 'araco_bringup', 'araco_system_tests')
+    'araco_gazebo', 'araco_perception', 'araco_bringup', 'araco_system_tests')
 CPP_PACKAGES = ('araco_kinematics', 'araco_locomotion', 'araco_supervision')
 
 

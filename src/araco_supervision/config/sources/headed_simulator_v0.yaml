@@ -1,0 +1,50 @@
+{
+  "schema_id": "araco://schemas/supervision/config/v1",
+  "schema_version": 1,
+  "artifact_id": "araco.supervision.source-registry",
+  "artifact_version": "0.2.0",
+  "owner_package": "araco_supervision",
+  "deployment_scope": "simulator_only",
+  "evidence": {
+    "class": "operational_policy",
+    "sources": [
+      "docs/agent/RUNTIME_TIMING_AND_SIMULATION_CONTRACT.md",
+      "headed Gazebo + RViz timing measurement on 2026-08-18"
+    ]
+  },
+  "dependencies": [],
+  "data": {
+    "kind": "source_registry",
+    "sources": [
+      {
+        "name": "teleop",
+        "id": 10,
+        "priority": 100,
+        "rate_hz": 50,
+        "freshness_timeout_s": 0.5,
+        "enabled": true,
+        "availability": "normal"
+      },
+      {
+        "name": "navigation",
+        "id": 20,
+        "priority": 50,
+        "rate_hz": 20,
+        "freshness_timeout_s": 0.3,
+        "enabled": false,
+        "availability": "future"
+      },
+      {
+        "name": "system_test",
+        "id": 250,
+        "priority": 200,
+        "rate_hz": 100,
+        "freshness_timeout_s": 0.1,
+        "enabled": false,
+        "availability": "test_fixture_only"
+      }
+    ],
+    "enable_wait_timeout_s": 5.0,
+    "handover_stable_dwell_s": 0.25
+  }
+}

@@ -69,8 +69,10 @@ StandingRequest nominal_request()
   request.branch = Branch::kKneeDown;
   request.oracle_tolerance_rad = 2.0e-6;
   const JointLimits limits{{
-    JointLimit{-0.7, 0.7}, JointLimit{0.15, 1.35},
-    JointLimit{-2.65, -0.75}, JointLimit{-1.25, 0.35}}};
+    JointLimit{-2.356194490192345, 2.356194490192345},
+    JointLimit{-1.636194490192345, 3.076194490192345},
+    JointLimit{-4.256194490192345, 0.456194490192345},
+    JointLimit{-2.766194490192345, 1.946194490192345}}};
   request.limits.fill(limits);
   request.mounts = {{
     LegMount{Point3{0.081819805, 0.066819805, -0.02675}, 0.684823427809552},
@@ -107,6 +109,18 @@ StandingRequest nominal_request()
       request.oracle_joints_rad[leg * 4 + joint] = oracle[leg][joint];
     }
   }
+  return request;
+}
+
+StandingRequest conservative_request()
+{
+  auto request = nominal_request();
+  const JointLimits limits{{
+    JointLimit{-0.45, 0.45},
+    JointLimit{0.35, 1.1},
+    JointLimit{-2.35, -1.15},
+    JointLimit{-0.85, 0.1}}};
+  request.limits.fill(limits);
   return request;
 }
 
@@ -344,32 +358,154 @@ TEST(StandingTarget, LegacyCurveRemainsReachableAndRequiresRuntimeRateShaping)
   EXPECT_TRUE(raw_step_exceeds_rate_cap);
 }
 
-TEST(StandingTarget, DoubleSpeedResponsiveCurveRemainsReachableAtNeutralPose)
+TEST(StandingTarget, LegacyRotationFitsConservativeProfileAtThirtyMillimetreClearance)
 {
-  const auto request = nominal_request();
+  const auto request = conservative_request();
   const auto standing = compute_standing_target(request, {});
   ASSERT_TRUE(standing.committed);
   TripodConfig config;
-  config.base_cadence_hz = 1.5;
-  config.maximum_cadence_hz = 2.5;
-  config.cadence_rate_hz_s = 2.0;
-  config.maximum_stride_m = 0.12;
-  config.translation_acceleration_m_s2 = 0.4;
-  config.yaw_acceleration_rad_s2 = 2.4;
-  constexpr double kDiagonal = 0.1414213562373095;
-  const std::array<PlanarVelocity, 7> commands{{
-    {0.2, 0.0, 0.0}, {-0.2, 0.0, 0.0},
-    {0.0, 0.2, 0.0}, {0.0, -0.2, 0.0},
-    {0.0, 0.0, 1.2}, {0.0, 0.0, -1.2},
-    {kDiagonal, kDiagonal, 1.2},
+  config.swing_clearance_m = 0.03;
+  const std::array<PlanarVelocity, 3> commands{{
+    {0.0, 0.0, 0.2}, {0.0, 0.0, -0.2}, {0.03, 0.02, 0.15},
   }};
   for (const auto & command : commands) {
     TripodState gait_state;
     auto previous = standing.joints_rad;
-    for (std::size_t tick = 0; tick < 1400; ++tick) {
+    for (std::size_t tick = 0; tick < 700; ++tick) {
+      bool found = false;
+      double lower = 0.0;
+      double upper = 1.0;
+      araco_locomotion::TripodStep best_gait;
+      araco_locomotion::StandingResult best_candidate;
+      for (std::size_t iteration = 0; iteration < 17; ++iteration) {
+        const double scale = iteration == 0 ? 1.0 : 0.5 * (lower + upper);
+        const auto trial_gait = advance_tripod(
+          config, gait_state, request.foot_targets_base_m,
+          command, true, false, 0.01 * scale);
+        const auto trial_candidate = compute_foot_pose_target(
+          request, trial_gait.foot_targets_base_m, {}, previous);
+        bool rate_valid = trial_candidate.committed;
+        for (std::size_t joint = 0; joint < previous.size() && rate_valid; ++joint) {
+          rate_valid = std::abs(
+            trial_candidate.joints_rad[joint] - previous[joint]) <= 0.012 + 1.0e-12;
+        }
+        if (trial_gait.valid && rate_valid) {
+          found = true;
+          lower = scale;
+          best_gait = trial_gait;
+          best_candidate = trial_candidate;
+          if (iteration == 0) {
+            break;
+          }
+        } else {
+          upper = scale;
+        }
+      }
+      ASSERT_TRUE(found) <<
+        "command=" << command.x_m_s << "," << command.y_m_s << "," <<
+        command.yaw_rad_s << " tick=" << tick << " phase=" << gait_state.phase;
+      previous = best_candidate.joints_rad;
+      gait_state = best_gait.state;
+    }
+  }
+}
+
+TEST(StandingTarget, YawRestartAfterPriorWalkRetainsRateContinuousWarmStart)
+{
+  const auto request = conservative_request();
+  const auto standing = compute_standing_target(request, {});
+  ASSERT_TRUE(standing.committed);
+  TripodConfig config;
+  config.swing_clearance_m = 0.03;
+  TripodState state;
+  state.phase = 0.0;
+  state.cycle = 7;
+  state.walking = false;
+  state.stopping = false;
+  state.hold_dwell_s = config.stable_hold_dwell_s;
+  auto previous = standing.joints_rad;
+  const PlanarVelocity command{0.0, 0.0, 0.2};
+  for (std::size_t tick = 0; tick < 80; ++tick) {
+    bool found = false;
+    double lower = 0.0;
+    double upper = 1.0;
+    araco_locomotion::TripodStep best_gait;
+    araco_locomotion::StandingResult best_candidate;
+    for (std::size_t iteration = 0; iteration < 17; ++iteration) {
+      const double scale = iteration == 0 ? 1.0 : 0.5 * (lower + upper);
+      const auto trial_gait = advance_tripod(
+        config, state, request.foot_targets_base_m,
+        command, true, false, 0.01 * scale);
+      const auto trial_candidate = compute_foot_pose_target(
+        request, trial_gait.foot_targets_base_m, {}, previous);
+      bool rate_valid = trial_candidate.committed;
+      for (std::size_t joint = 0; joint < previous.size() && rate_valid; ++joint) {
+        rate_valid = std::abs(
+          trial_candidate.joints_rad[joint] - previous[joint]) <= 0.012 + 1.0e-12;
+      }
+      if (trial_gait.valid && rate_valid) {
+        found = true;
+        lower = scale;
+        best_gait = trial_gait;
+        best_candidate = trial_candidate;
+        if (iteration == 0) {
+          break;
+        }
+      } else {
+        upper = scale;
+      }
+    }
+    ASSERT_TRUE(found) << "tick=" << tick << " phase=" << state.phase;
+    previous = best_candidate.joints_rad;
+    state = best_gait.state;
+  }
+  EXPECT_EQ(state.cycle, 7U);
+  EXPECT_FALSE(state.starting);
+  EXPECT_DOUBLE_EQ(state.startup_phase, 0.0);
+}
+
+TripodConfig responsive_config()
+{
+  TripodConfig config;
+  config.base_cadence_hz = 1.5;
+  config.maximum_cadence_hz = 2.5;
+  config.cadence_rate_hz_s = 2.0;
+  config.preferred_maximum_stride_scale = 0.6;
+  config.maximum_stride_m = 0.12;
+  config.swing_clearance_m = 0.06;
+  config.planar_command_scale_m_s = 0.24;
+  config.yaw_command_scale_rad_s = 1.2;
+  config.translation_acceleration_m_s2 = 0.4;
+  config.yaw_acceleration_rad_s2 = 2.4;
+  config.operator_input_pre_filtered = true;
+  return config;
+}
+
+TEST(StandingTarget, ResponsiveHardEnvelopeCurveRemainsReachableAtNeutralPose)
+{
+  const auto request = nominal_request();
+  const auto standing = compute_standing_target(request, {});
+  ASSERT_TRUE(standing.committed);
+  const auto config = responsive_config();
+  constexpr double kDiagonal = 0.1697056274847714;
+  constexpr double kHardDiagonal = 0.2036467529817257;
+  const std::array<PlanarVelocity, 11> commands{{
+    {0.24, 0.0, 0.0}, {-0.24, 0.0, 0.0},
+    {0.0, 0.24, 0.0}, {0.0, -0.24, 0.0},
+    {0.0, 0.0, 1.2}, {0.0, 0.0, -1.2},
+    {kDiagonal, kDiagonal, 1.2},
+    {0.288, 0.0, 0.0},
+    {0.0, 0.288, 0.0},
+    {0.0, 0.0, 1.5},
+    {kHardDiagonal, kHardDiagonal, 1.5},
+  }};
+  for (const auto & command : commands) {
+    TripodState gait_state;
+    auto previous = standing.joints_rad;
+    for (std::size_t tick = 0; tick < 700; ++tick) {
       const auto gait = advance_tripod(
         config, gait_state, request.foot_targets_base_m,
-        command, true, false, 0.001);
+        command, true, false, 0.01);
       ASSERT_TRUE(gait.valid);
       const auto candidate = compute_foot_pose_target(
         request, gait.foot_targets_base_m, {}, previous);
@@ -380,6 +516,57 @@ TEST(StandingTarget, DoubleSpeedResponsiveCurveRemainsReachableAtNeutralPose)
       gait_state = gait.state;
     }
     EXPECT_GE(gait_state.cycle, 2U);
+  }
+}
+
+TEST(StandingTarget, ResponsiveFilteredHardEnvelopeNeedsNoHiddenPhaseRetiming)
+{
+  const auto request = nominal_request();
+  const auto standing = compute_standing_target(request, {});
+  ASSERT_TRUE(standing.committed);
+  const auto config = responsive_config();
+  constexpr double kHardDiagonal = 0.2036467529817257;
+  const std::array<PlanarVelocity, 7> targets{{
+    {0.288, 0.0, 0.0}, {-0.288, 0.0, 0.0},
+    {0.0, 0.288, 0.0}, {0.0, -0.288, 0.0},
+    {0.0, 0.0, 1.5}, {0.0, 0.0, -1.5},
+    {kHardDiagonal, kHardDiagonal, 1.5},
+  }};
+  constexpr std::array<double, 4> kRateCapsRadS{{5.5, 10.0, 12.5, 9.0}};
+  const double publication_alpha = -std::expm1(
+    std::log1p(-0.02) * 0.02 / 0.005);
+
+  for (const auto & target : targets) {
+    TripodState gait_state;
+    PlanarVelocity filtered{};
+    auto previous = standing.joints_rad;
+    for (std::size_t tick = 0; tick < 700; ++tick) {
+      if ((tick % 2) == 0) {
+        filtered.x_m_s += publication_alpha * (target.x_m_s - filtered.x_m_s);
+        filtered.y_m_s += publication_alpha * (target.y_m_s - filtered.y_m_s);
+        filtered.yaw_rad_s += publication_alpha * (target.yaw_rad_s - filtered.yaw_rad_s);
+      }
+      const auto gait = advance_tripod(
+        config, gait_state, request.foot_targets_base_m,
+        filtered, true, false, 0.01);
+      ASSERT_TRUE(gait.valid);
+      const auto candidate = compute_foot_pose_target(
+        request, gait.foot_targets_base_m, {}, previous);
+      ASSERT_TRUE(candidate.committed) <<
+        "target=" << target.x_m_s << "," << target.y_m_s << "," <<
+        target.yaw_rad_s << " tick=" << tick << " phase=" << gait.state.phase;
+      for (std::size_t joint = 0; joint < candidate.joints_rad.size(); ++joint) {
+        const double rate = std::abs(
+          candidate.joints_rad[joint] - previous[joint]) / 0.01;
+        EXPECT_LE(rate, kRateCapsRadS[joint % 4] + 1.0e-12) <<
+          "target=" << target.x_m_s << "," << target.y_m_s << "," <<
+          target.yaw_rad_s << " tick=" << tick << " phase=" << gait.state.phase <<
+          " joint=" << joint;
+      }
+      previous = candidate.joints_rad;
+      gait_state = gait.state;
+    }
+    EXPECT_GE(gait_state.cycle, 10U);
   }
 }
 
