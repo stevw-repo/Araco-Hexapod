@@ -1,6 +1,6 @@
 # Araco Hexapod — Project Context
 
-Last verified: 2026-08-16
+Last verified: 2026-08-18
 
 ## Goal
 
@@ -40,17 +40,20 @@ Build a new ROS 2 software system for the Araco hexapod from the ground up, incl
 
 The Raspberry Pi is powered by the PiSugar battery module. The servo controller and servos are powered by the separate 7.4 V battery. Exact power distribution, protection, grounding, and regulator details remain unknown.
 
-Neither camera has been integrated into the ROS system. The Gemini IMU may be
-usable but has not been integrated. No actuator, joint, force/contact, power, or
-other robot-state feedback is currently integrated. The servo system is
-believed to be strictly open-loop.
+The physical cameras and Gemini IMU have not been integrated into the ROS
+system. Simulator-only Gemini-like RGB, depth, organized point-cloud, and IMU
+publishers are now integrated through Gazebo Harmonic and `ros_gz_bridge`.
+No physical actuator, joint, force/contact, power, or other robot-state feedback
+is currently integrated. The servo system is believed to be strictly open-loop.
 
 The Raspberry Pi Camera Module 3 is explicitly deferred and may be omitted from
 the operational software entirely. It must not constrain simulator development
 or the Pi OS/runtime choice. Gemini 335 remains the primary planned RGB-D sensor.
 
 For presentation, the exact Gemini 335 vendor exterior is integrated as three
-visual-only meshes on `camera_link`. The imported Fusion `0.4.0` / specification
+visual meshes on `camera_link`. Separate Gazebo sensor definitions provide the
+simulated optical behavior; the exterior meshes themselves remain visual-only.
+The imported Fusion `0.4.0` / specification
 `3.0.0` bundle covers 59 exports and 77 reviewed bodies. Its camera scope is 15
 exterior bodies (housing/bracket, pads/fasteners, and four optics); internal
 connector/PCB geometry and the separate Raspberry Pi camera remain excluded.
@@ -91,6 +94,11 @@ are simulator estimates, not measurements. Offline derivation evidence remains
 under `tools/fusion/`; the runtime snapshot is owned by `araco_description`.
 
 ## Legacy software inventory
+
+The feature-level comparison against the current simulator is maintained in
+`docs/agent/LEGACY_PARITY_AUDIT.md`. The current repository is a simulator
+baseline, not a feature-complete legacy replacement. Gate compliance must not
+be used as evidence of Responsive joystick usability or legacy parity.
 
 The legacy workspace mixes source, generated output, launch files, robot assets, and simulator assets at its root:
 
@@ -280,6 +288,12 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
 - Gait/trajectory progression uses ROS simulation time; motion-authority and
   readiness watchdogs use steady time. Pausing Gazebo therefore revokes motion
   readiness and cannot cause surprise gait resumption.
+- Locomotion health status is published by a separate `50 Hz` steady-time
+  heartbeat. The interactive `gazebo_joystick_v0` profile uses measured
+  simulator-only `0.500 s` joystick/source/component/clock freshness windows to
+  tolerate full Gazebo + RGB-D + RViz desktop scheduling stalls. Headless CI,
+  Gate, and `gazebo_dev_v0` retain the strict `0.050/0.100/0.250 s` safety and
+  `0.150 s` teleop-source baseline; no physical timeout is authorized.
 - Source candidates are best-effort latest-value streams. Trusted selected and
   safe commands are reliable latest-value streams. Concrete project topics,
   source IDs/priorities/timeouts, and status QoS are accepted.
@@ -289,11 +303,23 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   a continuous `1.0–1.5 Hz` gait phase; stride is the primary speed variable
   and cadence rises only above the preferred `0.5` stride scale.
 - The interactive `gazebo_joystick_v0` profile separately selects Responsive
-  simulator tuning: `0.200 m/s` translation, `1.200 rad/s` walking yaw,
-  `1.5–2.5 Hz` cadence, and matched translation/yaw shaping rates. Its stride
-  and clearance maxima are `0.120 m` and `0.030 m`; clearance continues to
-  scale by the same factor as stride. This does not alter Gate baselines or
-  authorize equivalent physical-hardware tuning.
+  simulator tuning: `0.240 m/s` translation, `1.200 rad/s` walking yaw,
+  `1.5–2.5 Hz` cadence, and matched translation/yaw shaping rates. Its
+  absolute stride and clearance maxima are `0.120 m` and `0.060 m`; the
+  preferred stride scale is `0.6`, or 72 mm, and clearance continues to scale
+  by the same factor as stride. This does not alter Gate baselines or authorize
+  equivalent physical-hardware tuning.
+- Locomotion's atomic gait transaction currently uses bisection over the 10 ms
+  step when a candidate exceeds checked IK or joint command-rate constraints.
+  Because the reduced scale is passed back as a smaller gait `dt`, phase
+  progression also slows. `LocomotionStatus.gait_cadence_hz` remains the
+  scheduler's nominal cadence and does not expose this effective slowdown.
+  Larger strides can therefore look slower even when the configured
+  speed-to-preferred-stride ratio—and nominal cadence—are unchanged. The
+  Responsive `0.15.0` joystick composition prevents this at its complete
+  smoothed hard command envelope with evidence-based simulator-only class caps
+  of `5.5/10.0/12.5/9.0 rad/s` for coxa/femur/tibia/foot. The bisection remains
+  a guard for out-of-contract commands and workspace/IK recovery.
 - Provisional joint ranges, command-rate/effort caps, damping, friction, DART
   physics settings, and quantitative Gate 0–6 thresholds are simulator-only and
   forbidden as physical calibration or safety evidence.
@@ -540,7 +566,12 @@ Past local Isaac Sim performance was only about 10–15 FPS, and the laptop is n
   is intentionally corrected: at legacy phase `0.75` it changes continuously
   from the `+0.5` plateau into a linear decrease to zero at phase `1.0`, with
   supporting-foot velocity continuous across the cycle boundary. The legacy
-  counter state machine itself was not ported.
+  counter state machine itself was not ported. On 2026-08-17 the missing
+  legacy first-step behavior was restored independently: every newly admitted
+  walk evaluates tripod A through the legacy negative-counter interval
+  `-50 → -25` while tripod B advances `0 → 25`, then joins the unchanged
+  repeating curve exactly. This starts all six horizontal and vertical foot
+  offsets at zero rather than at a repeating-cycle endpoint.
 - The arbiter, independent safety state machine, lifecycle/readiness handling,
   watchdog behavior, atomic 24-joint transaction, `ros2_control` path, and
   Gates 2–4 scorers are new and have no equivalent implementation in the
@@ -608,6 +639,67 @@ Accepted RL role split (accepted 2026-08-15):
 Confirmed goal:
 
 - The user specifically intends to integrate 3D SLAM and Nav2, initially in simulation and later with the planned ORBBEC Gemini 335.
+- Current repository state (2026-08-18): `araco_perception` owns provisional
+  Gemini-like simulator artifacts and RViz layouts. `araco_navigation` is now
+  active and owns the first RTAB-Map RGB-D odometry/SLAM contract and launch.
+  The generated robot has color camera, RGB-D camera, and camera-mounted IMU
+  sensors on `camera_link`, with fixed color/depth optical frames and exact
+  Gemini exterior visuals.
+- The performance-safe baseline is 424 x 240 at 15 Hz for color and depth, with
+  a 100 Hz camera IMU, 0.15–20 m clipping, and an organized `PointCloud2`.
+  This is a simulator-development mode, not a claim of calibrated Gemini 335
+  intrinsics, noise, latency, or physical-driver parity.
+- Live host validation measured about 13.4 Hz for each image and 87 Hz for the
+  IMU while the complete control stack remained in `HOLDING` with all 127
+  readiness bits, zero fault mask, and no reset requirement. The original
+  640 x 480 at 30 Hz draft overloaded this laptop's combined 1 kHz physics,
+  exact-mesh rendering, and point-cloud path and was deliberately rejected.
+- The simulator ROS endpoints are
+  `/araco/camera/color/image_raw`, `/araco/camera/color/camera_info`,
+  `/araco/camera/depth/image_raw`, `/araco/camera/depth/camera_info`,
+  `/araco/camera/depth/points`, and `/araco/camera/imu/data`. Image and
+  calibration headers use `camera_color_optical_frame` or
+  `camera_depth_optical_frame`. The organized cloud and IMU use `camera_link`:
+  Gazebo's point values are +X-forward camera coordinates and must not be
+  mislabeled as ROS +Z-forward optical coordinates.
+- Simulator safety requires all `127/127` readiness bits to remain continuously
+  valid for `1.0 s` before startup may enter `HOLDING`. A transient renderer
+  warm-up gap while still `INACTIVE` restarts qualification without latching a
+  reset; all clock and component watchdogs remain fail-closed after `HOLDING`.
+- `gazebo_perception_v0` selects a separate deterministic RGB-D landmark arena,
+  registered 424 x 240 color/depth intrinsics, and RTAB-Map 0.22.1. It publishes
+  `/araco/perception/odom`, `/araco/perception/map`,
+  `/araco/perception/cloud_map`, obstacle/ground clouds, and the full
+  `map -> odom -> base_link -> camera_link` chain. The default persistent
+  database is `~/.ros/araco_rgbd_map.db`.
+- Operational simulator estimator `araco.navigation.rtabmap-rgbd-sim` `0.4.0`
+  is six-DoF RGB-D visual odometry. The simulated camera IMU remains published
+  but is not fused operationally: controlled 2026-08-18 trials found more than
+  90% of timestamp-specific camera-IMU transforms unavailable, and visual-only
+  translation was slightly more accurate than the latest-transform fixed-IMU
+  fallback. Dynamic-IMU, fixed-gimbal-IMU, and visual-only exact variants are
+  retained as diagnostic profiles.
+- The first live run reached `MOTION_ENABLED` with `127/127` readiness and no
+  fault, tracked active robot motion, grew RTAB-Map working memory to 66 nodes,
+  published a 5 cm occupancy grid and accumulated cloud, and saved a 31 MB
+  database. This proves transport and online map growth, not loop-closure
+  accuracy or relocalization quality.
+- The former `Odom/ResetCountdown=1` policy converted one failed odometry frame
+  into an odometry reset and a disconnected active map, which appeared in RViz
+  as the accumulated cloud being wiped. The accepted baseline is now `0`:
+  brief tracking loss is non-destructive. Gimbal motion may still make feature
+  tracking fail, but it must not itself reset the map.
+- The dedicated RGB-D arena contains an ordered visual-only acceptance route:
+  east/red, north/blue, west/green, south/yellow, origin/white, each 1.2 m from
+  the start except the origin. `araco_slam_score` acceptance artifact `0.4.0`
+  observes loop-corrected `map -> base_link`, raw estimated odometry,
+  odometry tracking status, simulator ground truth, RTAB-Map info, occupancy
+  grid, and cloud map. Corrected pose supplies closure gates; raw drift and
+  tracking-loss/recovery remain separate diagnostics. Ground truth is
+  observer-only and is not connected to the estimator. Completion requires
+  final position and starting yaw for two seconds, followed by a ten-second
+  tracking-healthy stable corrected-pose window; a +X floor arrow shows the
+  required heading.
 
 Verified capability:
 
@@ -615,7 +707,9 @@ Verified capability:
 - `ros_gz_bridge` supports the ROS 2 sensor interfaces needed for this pipeline, including `sensor_msgs/Image`, `CameraInfo`, `PointCloud2`, `Imu`, and `LaserScan`. The upstream RGB-D bridge example publishes color, depth, camera calibration, and point-cloud streams.
 - Nav2 accepts `PointCloud2` from depth or 3D sensors through its voxel layer. That layer maintains limited 3D obstacle data and projects it into Nav2's 2D planning costmap; standard Nav2 is not a general volumetric 3D planner.
 - Nav2 requires a valid `map → odom → base_link → sensor` TF chain. The mapping/localization system owns `map → odom`, while the odometry system owns `odom → base_link`.
-- RTAB-Map is the accepted first RGB-D SLAM candidate to evaluate on ROS 2 Jazzy: its upstream ROS 2 repository includes RGB-D/3D-lidar sensor examples and Nav2 integration demos. Evaluation does not guarantee final adoption if acceptance tests expose a better option.
+- RTAB-Map 0.22.1 is the implemented first RGB-D SLAM baseline on ROS 2 Jazzy.
+  Evaluation does not guarantee final adoption if loop-closure, relocalization,
+  or performance acceptance tests expose a better option.
 - The Gemini 335 is an RGB + active/passive stereo depth camera with a six-axis accelerometer/gyroscope IMU. Orbbec's current ROS 2 wrapper supports Jazzy and the Gemini 335, including RGB, depth, point-cloud, accelerometer, and gyroscope configuration.
 
 Important limitations and implications:
@@ -627,7 +721,12 @@ Important limitations and implications:
 - Dense global volumetric mapping, textured meshing, and elevation/traversability maps are deferred.
 - Standard Nav2 is suitable for body-level navigation on mostly traversable ground. It does not by itself determine leg footholds, slope/step traversability, or full 3D paths over uneven terrain; those require an elevation/traversability representation and eventually a terrain-aware or footstep planning layer.
 - The physical robot currently lacks measured leg/joint odometry and foot contact. In simulation, ground-truth odometry may be used to test wiring but must not be used to claim SLAM performance. A realistic evaluation needs visual/RGB-D-inertial odometry or another noisy estimated odometry source.
-- Mounting the camera on the yaw gimbal creates a dynamic camera extrinsic. In simulation that transform can be exact, but on the real open-loop gimbal it would be inferred from the command and subject to servo error/backlash. Initial SLAM should therefore keep the gimbal fixed/locked unless a measured gimbal angle is added.
+- Mounting the camera on the yaw gimbal creates a dynamic camera extrinsic. The
+  simulator RGB-D path uses the exact dynamic TF and an isolated gimbal sweep
+  produced negligible false motion, but the camera-IMU timestamp path is not
+  qualified. On the real open-loop gimbal the angle would be inferred from the
+  command and subject to servo error/backlash. Keep the gimbal centered for the
+  first accepted route and require measured gimbal angle for physical use.
 
 ## Legacy design and correctness concerns
 
@@ -720,8 +819,9 @@ physical measurements:
 - The connected PXN-2113 Pro is USB `11ff:0837`, SDL GUID
   `0300b14bff1100003708000010010000`, and produces six ROS Joy axes plus 12
   buttons. Live axis calibration preserves the legacy axis roles. Joystick
-  mapping/profile `0.9.0` retains an 8% deadzone and 120 ms input timeout but no
-  deadman button or manual Enable Motion step. The joystick profile auto-enables
+  mapping `0.13.0` and joystick profile `0.19.0` retain an 8% deadzone and use
+  the headed-simulator-only 500 ms input timeout, but no deadman button or
+  manual Enable Motion step. The joystick profile auto-enables
   once after readiness and a fresh valid neutral-standing selection;
   translation, walking yaw, roll, pitch, and posture yaw must be neutral while
   body-height trim is permitted. The adapter emits one internal inactive startup
@@ -744,7 +844,7 @@ physical measurements:
   and headed launch verified the automatic transition to `MOTION_ENABLED`.
 - A later live direction check found only forward/reverse initially correct.
   Version `0.6.0` reversed the other controls, but the subsequent live check
-  showed height and roll had been correct before that broad reversal. Version
+  showed height and roll had been correct before that broad reversal. Mapping
   `0.9.0` retains the `0.7.0` height/roll restoration and corrected lateral,
   walking yaw, pitch, and posture yaw while adding the doubled-speed scales.
   The same live run
@@ -753,6 +853,33 @@ physical measurements:
   request at that boundary now holds the last complete valid trajectory and
   reports `REASON_COMMAND_LIMITED`; only loss of the valid-commit invariant
   remains a kinematics fault.
+- Joystick profile `0.15.0` selects a separate simulator-only 270-degree-wide
+  leg-joint envelope. The intervals are centered near each joint class's
+  nominal standing coordinate; they are deliberately permissive presentation
+  limits, not calibrated servo endpoints or hardware authorization. Baseline
+  CI, Gate, development, and keyboard profiles retain their original limits.
+  The knee-down analytic IK branch and geometric reach/singularity checks still
+  apply even when an angle lies inside the wider envelope.
+- The 2026-08-17 legacy-parity port supersedes the prior independent joystick
+  X/Y mapping and additive yaw path. Translation is radially normalized; the
+  legacy rotation curve and relative-magnitude translation/yaw blend are
+  active; and axis 4 commands both posture yaw and gimbal yaw (`±pi/10 rad`).
+  Responsive clearance is `0.060 m` maximum and remains proportional to
+  stride. Centered inactive-session recovery fixes the former permanent
+  invalid-source quarantine, and operator status lines distinguish source,
+  safety, and locomotion reasons.
+- Joystick mapping `0.13.0` retains the active legacy P-only input response
+  for every current operator control. Translation X/Y, walking yaw, height,
+  roll, pitch, and shared axis 4 use a time-step-independent equivalent of the
+  legacy 200 Hz update: normal controls close 2% of remaining error per 5 ms,
+  while height closes 1%. Axis 4 is filtered once in normalized space and then
+  scaled into both body and gimbal targets. The user explicitly retained the
+  current body-yaw range (`±0.2 rad`) and gimbal range (`±pi/10`); the legacy
+  body range (`±pi/8`) is not restored. For this already-filtered joystick
+  profile, ordinary commands bypass the gait/body/gimbal feel limiters so the
+  response is not shaped twice. Checked IK, complete six-leg transactions,
+  joint-rate validation, controller limits, controlled stop, and recovery
+  shaping remain authoritative guards.
 - The approved legacy-curve regression uses clean build/test root
   `/tmp/araco_legacy_curve_final_20260816_01/` and Gate 4 evidence
   `/tmp/araco_legacy_curve_gate4_final_20260816_01/`. Its behavior fingerprint

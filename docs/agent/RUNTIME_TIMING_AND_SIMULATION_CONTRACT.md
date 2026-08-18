@@ -77,12 +77,16 @@ transition and completes action feedback/result asynchronously.
 | `/joint_states` | `sensor_msgs/msg/JointState` | joint-state broadcaster | TF, safety, locomotion, tests |
 | `/leg_trajectory_controller/joint_trajectory` | `trajectory_msgs/msg/JointTrajectory` | locomotion | leg JTC |
 | `/leg_trajectory_controller/controller_state` | `control_msgs/msg/JointTrajectoryControllerState` | leg JTC | safety/tests |
-| `/gimbal_trajectory_controller/joint_trajectory` | `trajectory_msgs/msg/JointTrajectory` | no periodic publisher in v0; JTC holds its initialized state | gimbal JTC |
+| `/gimbal_trajectory_controller/joint_trajectory` | `trajectory_msgs/msg/JointTrajectory` | locomotion at `100 Hz` | gimbal JTC |
 | `/gimbal_trajectory_controller/controller_state` | `control_msgs/msg/JointTrajectoryControllerState` | gimbal JTC | safety/tests |
 
-The gimbal controller holds the initialized zero position in the first
-milestone. It is not continuously commanded by locomotion and has no ordinary
-command-source interface yet.
+The gimbal controller has separate ownership from the 24-leg controller.
+`MotionIntent.gimbal_yaw_rad` passes through arbitration and safety. Responsive
+joystick mapping `0.13.0` filters normalized axis 4 once and derives both the
+posture-yaw and gimbal-yaw targets from that shared state. Locomotion publishes
+those already-filtered ordinary targets without a second feel limiter. It
+retains bounded return shaping when motion is no longer executable, and the
+gimbal controller's physical limits remain authoritative.
 
 ### Simulation-only observation interfaces
 
@@ -95,7 +99,12 @@ command-source interface yet.
 | `/araco/simulation/contacts/right_front` | `ros_gz_interfaces/msg/Contacts` | Gazebo tests/diagnostics only |
 | `/araco/simulation/contacts/right_middle` | `ros_gz_interfaces/msg/Contacts` | Gazebo tests/diagnostics only |
 | `/araco/simulation/contacts/right_rear` | `ros_gz_interfaces/msg/Contacts` | Gazebo tests/diagnostics only |
-| `/araco/simulation/imu/data` | `sensor_msgs/msg/Imu` | Later estimator input; not required by Gates 0–4 |
+| `/araco/camera/color/image_raw` | `sensor_msgs/msg/Image` | Provisional simulated RGB stream; frame `camera_color_optical_frame` |
+| `/araco/camera/color/camera_info` | `sensor_msgs/msg/CameraInfo` | Simulated pinhole calibration paired with color image |
+| `/araco/camera/depth/image_raw` | `sensor_msgs/msg/Image` | Provisional simulated `32FC1` depth stream; frame `camera_depth_optical_frame` |
+| `/araco/camera/depth/camera_info` | `sensor_msgs/msg/CameraInfo` | Simulated pinhole calibration paired with depth image |
+| `/araco/camera/depth/points` | `sensor_msgs/msg/PointCloud2` | Organized 424 x 240 simulated point cloud for perception/RViz |
+| `/araco/camera/imu/data` | `sensor_msgs/msg/Imu` | Simulated camera IMU in `camera_link`; later estimator input |
 
 Contact topics contain only contacts involving the named foot collision. Test
 code rejects any unexpected non-foot robot-to-ground collision by inspecting
@@ -122,6 +131,13 @@ jump greater than `0.100 s` while motion is enabled, invalidates motion state
 with `REASON_TIME_DISCONTINUITY`. Startup and deliberate world reset perform the
 accepted gated reinitialization rather than being treated as recoverable motion.
 
+During lifecycle startup only, complete readiness must remain continuously true
+for `1.0 s` before safety leaves `INACTIVE` for `HOLDING`. A renderer warm-up
+that briefly stalls `/clock` before that transition resets the qualification
+timer; it cannot create `RESET_REQUIRED` because motion authority has never
+existed. Once `HOLDING` is reached, this startup exception ends and the normal
+clock/component fault behavior below applies unchanged.
+
 Pausing Gazebo therefore freezes physics immediately and revokes readiness no
 later than `0.260 s` after the last clock advancement (timeout plus one 100 Hz
 safety tick). Unpausing cannot resume prior gait motion; a fresh enable and
@@ -142,7 +158,7 @@ source activation edge are required.
 | Safety evaluation and safe command | `100 Hz` | steady timer | Periodic disposition even while holding |
 | Locomotion motion/trajectory loop | `100 Hz` | ROS time | One atomic six-leg transaction per tick |
 | Locomotion steady watchdog | `100 Hz` | steady timer | Does not advance gait |
-| Locomotion status | `50 Hz` plus change | ROS time | Every second valid motion tick |
+| Locomotion status | `50 Hz` plus change | steady time | Health heartbeat is independent of paused/slow simulation time; motion state still comes from the ROS-time loop |
 | Safety status | `10 Hz` plus change/transition | steady time | Not the motion command path |
 | Joint-state provenance | `1 Hz` plus change/activation | steady time | Transient-local latest sample |
 | Foot-target visualization | `20 Hz` | ROS time | Best-effort debug output |
@@ -190,6 +206,12 @@ If none arrives, the action returns unsuccessful and safety returns to
 `HOLDING`. A deliberate higher-priority handover uses a `0.250 s` stable-hold
 dwell before the pending source may execute. The pending source must remain
 fresh throughout the stop and dwell.
+
+The interactive headed joystick profile uses a separate simulator-only source
+registry: its joystick-report and teleop-candidate freshness timeouts are both
+`0.500 s`. This accommodates the measured desktop renderer/RViz scheduling
+jitter without weakening the `0.150 s` CI/development source contract. It is
+not a physical joystick-disconnect policy.
 
 ## QoS profiles
 
@@ -252,6 +274,23 @@ The latest validated reply remains a mailbox value while its service is
 available; controller, joint, and clock streams continue to provide the bounded
 ongoing liveness evidence above.
 
+### Interactive headed-simulator timing policy
+
+`gazebo_joystick_v0` selects `headed_simulator_v0` because exact visual meshes,
+Gazebo GUI, RGB-D rendering, RViz point-cloud display, and the control stack
+share one non-real-time desktop. A live 2026-08-18 trace measured a worst
+whole-executor scheduling gap of `327.409 ms`; the previous `100 ms` component
+timeouts therefore classified host rendering jitter as a robot fault.
+
+For this one simulator-only profile, selected command, safe command, joint
+state, locomotion status, controller state, and clock progress use `0.500 s`
+timeouts with `0.510 s` maximum detection. Provenance remains `1.500/1.510 s`.
+The safety supervisor receives each value as a generated read-only parameter;
+none of those component timeouts remain hard-coded. Headless CI, Gate profiles,
+and `gazebo_dev_v0` retain the stricter table above, preserving their behavior
+fingerprint and regression sensitivity. A future physical policy must be
+measured and approved independently.
+
 ## Initial command and gait envelope
 
 The normal envelope is the value delivered to locomotion. A finite value
@@ -302,14 +341,16 @@ Responsive simulator contract:
 
 | Parameter | Responsive value |
 |---|---:|
-| Translation limit | `0.200 m/s` |
+| Translation limit | `0.240 m/s` |
+| Hard planar envelope | `0.288 m/s` |
 | Walking-yaw limit | `1.200 rad/s` |
 | Translation acceleration / stop deceleration | `0.400 / 0.600 m/s²` |
 | Yaw acceleration / stop deceleration | `2.400 / 3.600 rad/s²` |
 | Tripod baseline / maximum cadence | `1.500 / 2.500 Hz` |
 | Tripod cadence slew limit | `2.000 Hz/s` |
+| Preferred / absolute maximum stride | `0.072 / 0.120 m` |
 
-Maximum stride is `0.120 m`; maximum clearance remains `0.030 m` and is scaled
+Maximum stride is `0.120 m`; maximum clearance is `0.060 m` and is scaled
 by the same per-leg normalized factor as stride. Planted-body pose rates are
 unchanged. CI, Gate, and keyboard profiles continue to use the initial values
 above, so the established acceptance baseline is not retuned.
@@ -331,19 +372,42 @@ travel. A future physical profile is forbidden from loading them.
 | Six femur pitch joints | `[+0.150, +1.350]` | `[+0.350, +1.100]` | `2.0 rad/s` | `1.2 rad/s` | `5.0 N·m` |
 | Six tibia pitch joints | `[-2.650, -0.750]` | `[-2.350, -1.150]` | `2.0 rad/s` | `1.2 rad/s` | `3.0 N·m` |
 | Six foot pitch joints | `[-1.250, +0.350]` | `[-0.850, +0.100]` | `2.0 rad/s` | `1.2 rad/s` | `3.0 N·m` |
-| Gimbal yaw | `[-1.571, +1.571]` | fixed target `0` in v0 | `1.5 rad/s` | no active command | `3.0 N·m` |
+| Gimbal yaw | `[-1.571, +1.571]` | `[-0.314159, +0.314159]` | `1.5 rad/s` | `1.5 rad/s` | `3.0 N·m` |
 
-The joystick-only Responsive simulator policy uses each leg joint's complete
-canonical model range shown above and a `2.0 rad/s` command-rate cap. This is a
-simulator operational choice supported by the current exact-geometry IK sweep;
-it is not physical-servo calibration or a hardware safety limit. All other
-profiles retain the initial operational ranges and `1.2 rad/s` cap.
+The table above remains the `0.1.0` baseline selected by CI, Gate, development,
+and keyboard profiles. Joystick profile `0.15.0` instead selects the isolated
+`0.3.0` wide simulator artifact and uses the same values as its Responsive
+operational range:
+
+| Joint class | Joystick wide model/operational range (rad) | Span | Command-rate cap |
+|---|---:|---:|---:|
+| Six coxa yaw joints | `[-2.356194, +2.356194]` | `270 deg` | `5.5 rad/s` |
+| Six femur pitch joints | `[-1.636194, +3.076194]` | `270 deg` | `10.0 rad/s` |
+| Six tibia pitch joints | `[-4.256194, +0.456194]` | `270 deg` | `12.5 rad/s` |
+| Six foot pitch joints | `[-2.766194, +1.946194]` | `270 deg` | `9.0 rad/s` |
+
+These are permissive simulator presentation limits centered near nominal
+standing coordinates. They are not calibrated servo endpoints, collision-free
+certification, or hardware safety limits. The gimbal remains
+`[-1.571,+1.571] rad`. The knee-down IK branch can only produce its negative
+knee solution and continues to reject straight/folded singularities and
+geometrically unreachable foot targets.
+
+The Responsive rate caps are presentation-simulator policy derived from a
+100 Hz exact-geometry gait/IK sweep. At the configured hard command envelope,
+the measured steady peaks were `4.95`, `8.30`, `10.97`, and `7.42 rad/s` for
+coxa, femur, tibia, and foot respectively. The selected caps include margin,
+and a regression models the real 50 Hz joystick response before asserting that
+every 10 ms transaction is accepted at full phase time. These values do not
+predict safe or achievable loaded speed on the physical servos.
 
 If a Responsive gait reaches a workspace boundary, locomotion freezes the
 current gait phase and decelerates its curve amplitude toward the nominal
-six-foot stance. Reason 11 remains visible until the retreat is complete and
-planar controls are centered; centering re-arms normal gait. This prevents an
-exact boundary from becoming an indefinite retry lock.
+six-foot stance. After the retreat completes, planar gait retries automatically
+at neutral body posture; planar-stick centering is not required. If a combined
+walking-posture request caused the rejection, those posture offsets remain
+suppressed and reason 11 stays visible until the posture controls are centered.
+This avoids an indefinite operator lock while retaining geometric IK checks.
 
 All 24 standing targets are at least `0.10 rad` inside their initial
 operational range. Generated trajectories are rejected before publication if a
@@ -367,6 +431,9 @@ to claim that the real servo can sustain the corresponding load.
 | Foot-ground friction coefficients | `mu = 0.90`, `mu2 = 0.90` | Provisional simulator estimate |
 | Non-foot collision friction | `mu = 0.40`, `mu2 = 0.40` | Provisional simulator estimate |
 | Restitution | `0.0` | Provisional; no intentional bounce |
+| RGB image mode | `424 x 240 @ 15 Hz`, `rgb8` | Performance-safe development mode; not physical calibration |
+| Depth/point-cloud mode | `424 x 240 @ 15 Hz`, `32FC1`, organized cloud | Performance-safe development mode; `0.15–20 m` clipping |
+| Camera IMU rate | `100 Hz` | Simulator rate; no calibrated noise or latency model |
 
 Joint dynamics begin with:
 
@@ -463,19 +530,29 @@ The commands are a `0.006 m/s` precision-forward case, `±0.040 m/s` forward,
 `[0.030, 0.020, 0.150]` in SI units. Each runs for at least five complete gait
 cycles after startup.
 
-The accepted gait artifact `0.3.0` uses the legacy function-defined horizontal
-and vertical foot-path shapes, normalized to the configured stride and
+The accepted baseline gait artifact `0.7.0` uses the legacy function-defined
+horizontal, vertical, and rotational foot-path shapes, normalized to the
+configured stride and
 clearance and phase-aligned to the new state machine. Its horizontal path is
 continuous at legacy phase `0.75`: the `+0.5` plateau changes there into a
 linear decrease to zero at phase `1.0`, retaining constant supporting-foot
 velocity across the cycle boundary. The production joint-rate limiter remains
-authoritative when the raw polynomial requests a sharper step. The fixed 100 Hz
+authoritative when the raw polynomial requests a sharper step. Each new walk
+first executes the legacy negative-counter quarter-cycle: tripod A follows
+`-50 → -25`, tripod B follows `0 → 25`, and both trajectories start at the
+nominal six-foot stance before joining repeating phase zero continuously. The fixed 100 Hz
 locomotion loop advances a continuous `1.0–1.5 Hz` phase oscillator. Stride is
 the primary speed variable, cadence rises only above the preferred `0.5` stride
 scale, and each leg's maximum clearance uses exactly its own normalized stride
 scale. Gate 4 observes each case for `7.6 s` to measure at least five completed
 cycles; the central score window and all physical/contact/tracking/stop limits
 remain unchanged.
+
+Mixed translation/yaw follows the legacy normalized-magnitude rule: relative
+translation and rotation magnitudes become blend weights, while the larger
+magnitude sets the overall request. Consequently, a mixed command may remain
+at base cadence where the superseded additive-twist scheduler increased it;
+all generic cadence, stride, clearance, and velocity-scale bounds still apply.
 
 - Over the central three cycles, planar velocity-vector mean error is
   `≤ 0.020 m/s` and yaw-rate mean error is `≤ 0.100 rad/s`.

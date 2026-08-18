@@ -28,8 +28,8 @@ simulator-first deployment. Acceptance does not authorize scaffolding.
 
 ## Accepted initial packages
 
-These nine packages cover the first Gazebo standing, body-control, and tripod-
-walking milestones.
+These eleven packages cover the Gazebo standing, body-control, tripod-walking,
+RGB-D/IMU simulation, and first visual-inertial SLAM milestones.
 
 | Package | Type | Owns | Does not own |
 |---|---|---|---|
@@ -40,6 +40,8 @@ walking milestones.
 | `araco_supervision` | C++ libraries plus two separate lifecycle nodes | Command-source arbitration, command freshness, operating/safety state machine, command gating, health/fault diagnostics | Gait math, controller implementation, power-cut claims |
 | `araco_teleop` | Adapter node and mappings | Joystick/keyboard input conversion into a canonical command candidate | Arbitration priority, safety decisions, locomotion |
 | `araco_gazebo` | Simulator adapter/data | Gazebo worlds, spawn integration, physics/contact/sensor settings, `ros_gz` bridge configuration, `gz_ros2_control` backend overlay | Canonical robot geometry, locomotion logic, generic controller policy |
+| `araco_perception` | `ament_cmake` data | Gemini-like simulator sensor contract, perception-facing topic/frame configuration, RViz display assets | Gazebo world/backend ownership, SLAM algorithms, navigation, physical camera driver |
+| `araco_navigation` | `ament_cmake` data/launch | RTAB-Map RGB-D odometry and SLAM policy, `map -> odom -> base_link` ownership, occupancy/cloud outputs | Camera simulation, robot control, Nav2 planning, physical camera driver |
 | `araco_bringup` | Launch/configuration | Top-level simulation profiles, common controller-manager configuration, lifecycle/startup ordering, parameter composition | Algorithm implementations or model assets |
 | `araco_system_tests` | Test-only package | Cross-package launch tests, deterministic simulation fixtures, standing/walking acceptance tests, scoring and regression reports | Production runtime behavior |
 
@@ -70,8 +72,8 @@ command-source failure cannot silently replace safety supervision.
 - One controller path owns all 24 leg joints.
 - A separate controller path owns `gimbal_yaw_joint`.
 - Gazebo Harmonic and `gz_ros2_control` implement the initial plant/backend.
-- `ros_gz_bridge` exposes the required IMU, contact, clock, and later RGB-D
-  sensor data.
+- `ros_gz_bridge` exposes clock, contact, ground-truth diagnostics, and the
+  current RGB, depth, camera-info, organized point-cloud, and camera-IMU data.
 
 The accepted controller contract uses `joint_state_broadcaster` and two
 `joint_trajectory_controller/JointTrajectoryController` instances: one for all
@@ -197,8 +199,6 @@ required third-party attributions are recorded in `THIRD_PARTY_NOTICES.md`.
 | Package | Add only when | Expected responsibility |
 |---|---|---|
 | `araco_hardware` | Physical integration is authorized and safety prerequisites exist | `ros2_control` hardware plugin, Hiwonder protocol/transport, calibrated command conversion, device health; never gait logic |
-| `araco_perception` | RGB-D/IMU simulation begins | Gemini-like sensor configuration, RTAB-Map composition, perception-specific filters and diagnostics |
-| `araco_navigation` | Stable localization and planar command contract exist | Nav2 parameters, maps, launch composition, Nav2-to-command-candidate adapter |
 | `araco_isaac` | Gazebo baseline passes and an Isaac release pair is selected | Isaac-specific robot/sensor adapter and validation configuration; no duplicate robot-control algorithms |
 
 RL packages are deliberately unnamed and deferred until deterministic baselines

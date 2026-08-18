@@ -95,6 +95,12 @@ active Gazebo backend, fresh finite joint position, active state/leg/gimbal
 controllers, fresh holding locomotion status, known simulated provenance, and a
 valid simulation clock.
 
+Those gates must remain complete continuously for `1.0 s` before the simulator
+profile can transition from `INACTIVE` to `HOLDING`. Any startup-only readiness
+drop restarts that qualification dwell and remains non-latching because no
+motion authority has yet existed. After `HOLDING`, readiness loss is evaluated
+by the normal watchdog/fault path and may require an explicit reset.
+
 `READY_BACKEND` does not require a new project health topic. It is derived from
 the configured `ros2_control` hardware-component identity/state obtained through
 typed controller-manager APIs and corroborated by fresh clock, joint-state, and
@@ -442,6 +448,14 @@ that safe.
 All motion-authority watchdogs use local steady time. ROS timestamps remain for
 provenance and simulation sequencing. A paused simulator will eventually revoke
 motion through steady-time expiry; resumption requires fresh gated commands.
+
+Locomotion publishes its health status from a `50 Hz` steady-time heartbeat,
+separate from the ROS-time trajectory loop. The heartbeat reports the most
+recent committed motion state but does not advance gait. The interactive headed
+simulator profile uses measured `0.500 s` component/source timeouts so a bounded
+desktop rendering stall does not masquerade as a robot fault; strict headless
+test policies remain unchanged. This exception is simulator-only and cannot be
+used as physical safety evidence.
 
 ## Accepted scope and remaining gates
 

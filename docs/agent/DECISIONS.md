@@ -1868,9 +1868,9 @@ Validation:
 
 ## 2026-08-17 — Double Responsive speed and make workspace saturation recoverable
 
-Status: implemented and validated in source, unit tests, configuration
-composition, and an isolated ROS integration exercise; headed operator
-validation remains pending.
+Status: superseded for joint-angle range by the following wide-envelope
+decision and for re-arm behavior by the later first-step/automatic-retry
+decision. The doubled stride, speed, and cadence selections remain active.
 
 Decision:
 
@@ -1927,3 +1927,632 @@ Validation:
   fingerprint
   `15277c3a7fbc20e7315dc665bfab482bf0d8f9380059c5cdf55a694bdf9ab1bd`.
   All five non-joystick behavior fingerprints remain unchanged.
+
+## 2026-08-17 — Isolate a wide 270-degree simulator joint envelope to joystick control
+
+Status: implemented and validated by clean build, affected-package tests, exact
+configuration composition, and non-joystick fingerprint isolation; renewed
+headed operator validation is pending.
+
+Decision:
+
+- Supersede only the earlier instruction not to widen the Responsive
+  joystick model limits. The user reports 270-degree servos and intentionally
+  designed the mechanical parts with substantial collision clearance.
+- Add `araco.description.provisional-sim-limits` `0.2.0` as a separate artifact
+  selected only by joystick profile `0.10.0`. Keep the original `0.1.0` limits
+  and all existing non-joystick profile selections unchanged.
+- Give coxa, femur, tibia, and foot intervals a `270 degree` (`3*pi/2`) span,
+  centered near the corresponding nominal standing coordinate: coxa
+  `[-2.356194,+2.356194]`, femur `[-1.636194,+3.076194]`, tibia
+  `[-4.256194,+0.456194]`, and foot `[-2.766194,+1.946194]` radians.
+  Keep the gimbal limit unchanged because this request concerns the leg-control
+  saturation and the gimbal has separate cable/extrinsic considerations.
+- Make the Responsive operational policy use the complete wide leg envelope at
+  the existing `2.0 rad/s` simulator command-rate cap.
+- Select a matching Gazebo backend artifact `0.4.0` whose exact dependency is
+  the wide model-limit artifact, so URDF and `ros2_control` enforce the same
+  bounds without altering the baseline backend.
+- Retain the knee-down IK branch, singularity rejection, geometric reach test,
+  complete six-leg transaction rule, and phase-frozen boundary recovery.
+
+Rationale:
+
+- A separate selected artifact gives the user a permissive presentation and
+  joystick test profile without weakening the deterministic CI/Gate baseline.
+- Servo travel alone does not identify calibrated physical endpoints. Centering
+  the provisional range near the nominal coordinate is suitable for simulation
+  exploration but is explicitly ineligible for a physical deployment profile.
+- Wider angular limits remove artificial joint-limit rejections but cannot make
+  a geometrically unreachable foot target reachable. The existing recovery
+  behavior remains necessary.
+
+Validation:
+
+- All nine packages build cleanly at
+  `/tmp/araco_joystick_wide_limits_build_20260817_01`; affected-package results
+  contain 181 tests, zero errors/failures, and 10 expected skips.
+- Profile `0.10.0` composes with `PASS` at
+  `/tmp/araco_joystick_wide_limits_profile_v0100_20260817_01`; its behavior
+  fingerprint is
+  `f75f419871a7df381ea88bf1bbf8c3938b049b228da96c5409afaec2fb7e13bf`.
+- Generated locomotion parameters, URDF limits, and `ros2_control` min/max
+  interfaces contain the same wide values. A regression verifies a 270-degree
+  span for all four leg-joint classes and nominal-pose containment.
+- All five non-joystick profiles retain their established behavior
+  fingerprints: `866f756334259bd34e2d3960948f69af92ccaadb1b5719c4ff567ca6c048e829`
+  for development, CI, Gate 3, and Gate 4; and
+  `4a803eed16ea0203bfa59ea0c545d90865b18c1ff58cf3691f3318ec9357caa6`
+  for Gate 5.
+
+## 2026-08-17 — Restore the legacy first-step curve and remove planar re-arm lock
+
+Status: implemented; clean build, complete test suite, all profile compositions,
+and Gazebo contact-gate validation pass. Headed operator validation is pending.
+
+Decision:
+
+- Supersede the assumption that acceleration-scaled stride alone reproduced
+  the legacy smooth first step. The legacy algorithm begins tripod A at counter
+  `-50` and tripod B at `0`; the previous normalized port entered the repeating
+  curve directly and therefore began at nonzero horizontal endpoints.
+- Restore only the legacy negative-counter horizontal and vertical functions
+  and execute `-50 → -25` / `0 → 25` as a dedicated first quarter-cycle on
+  every newly admitted walk. Join the existing repeating curve at phase zero,
+  retaining the user-approved phase-0.75 horizontal correction and the new
+  scheduler/state-machine architecture.
+- Version the baseline and Responsive gait artifacts as `0.4.0` and `0.6.0`
+  with identity `tripod_legacy_curve_warm_start_responsive_scheduler`.
+- Supersede the recovery rule that held all gait output until planar controls
+  were centered. After a complete phase-frozen retreat, retry planar gait
+  automatically at neutral body posture. If the incompatible request included
+  body posture, suppress walking posture offsets and keep reason 11 visible
+  until posture controls are centered; do not weaken IK reachability,
+  singularity, or complete-transaction checks.
+
+Rationale:
+
+- The negative interval is the mechanism that makes the legacy first tripod
+  travel from the standing target to its first half-stride instead of appearing
+  instantly at a periodic endpoint. It also gives the initial lift the legacy
+  counter-speed ramp rather than starting a leg in an already active swing.
+- The 270-degree simulator envelopes remove joint-angle clipping but cannot
+  resolve incompatible combined body-pose and gait geometry. Requiring planar
+  centering after recovery made a recoverable reason-11 event look like an
+  indefinite freeze. Prioritizing planar gait while temporarily dropping the
+  conflicting posture preserves useful control without creating a latched
+  software fault.
+
+Validation:
+
+- `/tmp/araco_first_step_build_20260817_01` builds the locomotion dependency
+  chain. `araco_locomotion` reports 66 tests, zero errors/failures, and 10
+  expected static-analysis skips, including exact warm-start and restart
+  regressions.
+- `/tmp/araco_warm_start_recovery_build_20260817_01` builds all nine packages;
+  340 tests report zero errors/failures and 24 expected skips.
+- All six profiles compose at
+  `/tmp/araco_warm_start_recovery_profiles_20260817_01`. Development, CI,
+  Gate 3, and Gate 4 share behavior fingerprint
+  `44c8c502bc5976cc579cf32edd4ca57454c63647e3d81813d58e4cec1aedd398`;
+  joystick uses
+  `0a28c82cf911b2cc0e81245584ad01673ce348b5eda307281a94b48e56146093`;
+  Gate 5 uses
+  `fe5169518dd0c49a9645bc7872c31d0dab497c23e3ab037bc367b0de849e387d`.
+- Full Gazebo Gate 4 passes at
+  `/tmp/araco_warm_start_gate4_20260817_02`, including startup, active stand,
+  every movement direction, support contacts, manual hold, controlled stop,
+  and absence of non-foot ground contact.
+
+## 2026-08-17 — Reclassify the current result as a simulator baseline, not legacy parity
+
+Status: audit complete; no behavior change authorized by this review.
+
+Decision:
+
+- Correct earlier reporting that allowed completion of simulator Gates 0–6 to
+  sound like completion of the full robot system. The implemented result is a
+  tested Gazebo control baseline.
+- Treat legacy behavior and capability parity as an explicit unfinished work
+  stream. Preserve the detailed comparison in
+  `docs/agent/LEGACY_PARITY_AUDIT.md`.
+- Record a confirmed cross-layer defect: independent `0.20 m/s` joystick axes
+  produce a `0.2828427 m/s` diagonal above the `0.24 m/s` hard radial envelope;
+  invalid-source quarantine then cannot clear because the no-deadman adapter
+  remains active even with centered controls.
+- Do not attribute every apparent freeze to IK. The latest headed session
+  logged reason 10 (`SOURCE_INVALID`) and no reason-11 event. Retain the
+  separately observed combined gait/posture IK usability problem as unfinished.
+
+Rationale:
+
+- The existing gates validate the contracts selected by their profiles. Gate 4
+  uses the slow system-test profile and does not exercise the Responsive
+  joystick stack or complete combined operator-input space.
+- The legacy system omitted important validation, but that does not justify a
+  successor that turns ordinary joystick input or reachable subsets of a
+  command into unexplained persistent holds.
+
+Validation:
+
+- Pure mapping reproduction gives diagonal magnitude `0.282842712 m/s` against
+  hard limit `0.24 m/s`, and confirms a fresh centered joystick report still
+  has `active=true`.
+- Launch log
+  `/home/stevw-s14/.ros/log/2026-08-17-19-12-43-934839-stevw-s14-Stealth-14Studio-A13VF-659450`
+  records `MOTION_ENABLED`, reason 10, holding, and later backend-loss shutdown.
+
+## 2026-08-17 — Restore advanced legacy locomotion input, mixing, and gimbal
+
+Status: implemented and validated in package tests, profile composition,
+Gazebo Gate 4, and an isolated live joystick/gimbal run.
+
+Decision:
+
+- Supersede the independently scaled joystick X/Y mapping. Shape the left
+  stick as one radially normalized vector so a full diagonal remains at the
+  configured planar magnitude.
+- Port the inspected legacy `rotation()` foot-path function separately from
+  the horizontal translation function. Apply its yaw output as exact arcs
+  around the base origin.
+- Port the legacy translation/yaw mix: normalize each magnitude to its command
+  scale, use their relative magnitudes as weights, and use the larger magnitude
+  as the overall request.
+- Preserve cumulative gait-cycle telemetry while using a separate per-walk
+  startup marker. Every new walk gets the negative-counter warm start and
+  group-A rotational handover suppression.
+- Couple joystick axis 4 to planted-body posture yaw and gimbal yaw. Supervise
+  `gimbal_yaw_rad` through the typed command path and publish it through the
+  separate gimbal trajectory controller at a `1.5 rad/s` rate cap.
+- Double Responsive maximum swing clearance from `0.030 m` to `0.060 m`, using
+  the same normalized factor as stride. Keep conservative CI/Gate clearance at
+  `0.030 m` because its separately selected narrow joint envelope does not pass
+  the yaw matrix at 60 mm.
+- Fix invalid-source recovery without adding a deadman. After all motion,
+  posture, and gimbal controls center, emit one inactive session release and
+  resume from the next fresh report.
+- Expose typed source, safety, and locomotion reasons as operator status
+  transitions. Keep info/warning calls on stable Python source lines and ignore
+  only `1e-12`-scale roundoff when classifying a normal-boundary clamp.
+
+Rationale:
+
+- These changes restore the user-valued smooth legacy path behavior without
+  removing the current system's checked IK, atomic transactions, supervision,
+  controlled stop, or simulator profile isolation.
+- The conservative and Responsive artifacts serve different evidence goals.
+  Doubling all profiles would invalidate the conservative contact gate rather
+  than prove the Responsive presentation behavior.
+- A source rejection and an IK/command limit must remain diagnosable as
+  different causes; neither should appear as an unexplained Gazebo freeze.
+
+Validation:
+
+- All six profiles compose at
+  `/tmp/araco_legacy_port_profiles_20260817_final`. Baseline fingerprint is
+  `e18abb8bf7ae8233c68612ee58ad8e93646e5f9d52a297e18d56550363401e0e`;
+  Responsive joystick fingerprint is
+  `20743b137720f53cd6622da81f86b23fec7c3b4923828dd1c3ca9a4aab30e226`.
+- Gate 4 passes at `/tmp/araco_legacy_port_gate4_20260817_07`; all eight cases
+  complete seven monotonic cycles with at least three intended support
+  contacts and unchanged physical/tracking thresholds.
+- Live axis-4 validation in
+  `/tmp/araco_legacy_port_joystick_live_20260817_03` produced a selected
+  `0.3141592653589793 rad` gimbal request and
+  `0.31415926535897787 rad` Gazebo feedback with safety state 4 and no fault.
+- `docs/agent/LEGACY_PARITY_AUDIT.md` supersedes its earlier defect report and
+  records the remaining parity boundary.
+
+## 2026-08-17 — Reclassify axis-4 smoothing parity as unfinished
+
+Status: confirmed by operator observation and direct legacy/current source
+comparison; no runtime change is authorized yet.
+
+Correction:
+
+- The preceding axis-4 work restored the typed command route and simulated
+  gimbal actuation, but did not restore legacy response shaping.
+- Legacy `algo.py` is nominally a PID layer, but its active gains are P-only:
+  `Kp=0.02`, `Ki=0`, and `Kd=0` at 200 Hz. Body yaw and gimbal yaw are both
+  derived from the same filtered `dx` state, at `±pi/8` and `±pi/10`.
+- The current implementation independently slews body posture at `0.3 rad/s`
+  and the gimbal at `1.5 rad/s`, while body yaw is limited to `±0.2 rad`.
+  This makes the gimbal visibly outrun the body and is not legacy parity.
+- A later correction should filter the normalized axis once using a
+  time-step-independent equivalent of the legacy first-order response, then
+  scale that shared result into both targets. Physical joint velocity and
+  checked-IK rate limits remain final safety guards rather than operator-feel
+  shaping.
+
+## 2026-08-17 — Restore legacy-equivalent smoothing for every joystick control
+
+Status: implemented and validated; supersedes the preceding unfinished-runtime
+classification.
+
+Decision:
+
+- Apply a time-step-independent form of the legacy P-only response to every
+  current joystick control: radial translation X/Y, walking yaw, body height,
+  dedicated-button roll, body pitch, and axis 4.
+- Preserve the legacy coefficients as response fractions at a 5 ms reference
+  interval: `0.02` for normal controls and `0.01` for height. This produces the
+  same response curve even though the current adapter publishes at 50 Hz.
+- Filter physical axis 4 exactly once in normalized space, then scale that
+  shared state into body yaw and gimbal yaw. Keep the approved current ranges:
+  body yaw `±0.2 rad` and gimbal yaw `±pi/10`. Do not restore the legacy
+  `±pi/8` body-yaw range.
+- Mark only the joystick composition as `operator_input_pre_filtered`. Its
+  ordinary executable commands bypass the locomotion gait/body/gimbal feel
+  limiters so the legacy response is not filtered twice. Keyboard, CI, and
+  Gate inputs keep their existing shaping.
+- Preserve controlled deceleration, non-executable return shaping, checked IK,
+  complete six-leg transaction validation, joint command-rate checks,
+  controller limits, source freshness, quarantine recovery, and supervision.
+
+Rationale:
+
+- The previous independent body and gimbal slew limits changed their normalized
+  timing and made the gimbal appear disconnected from posture control.
+- One normalized axis state guarantees equal response progress for both
+  outputs. Their physical angles are intentionally different because the user
+  chose to keep their current unequal ranges.
+- Applying the same response policy to all controls restores the behavior the
+  user meant by the legacy PID layer; height retains its deliberately slower
+  coefficient.
+
+Validation:
+
+- Clean build root: `/tmp/araco_smoothing_build_20260817_01`.
+- Full result: `355 tests, 0 errors, 0 failures, 24 skipped`.
+- All six profiles compose at
+  `/tmp/araco_smoothing_profiles_20260817_01`.
+- Joystick profile `0.13.0` resolves
+  `operator_input_pre_filtered: true`; development profile resolves `false`.
+- Unit tests cover time-step equivalence, every current joystick control,
+  shared axis-4 normalized response, timeout reset, and centered recovery.
+
+## 2026-08-17 — Increase Responsive preferred stride and planar speed by 20%
+
+Status: implemented and regression-tested; operator Gazebo evaluation pending.
+
+Decision:
+
+- Interpret “increase the stride a bit more to get more speed” as a coordinated
+  20% Responsive-only increase. Raising stride without requested velocity would
+  merely lower cadence at the same body speed.
+- Increase preferred stride scale from `0.5` to `0.6`. With the unchanged
+  `0.120 m` absolute maximum, preferred full-stick stride rises from 60 mm to
+  72 mm.
+- Increase joystick planar scales and the Responsive normal planar envelope
+  from `0.200` to `0.240 m/s`. Preserve the 1.2 hard/normal ratio by increasing
+  the hard envelope from `0.240` to `0.288 m/s`.
+- Keep `1.5–2.5 Hz` cadence, `0.060 m` maximum clearance, proportional
+  stride/clearance scaling, yaw speed, smoothing coefficients, checked IK,
+  joint-rate validation, and all supervision behavior unchanged.
+- Version the Responsive gait as `0.8.0`, Responsive operational policy as
+  `0.6.0`, PXN mapping as `0.12.0`, and joystick profile as `0.14.0`.
+
+Risk boundary:
+
+- This is a presentation-profile tuning change, not a physical calibration.
+- The preceding headed run logged recoverable workspace retreats during some
+  combined commands. The higher-speed/stride profile may reach workspace
+  limits more often and still requires a headed operator check plus an
+  exhaustive Responsive contact/workspace matrix.
+
+Validation:
+
+- Clean build/test root: `/tmp/araco_stride_speed_build_20260817_01`.
+- Full result: `355 tests, 0 errors, 0 failures, 24 skipped`.
+- All six profiles compose at
+  `/tmp/araco_stride_speed_profiles_20260817_01`; conservative profile behavior
+  fingerprint remains unchanged.
+- Responsive joystick behavior fingerprint:
+  `5cf383effae1ac9ed603d4d1e2f72603114c957b3245a34e70cc6aca53c6db96`.
+
+## 2026-08-17 — Remove hidden Responsive cadence retiming at the validated envelope
+
+Status: implemented and regression-tested; headed operator evaluation remains
+useful but is not required for the configuration contract.
+
+Decision:
+
+- Treat the reported larger-but-slower gait as a real control effect, not an
+  optical illusion. The 10 ms locomotion transaction was bisecting its gait
+  time whenever the previous uniform `2.0 rad/s` rate cap rejected a candidate;
+  this slowed phase while status continued to report nominal cadence.
+- Do not raise the cap to an initially guessed `2.4 rad/s`. A 100 Hz
+  exact-geometry sweep measured hard-envelope steady peaks of approximately
+  `4.95`, `8.30`, `10.97`, and `7.42 rad/s` for coxa, femur, tibia, and foot.
+- Select simulator-only model and operational caps of `5.5`, `10.0`, `12.5`,
+  and `9.0 rad/s` respectively. Preserve every angle/reach/singularity check,
+  atomic transaction, and workspace recovery path.
+- Model the actual 50 Hz joystick publication and the legacy-equivalent 2%-per-
+  5-ms response in regression tests. Require all normal and hard translation,
+  lateral, yaw, and mixed commands to advance at the complete 10 ms phase step.
+- Version the wide limit and pose artifacts as `0.3.0`, Responsive operational
+  policy as `0.7.0`, wide Gazebo backend as `0.5.0`, and joystick profile as
+  `0.15.0`.
+
+Rationale:
+
+- Raising only to `2.4 rad/s` would leave the hidden retiming active. Raising
+  every joint to the unfiltered instantaneous-command peak would instead encode
+  an input discontinuity that the production joystick never emits. Per-class
+  caps based on the filtered hard envelope retain margin without pretending to
+  be physical-servo calibration.
+
+Consequences:
+
+- These caps are presentation-simulator values only. Physical DS3235/DS5160
+  loaded-speed measurements, PWM mapping, power limits, and safety validation
+  must define any later hardware profile independently.
+- Out-of-envelope inputs, an IK/workspace failure, or a future gait change can
+  still invoke transaction bisection. The new regression prevents the current
+  supported joystick envelope from silently doing so.
+
+## 2026-08-17 — Establish the simulator Gemini RGB-D/IMU and RViz baseline
+
+Status: implemented, regression-tested, and validated with live Gazebo/ROS
+messages on the development laptop.
+
+Decision:
+
+- Activate the previously deferred `araco_perception` package now that RGB-D
+  simulation has begun. It owns a strict Gemini-like sensor artifact and the
+  project RViz display layout; Gazebo world/plugins and bridges remain owned by
+  `araco_gazebo`, and canonical frames/meshes remain owned by
+  `araco_description`.
+- Add separate Gazebo color-camera, RGB-D-camera, and IMU sensors at
+  `camera_link`. Keep the yaw gimbal fixed for initial perception validation.
+- Publish standard ROS messages on six stable endpoints: color `Image` and
+  `CameraInfo`, depth `Image` and `CameraInfo`, organized `PointCloud2`, and
+  camera `Imu`. Use `camera_color_optical_frame` and
+  `camera_depth_optical_frame` for optical products and `camera_link` for IMU.
+- Use a performance-safe baseline of 424 x 240 at 15 Hz for color/depth and
+  100 Hz for IMU, with 0.15–20 m clipping. Treat the generated pinhole
+  calibration as simulator data, not a physical Gemini calibration.
+- Make `gazebo.launch.py` honor the composed profile's `rviz` setting and load
+  `gemini_rgbd_v0.rviz`, which contains robot, TF, RGB, depth, and point-cloud
+  displays.
+- Require the Gazebo Sensors/Ogre2 and IMU systems in the selected world and
+  cross-validate sensor frames and all bridge mappings during composition.
+
+Rationale and rejected draft:
+
+- The first 640 x 480 at 30 Hz draft produced valid messages but delivered only
+  about 7 Hz in wall time while competing with the exact-mesh 1 kHz physics and
+  controller workload. It also exposed a transient locomotion-staleness fault
+  during full-stack startup. Keeping that draft would recreate the user's
+  simulator-freeze problem.
+- The selected mode reduces organized point-cloud traffic by about sixfold and
+  preserves useful RGB-D development while keeping control supervision healthy.
+  Higher-fidelity camera modes may be added later as separate profiles after
+  measured performance evidence; they must not silently replace this control-
+  safe baseline.
+
+Validation:
+
+- Fresh build/test root: `/tmp/araco_rgbd_build_20260817_01`; the final
+  post-tuning full result is `372 tests, 0 errors, 0 failures, 24 skipped`.
+- Live full-stack headless launch reached and remained in `HOLDING` with
+  readiness `127/127`, `fault_mask=0`, and `reset_required=false`.
+- Measured delivery was approximately 13.4 Hz for color and depth and 87 Hz for
+  IMU. One-shot messages confirmed `rgb8`, `32FC1`, organized point-cloud data,
+  populated `CameraInfo`, correct dimensions, and correct frame IDs.
+- RViz loaded on the real desktop display, subscribed to the configured point
+  cloud, and exited cleanly after the bounded smoke test. The failed offscreen
+  attempt was an expected GLX parent-window limitation, not a configuration
+  failure.
+
+## 2026-08-17 — Qualify startup readiness and label Gazebo point clouds truthfully
+
+Status: implemented, regression-tested, and live-validated in headed Gazebo
+with RViz.
+
+Decision:
+
+- Require continuous complete simulator readiness for `1.0 s` before the safety
+  machine transitions from `INACTIVE` to `HOLDING`. A readiness gap during this
+  startup dwell restarts the dwell instead of latching a fault. Once `HOLDING`
+  is reached, all existing clock, controller, joint, backend, locomotion, and
+  provenance fault behavior remains unchanged.
+- Label the Gazebo RGB-D point cloud as `camera_link`. Gazebo rendering sensors
+  generate +X-forward point coordinates, whereas ROS optical frames are
+  +Z-forward. Images and calibration remain in their optical frames; relabeling
+  the unrotated point values as optical was the source of the RViz axis error.
+- Cross-validate the perception artifact and bridge `frame_id` at composition
+  time. Version the safety policy and bridge as `0.3.0`, perception artifact as
+  `0.2.0`, simulator profiles as `0.3.0`, and joystick profile as `0.17.0`.
+
+Validation:
+
+- Full result: `373 tests, 0 errors, 0 failures, 24 skipped` in
+  `/tmp/araco_rgbd_build_20260817_01`.
+- Headed Gazebo/RViz reached `HOLDING` only after the observed one-second dwell,
+  then reported readiness `127/127`, `fault_mask=0`, and
+  `reset_required=false` after the renderer and point-cloud stream were active.
+- The live `PointCloud2` header was `camera_link`; the live
+  `camera_link -> camera_depth_optical_frame` transform remained the canonical
+  `[-90 deg, 0, -90 deg]` optical rotation.
+
+## 2026-08-18 — Separate locomotion health from simulation time and qualify headed timing
+
+Status: implemented, regression-tested, and live-validated under joystick
+motion with Gazebo GUI, exact meshes, RGB-D rendering, and RViz.
+
+Decision:
+
+- Publish locomotion status from a `50 Hz` steady-time heartbeat rather than
+  deriving health publication from every second ROS-time motion tick. Keep gait
+  and trajectory progression on ROS time.
+- Instrument motion-loop wall gap/execution time and heartbeat callback gaps;
+  log exact locomotion receive age when readiness changes.
+- Make joint, controller, locomotion, and clock watchdogs generated read-only
+  safety parameters. The prior policy file declared these values, but runtime
+  still used hard-coded `100/250 ms` values; that mismatch is removed.
+- Select a headed-only simulator safety/source policy for
+  `gazebo_joystick_v0`: `0.500 s` for joystick reports, teleop candidates,
+  selected/safe command, joint/controller/locomotion state, and clock progress.
+  Keep provenance at `1.500 s`.
+- Preserve strict `gazebo_dev_v0`, CI, and Gate timing artifacts and behavior
+  fingerprints. Do not infer a physical watchdog policy from desktop evidence.
+
+Evidence and rationale:
+
+- The original freeze was state `4 -> 6`, reason 15
+  (`LOCOMOTION_STALE`), after only locomotion readiness crossed `100 ms`; the
+  next status arrived roughly one safety tick later, too late for the latched
+  fault.
+- Instrumented headed startup then measured whole-process scheduling gaps of
+  `280–327.409 ms`, during which joints, controllers, locomotion, and clock all
+  aged together. This is host rendering/RViz contention, not an IK failure or
+  component crash.
+- A first fixed-policy run exposed the same missing margin in the independent
+  `120 ms` joystick-report and `150 ms` source-candidate windows, causing a
+  recoverable source quarantine. The final policy carries one coherent margin
+  through the full joystick-to-safety chain.
+- The final headed run remained in `MOTION_ENABLED` for over 110 seconds while
+  accepting active joystick gait transitions and logging repeated motion-loop
+  gaps up to `153.983 ms`. No source quarantine, readiness drop, safety fault,
+  or reset-required transition occurred. One deliberate workspace-boundary
+  event used the existing `COMMAND_LIMITED` retreat and recovered to reason
+  `NONE`, proving IK protection remained active rather than being loosened.
+
+## 2026-08-18 — Add a deterministic registered-RGB-D RTAB-Map baseline
+
+Status: implemented, statically tested, and live-validated for online map
+growth; loop closure and saved-map relocalization remain unqualified.
+
+Decision:
+
+- Keep all accepted flat-ground/control profiles unchanged. Add the dedicated
+  `gazebo_perception_v0` profile and `rgbd_validation_v0` arena for perception
+  work, with asymmetric colored geometry and a checkerboard to provide stable
+  visual/depth features.
+- Add a registered simulator sensor variant in which color and depth use the
+  same 424 x 240, 15 Hz, 90-degree pinhole geometry. Do not silently mutate the
+  earlier generic sensor artifact.
+- Activate `araco_navigation` and make it own explicit RTAB-Map RGB-D sync,
+  frame-to-map visual-inertial odometry, pose-graph SLAM, the
+  `map -> odom -> base_link` chain, a 5 cm occupancy grid, and accumulated 3D
+  cloud outputs. Ground truth is forbidden as an estimator input.
+- Persist the default mapping database at `~/.ros/araco_rgbd_map.db`; callers
+  may select another path through the launch argument.
+- Retain dynamic IMU transform checking. Although RTAB-Map occasionally sees a
+  2-8 ms future extrapolation under headed render load, this profile can still
+  command the yaw gimbal, so treating `camera_link -> base_link` as static would
+  be incorrect. Initial mapping runs should keep the gimbal centered. A later
+  measured/timestamped IMU preprocessing path or explicit mapping-mode gimbal
+  lock must precede claiming dynamic-gimbal SLAM quality.
+
+Evidence:
+
+- The live stack reached safety state 4 with readiness `127/127`, reason 0,
+  fault mask 0, and no reset requirement.
+- RGB-D odometry tracked active motion with typical feature quality 32-54.
+  RTAB-Map grew from one node to working memory 66 with five active local-map nodes,
+  published odometry, a 90 x 159 occupancy grid at 0.05 m resolution, an
+  accumulated cloud in `map`, and a resolvable `map -> base_link` transform.
+- Shutdown saved `/home/stevw-s14/.ros/araco_rgbd_map.db` at approximately
+  31 MB. The affected five-package suite reports `369 tests, 0 errors,
+  0 failures, 23 skipped`.
+
+## 2026-08-18 — Make brief tracking loss non-destructive and score a closed loop
+
+Status: implemented and live-wiring validated. Operator route 03 proved route,
+loop-closure, graph-growth, and cloud-continuity behavior but exposed a scorer
+defect; the first route using corrected scorer `0.2.0` is pending.
+
+Decision:
+
+- Set `Odom/ResetCountdown=0`. A single odometry-quality failure must pause
+  usable pose updates rather than reset odometry and replace the active cloud
+  with a disconnected map segment.
+- Add visual-only east/north/west/south/origin route markers to the dedicated
+  RGB-D arena. They affect presentation and operator repeatability, not
+  collision or robot physics.
+- Score one ordered closed loop with `araco_slam_score`. Require route/path
+  completion, returned heading, RTAB-Map working-memory growth, at least one
+  loop closure, a substantial cloud with no catastrophic replacement, and
+  bounded estimated closure error.
+- Permit simulator ground truth only inside this observer/scorer. It remains
+  forbidden from the RGB-D odometry and SLAM launch graph.
+- Treat the initial thresholds as provisional until a first complete route
+  produces evidence. Do not tune thresholds from an incomplete or failed run.
+
+Rationale: gimbal motion can plausibly trigger feature-tracking loss, but it was
+the one-frame automatic reset—not RViz decay—that turned the loss into the
+visible cloud wipe. Disabling destructive reset addresses that failure mode;
+the marked route and immutable score make loop closure and continuity claims
+repeatable instead of visual impressions.
+
+Smoke evidence:
+
+- The live node reported `Odom/ResetCountdown=0` and recovered from a startup
+  `quality=0` frame to normal feature quality without an odometry-reset event.
+- The scorer received all five observer streams after its map and cloud
+  subscriptions were aligned with RTAB-Map's reliable transient-local QoS.
+  No route was driven, so this is wiring evidence only and not a SLAM pass.
+
+Scorer correction after operator route 03:
+
+- Route 03 revealed that acceptance artifact `0.1.0` incorrectly gated closure
+  on raw `odom -> base_link`. RTAB-Map applies loop corrections in
+  `map -> odom`, so that value cannot measure final graph-corrected SLAM error.
+- Artifact `0.2.0` gates translation and yaw closure on `map -> base_link` and
+  retains raw odometry translation/yaw drift as explicitly named diagnostics.
+- Record exact final simulator truth translation and yaw, rather than only a
+  Boolean heading check. Subscribe to `/araco/perception/odom_info` to record
+  odometry inlier range, tracking-loss event count, recovery count, total and
+  longest loss duration, and whether tracking is available at finish. Tracking
+  availability at finish is an acceptance gate.
+- Live smoke `/tmp/araco_slam_scorer_v2_smoke_20260818_01/metrics.json`
+  received all six observer topics and `map -> base_link`, captured the origin,
+  and wrote all corrected/raw/tracking fields. It was interrupted without
+  driving, so its `FAIL` is expected and is not route acceptance.
+
+## 2026-08-18 — Isolate the camera-IMU timing defect and use visual RGB-D operationally
+
+Status: implemented, controlled live diagnostics completed, regression-tested;
+a fresh complete route remains pending.
+
+Decision:
+
+- Supersede the operational visual-inertial selection in the 2026-08-18 RTAB-
+  Map baseline decision. `gazebo_perception_v0` now selects six-DoF RGB-D
+  visual odometry without IMU fusion (`araco.navigation.rtabmap-rgbd-sim`
+  `0.4.0`). Keep publishing the simulated camera IMU.
+- Preserve exact dynamic-gimbal-IMU, fixed-gimbal-IMU, and visual-only
+  estimator artifacts and bringup profiles for controlled diagnostics. Do not
+  represent the fixed latest-transform fallback as repaired inertial fusion.
+- Add synchronized stationary, translation, body-yaw, and gimbal-yaw recording.
+  The recorder must publish its command on a dedicated 50 Hz wall-time thread,
+  record safety state/reason, and invalidate stale-command or no-motion runs.
+- Require final XY and starting yaw together for a two-second dwell, followed
+  by ten seconds of tracking-healthy stable corrected pose. Add a visible +X
+  arena arrow. A position-only return or an unconverged five-second snapshot
+  cannot complete acceptance.
+
+Evidence and rationale:
+
+- Timestamped camera-IMU transform lookup succeeded in only 99–135 samples and
+  failed in 1475–1514 samples across representative controlled runs. The old
+  dynamic profile therefore had a real timing defect; the fixed profile hid it
+  by accepting the latest transform.
+- Over about 0.585 m of controlled translation, visual-only corrected error was
+  `0.08229 m` versus `0.10386 m` for fixed-IMU. Large body-yaw trials were
+  effectively tied at about `0.022 rad` yaw error, with no tracking loss.
+- A visual-only gimbal sweep to `0.28 rad` with the body fixed invented only
+  `0.0000470 m` translation and `0.000399 rad` yaw. This supports the dynamic
+  RGB-D extrinsic and contradicts gimbal motion as the primary drift source.
+- All four operational/diagnostic profiles compose from installed artifacts.
+  The four affected package suites report `386 tests, 0 errors, 0 failures,
+  23 skipped`.
+
+Tradeoff:
+
+- Removing unqualified IMU input is not a claim that visual-only is the final
+  physical architecture. It is the more accurate and auditable simulator
+  baseline under current evidence. Inertial fusion may return only after its
+  timestamp path and gimbal policy pass the same controlled trials.
