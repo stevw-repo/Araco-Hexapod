@@ -63,7 +63,7 @@ def test_rtabmap_rviz_layout_covers_2d_and_colored_3d_maps():
     )
     assert any(
         display['Class'] == 'rviz_default_plugins/PointCloud2'
-        and display['Topic'] == '/araco/perception/cloud_map'
+        and display['Topic']['Value'] == '/araco/perception/cloud_map'
         and display['Color Transformer'] == 'RGB8'
         for display in displays
     )
