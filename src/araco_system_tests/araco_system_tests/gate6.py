@@ -12,6 +12,10 @@ import re
 import statistics
 
 
+from araco_system_tests.gate1 import GAZEBO_CRASH_EXIT_CODES
+from araco_system_tests.gate1 import TEARDOWN_SIGNAL_EXIT_CODES
+from araco_system_tests.gate1 import launch_exit_code
+
 ANSI = re.compile(r'\x1b\[[0-9;]*m')
 ERROR_TOKENS = ('[ERROR]', '[FATAL]', 'process has died', 'Segmentation fault')
 SANITIZER_TOKENS = (
@@ -32,11 +36,31 @@ def load_json(path):
     return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
+def is_gz_shutdown_defect(line):
+    """Return True for the known gz-sim 8.11.0 teardown crash or deadlock.
+
+    Only the simulator process may be excused for a crash signal, and only for
+    the teardown signatures.  A signal-terminated process of any name is
+    accepted because the runner signals the whole process group when the server
+    deadlocks.  A crash in any other process stays an error.  The authoritative
+    protection against masking a mid-run crash is the preflight sub-gate result,
+    which fails independently of this classification.
+    """
+    code = launch_exit_code(line)
+    if code in TEARDOWN_SIGNAL_EXIT_CODES:
+        return True
+    return '[gazebo-1]' in line and (
+        code in GAZEBO_CRASH_EXIT_CODES or
+        'Segmentation fault' in line or
+        'failed to terminate' in line)
+
+
 def classify_logs(root):
     """Classify relevant error and warning lines without suppressing unknowns."""
     classified_warnings = []
     unclassified_warnings = []
     errors = []
+    shutdown_defect = []
     sanitizer_failures = []
     for path in sorted(Path(root).rglob('*.log')):
         for number, raw in enumerate(
@@ -46,7 +70,8 @@ def classify_logs(root):
             if any(token in line for token in SANITIZER_TOKENS):
                 sanitizer_failures.append(record)
             if any(token in line for token in ERROR_TOKENS):
-                errors.append(record)
+                target = shutdown_defect if is_gz_shutdown_defect(line) else errors
+                target.append(record)
             elif '[WARN]' in line or '[Wrn]' in line:
                 target = (classified_warnings if any(
                     token in line for token in ALLOWED_WARNING_TOKENS)
@@ -56,6 +81,7 @@ def classify_logs(root):
         'classified_warnings': classified_warnings,
         'unclassified_warnings': unclassified_warnings,
         'errors': errors,
+        'shutdown_defect': shutdown_defect,
         'sanitizer_failures': sanitizer_failures,
     }
 

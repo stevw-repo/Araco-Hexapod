@@ -21,6 +21,8 @@ import xml.etree.ElementTree as ET
 from ament_index_python.packages import get_package_share_directory
 import yaml
 
+from araco_system_tests.gate1 import classify_launch_log
+
 
 def _write_json(path, value):
     path.write_text(
@@ -151,6 +153,7 @@ def main():
     errors = []
     launch = None
     relay = None
+    launch_escalated = False
     gazebo_stop_valid = False
     launch_stream = (logs / 'launch.log').open('w', encoding='utf-8')
     relay_stream = (logs / 'joint_state_relay.log').open('w', encoding='utf-8')
@@ -243,6 +246,7 @@ def main():
             try:
                 launch.wait(timeout=5)
             except subprocess.TimeoutExpired:
+                launch_escalated = True
                 os.killpg(launch.pid, signal.SIGINT)
                 try:
                     launch.wait(timeout=5)
@@ -253,6 +257,7 @@ def main():
                 'command': launch_command,
                 'return_code': launch.returncode,
                 'wall_s': time.monotonic() - started,
+                'escalated': launch_escalated,
             }
         if relay is not None:
             os.killpg(relay.pid, signal.SIGINT)
@@ -271,11 +276,20 @@ def main():
         relay_stream.close()
 
     launch_text = (logs / 'launch.log').read_text(encoding='utf-8')
-    forbidden_log_tokens = ('Traceback (most recent call last)', 'process has died', '[ERROR]')
-    log_clean = not any(token in launch_text for token in forbidden_log_tokens)
+    # Scoring must have completed before any shutdown error may be attributed
+    # to the known upstream gz-sim defect; otherwise everything stays blocking.
+    scored_complete = metrics_path.is_file()
+    classification = classify_launch_log(
+        launch_text, scored_complete, gazebo_stop_valid, launch_escalated)
+    shutdown_defect = classification['shutdown_defect']
+    log_clean = not classification['unclassified']
     if not log_clean:
         errors.append('launch log contains a traceback, process death, or ERROR record')
-    launch_valid = outcomes.get('launch', {}).get('return_code') == 0
+    launch_return_code = outcomes.get('launch', {}).get('return_code')
+    # A non-zero launch exit caused solely by the recorded upstream shutdown
+    # defect is not a gate failure; anything else still is.
+    launch_valid = launch_return_code == 0 or bool(
+        scored_complete and gazebo_stop_valid and shutdown_defect and log_clean)
     if not launch_valid:
         errors.append('launch did not exit cleanly')
     checks = {
@@ -284,6 +298,17 @@ def main():
         'gazebo_stop_request': gazebo_stop_valid,
         'launch_exit': launch_valid,
         'launch_log_clean': log_clean,
+    }
+    upstream_defects = {
+        'gz_sim_shutdown': {
+            'observed': bool(shutdown_defect),
+            'blocking': False,
+            'reference': 'gz-sim 8.11.0 teardown with gz_ros2_control; '
+                         'see .agent/WORKING_STATE.md Defect C',
+            'launch_return_code': launch_return_code,
+            'escalated': launch_escalated,
+            'lines': shutdown_defect,
+        },
     }
     if gate == 2:
         solver_path = bundle / 'normalized_artifacts/araco_kinematics_ik.json'
@@ -381,13 +406,15 @@ def main():
     _write_json(stage / 'environment.json', _environment(environment))
     _write_json(stage / 'process_outcomes.json', outcomes)
     _write_json(stage / 'validation_report.json', {
-        'status': status, 'checks': checks, 'errors': errors})
+        'status': status, 'checks': checks, 'errors': errors,
+        'upstream_defects': upstream_defects})
     _write_json(stage / 'gate_result.json', {
         'gate': gate,
         'status': status,
         'profile': arguments.profile,
         'run_fingerprint': manifest.get('run_fingerprint'),
         'behavior_fingerprint': manifest.get('behavior_fingerprint'),
+        'upstream_defects': upstream_defects,
         'metrics': score.get('metrics', {}),
     })
     _junit(
