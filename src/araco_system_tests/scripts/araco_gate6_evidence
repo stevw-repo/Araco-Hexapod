@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import signal
 import subprocess
 import tempfile
 import time
@@ -21,6 +22,8 @@ import xml.etree.ElementTree as ET
 from ament_index_python.packages import get_package_share_directory
 from araco_system_tests.gate6 import classify_logs
 from araco_system_tests.gate6 import compare_repetitions
+from araco_system_tests.gate6 import orphan_server_pids
+from araco_system_tests.gate6 import sub_gate_domain_id
 import jsonschema
 
 
@@ -119,20 +122,85 @@ def environment_identity(root):
     }
 
 
-def suite(stage, label, gates, registry, environment):
+def reap_orphan_servers():
+    """
+    Kill simulator servers left behind by the upstream gz-sim teardown defect.
+
+    Called only after a sub-gate has finished, so any server still alive is by
+    definition leaked and safe to kill.  Returns one record per reaped process
+    so the leak is recorded as evidence rather than silently tidied away.  Never
+    use `pkill -f` on the world path: the wrapper is `/bin/sh` and the pattern
+    would also match this process's own command line.
+    """
+    found = subprocess.run(
+        ['pgrep', '-f', '^gz sim'], text=True, stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL, check=False)
+    pids = orphan_server_pids(found.stdout, exclude=(os.getpid(),))
+    if not pids:
+        return []
+    reaped = []
+    for name, number, grace in (
+            ('SIGTERM', signal.SIGTERM, 2.0), ('SIGKILL', signal.SIGKILL, 2.0)):
+        remaining = []
+        for pid in pids:
+            try:
+                os.kill(pid, number)
+                remaining.append(pid)
+            except (ProcessLookupError, PermissionError):
+                pass
+        # A deadlocked server ignores SIGTERM, so keep the grace period short
+        # and escalate; the wait is only paid when a server actually leaked.
+        deadline = time.monotonic() + grace
+        while remaining and time.monotonic() < deadline:
+            time.sleep(0.1)
+            remaining = [pid for pid in remaining if _process_alive(pid)]
+        for pid in pids:
+            if pid not in remaining and not any(
+                    record['pid'] == pid for record in reaped):
+                reaped.append({'pid': pid, 'signal': name})
+        pids = remaining
+        if not pids:
+            break
+    for pid in pids:
+        reaped.append({'pid': pid, 'signal': 'SURVIVED'})
+    return reaped
+
+
+def _process_alive(pid):
+    """Return True while the pid is still present."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def suite(stage, label, gates, registry, environment, domain_offset=0):
     """Run each named gate once in a new child process."""
     root = stage / label
     root.mkdir(parents=True)
     outcomes = {}
     started = time.monotonic()
     passed = True
-    for gate in gates:
+    for position, gate in enumerate(gates):
         executable = registry['evidence_executables'][str(gate)]
         destination = root / f'gate{gate}'
+        command = [
+            'ros2', 'run', 'araco_system_tests', executable, str(destination)]
+        # Gate 0 composes configuration only and accepts no --domain-id.
+        if gate != 0:
+            command.extend([
+                '--domain-id',
+                str(sub_gate_domain_id(
+                    domain_offset + position, os.getpid() % 100))])
         outcome = run(
-            ['ros2', 'run', 'araco_system_tests', executable, str(destination)],
-            environment, root / f'gate{gate}_runner.log',
+            command, environment, root / f'gate{gate}_runner.log',
             300 if gate in (4, 5) else 180)
+        # Reap before the next sub-gate: a server left running by the upstream
+        # teardown defect keeps burning CPU and starves whatever runs next.
+        outcome['orphan_servers_reaped'] = reap_orphan_servers()
         outcomes[str(gate)] = outcome
         passed &= outcome['return_code'] == 0 and not outcome['timed_out']
         if not passed:
@@ -234,7 +302,8 @@ def main():
     preflight_outcomes = {}
     if preflight_ok:
         preflight_ok, preflight_outcomes, preflight_wall = suite(
-            stage, 'preflight', registry['preflight_gates'], registry, environment)
+            stage, 'preflight', registry['preflight_gates'], registry,
+            environment)
         outcomes['preflight_wall_s'] = preflight_wall
     outcomes['preflight_gates'] = preflight_outcomes
     checks['gates_0_through_5_preflight'] = preflight_ok
@@ -245,8 +314,13 @@ def main():
     if preflight_ok:
         for index in range(1, registry['repetitions'] + 1):
             label = f'repetitions/repetition_{index}'
+            # Offset past preflight and earlier repetitions so every sub-gate in
+            # the attempt gets a distinct domain id.
+            offset = len(registry['preflight_gates']) + (
+                (index - 1) * len(registry['repeated_gates']))
             passed, run_outcomes, wall_s = suite(
-                stage, label, registry['repeated_gates'], registry, environment)
+                stage, label, registry['repeated_gates'], registry, environment,
+                domain_offset=offset)
             repetition_paths.append(stage / label)
             repetition_outcomes.append(run_outcomes)
             repetition_wall.append(wall_s)
@@ -286,6 +360,19 @@ def main():
                      sanitizer_test, sanitizer_result, *gate_processes]
         if isinstance(item, dict))
 
+    # Report the leak rather than hiding it: reaping keeps a sub-gate from
+    # poisoning the next one, but a server that had to be killed is still an
+    # occurrence of the upstream teardown defect and belongs in evidence.
+    orphan_reaping = []
+    for scope, group in (('preflight', preflight_outcomes),
+                         *((f'repetition_{number}', value)
+                           for number, value in enumerate(
+                               repetition_outcomes, 1))):
+        for gate_name, item in sorted((group or {}).items()):
+            for record in (item.get('orphan_servers_reaped') or []):
+                orphan_reaping.append(
+                    {'scope': scope, 'gate': gate_name, **record})
+
     environment_data = environment_identity(root)
     environment_data.update({
         'scenario_sha256': sha256(stage / 'scenario_registry.json'),
@@ -301,6 +388,7 @@ def main():
         'checks': checks,
         'metrics': {
             'comparison': comparison_metrics,
+            'orphan_servers_reaped': orphan_reaping,
             'repetition_wall_s': repetition_wall,
             'suite_wall_limit_s': suite_wall_limit,
             'log_classification': log_classification,

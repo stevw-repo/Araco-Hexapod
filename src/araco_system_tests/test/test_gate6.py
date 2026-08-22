@@ -8,6 +8,9 @@ from pathlib import Path
 from araco_system_tests.gate6 import _discrete_safety_path
 from araco_system_tests.gate6 import _discrete_validation_outcome
 from araco_system_tests.gate6 import classify_logs
+from araco_system_tests.gate6 import orphan_server_pids
+from araco_system_tests.gate6 import sub_gate_domain_id
+import pytest
 
 
 def test_log_classifier_separates_known_warning_and_error(tmp_path: Path):
@@ -73,3 +76,28 @@ def test_discrete_safety_path_uses_terminal_state_reason_not_late_fault_union():
     assert _discrete_safety_path(path_a) == _discrete_safety_path(path_b)
     assert _discrete_safety_path(path_a) == [
         [9, 5, 18], [10, 6, 26], [11, 2, 3]]
+
+
+def test_sub_gate_domain_ids_are_distinct_across_a_whole_attempt():
+    # Six preflight gates plus three repetitions of six.
+    ids = [sub_gate_domain_id(index, 7) for index in range(24)]
+    assert len(set(ids)) == 24
+    assert all(100 <= value <= 199 for value in ids)
+
+
+def test_sub_gate_domain_id_is_deterministic_and_rejects_bad_index():
+    assert sub_gate_domain_id(3, 7) == sub_gate_domain_id(3, 7)
+    assert sub_gate_domain_id(0, 99) != sub_gate_domain_id(1, 99)
+    with pytest.raises(ValueError):
+        sub_gate_domain_id(-1, 0)
+
+
+def test_orphan_server_pids_parses_and_excludes():
+    assert orphan_server_pids('120\n121\n') == [120, 121]
+    assert orphan_server_pids('120\n121\n', exclude=(121,)) == [120]
+
+
+def test_orphan_server_pids_tolerates_empty_and_junk_output():
+    assert orphan_server_pids('') == []
+    assert orphan_server_pids(None) == []
+    assert orphan_server_pids('\n  \nnot-a-pid\n130\n130\n') == [130]

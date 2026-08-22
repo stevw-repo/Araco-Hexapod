@@ -13,8 +13,8 @@ import statistics
 
 
 from araco_system_tests.gate1 import GAZEBO_CRASH_EXIT_CODES
-from araco_system_tests.gate1 import TEARDOWN_SIGNAL_EXIT_CODES
 from araco_system_tests.gate1 import launch_exit_code
+from araco_system_tests.gate1 import TEARDOWN_SIGNAL_EXIT_CODES
 
 ANSI = re.compile(r'\x1b\[[0-9;]*m')
 ERROR_TOKENS = ('[ERROR]', '[FATAL]', 'process has died', 'Segmentation fault')
@@ -37,7 +37,8 @@ def load_json(path):
 
 
 def is_gz_shutdown_defect(line):
-    """Return True for the known gz-sim 8.11.0 teardown crash or deadlock.
+    """
+    Return True for the known gz-sim 8.11.0 teardown crash or deadlock.
 
     Only the simulator process may be excused for a crash signal, and only for
     the teardown signatures.  A signal-terminated process of any name is
@@ -53,6 +54,55 @@ def is_gz_shutdown_defect(line):
         code in GAZEBO_CRASH_EXIT_CODES or
         'Segmentation fault' in line or
         'failed to terminate' in line)
+
+
+# Gate 6 runs up to 24 sub-gates in one attempt (six preflight plus six per
+# repetition).  Each needs its own DDS domain.  `araco_gate1_evidence` already
+# derives one from its own pid when none is given, but `100 + pid % 100`
+# collides whenever two sub-gate pids differ by exactly 100, which is reachable
+# across a suite that spawns dozens of processes per gate.  Assigning the ids
+# explicitly removes that residual risk.  Domain ids stay in the 100-199 band
+# the runner already uses.
+DOMAIN_BAND_START = 100
+DOMAIN_BAND_SIZE = 100
+
+
+def sub_gate_domain_id(index, base):
+    """
+    Return the ROS domain id for one Gate 6 sub-gate.
+
+    `index` is the sub-gate's position within the whole attempt, so ids stay
+    distinct for any attempt of fewer than DOMAIN_BAND_SIZE sub-gates.  `base`
+    separates concurrent attempts on one machine.
+    """
+    if index < 0:
+        raise ValueError('sub-gate index must not be negative')
+    return DOMAIN_BAND_START + (base + index) % DOMAIN_BAND_SIZE
+
+
+def orphan_server_pids(pgrep_output, exclude=()):
+    """
+    Parse `pgrep -f` output into simulator pids to reap.
+
+    The upstream gz-sim teardown defect leaves the real server alive after its
+    gate has finished: it is a child of the `/bin/sh` wrapper, so signalling the
+    launch process group misses it, and being deadlocked it ignores SIGTERM.
+    Match on the argument list, never on the process name -- the server's name
+    is `ruby`, so `pgrep -x "gz sim"` silently matches nothing.
+    """
+    excluded = set(exclude)
+    pids = []
+    for line in (pgrep_output or '').splitlines():
+        entry = line.strip()
+        if not entry:
+            continue
+        try:
+            pid = int(entry)
+        except ValueError:
+            continue
+        if pid > 0 and pid not in excluded and pid not in pids:
+            pids.append(pid)
+    return pids
 
 
 def classify_logs(root):
