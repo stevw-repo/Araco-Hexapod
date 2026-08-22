@@ -2646,3 +2646,148 @@ Known defect, not fixed:
   fingerprint. Excluding `evidence` from the artifact hash would fix this
   permanently. It was considered and deliberately not taken in this change
   because it modifies the composer.
+
+## 2026-08-20 — Record the gz-sim teardown failure as a named non-blocking upstream defect
+
+Status: implemented and committed as `8865e3c`; recorded here 2026-08-22. Not
+yet exercised by a gate run — no gate has been run since 2026-08-19, so the
+classification is covered by unit tests only.
+
+This is option 3 of the three recorded in the Defect C section of
+`WORKING_STATE.md`. It is a gate-contract change and was the operator's call,
+not the agent's.
+
+Decision:
+
+- Gates 1-5 and Gate 6 split launch-log error lines into a named
+  `gz_sim_shutdown` upstream defect and everything else. Only the second kind
+  fails a gate.
+- Options 1 (symbolize the core and file upstream) and 2 (upgrade or patch
+  Gazebo) remain open and unchosen. This change records the defect; it does not
+  fix or close it.
+- The runner's 5 s shutdown wait was **not** enlarged. That was explicitly
+  rejected in the Defect C options because it would hide a real crash.
+
+Rationale:
+
+- The defect is established as an upstream shutdown race in gz-sim `8.11.0`
+  reached through `gz_ros2_control` `1.2.19`, reproducible only when the robot
+  model is spawned, and absent from both a stock Gazebo world and our own
+  `resolved_world.sdf` without the robot. No Araco source change fixes it.
+- Both failure modes occur strictly after all scored behavior has completed and
+  after `metrics.json` has been written. Conflating them with
+  `launch_log_clean` reported a clean, fully scored run as a failure and
+  blocked Gates 1, 2, 4, 5 and 6 on a condition no Araco change can clear.
+
+Implementation:
+
+- `gate1.py` gains `classify_launch_log(text, scored_complete, stop_requested,
+  escalated)`, returning `shutdown_defect` and `unclassified` line lists.
+- `araco_gate1_evidence` is the shared runner for Gates 1-5, so one change
+  covers all five. `launch_log_clean` is now `not unclassified`. `launch_exit`
+  accepts a non-zero return code only when scoring completed, a stop was
+  requested, a shutdown-defect line was actually seen, and nothing is
+  unclassified.
+- Both `validation_report.json` and `gate_result.json` carry an
+  `upstream_defects.gz_sim_shutdown` block with `observed`, `blocking: false`,
+  the launch return code, whether the runner had to escalate, and every
+  attributed line. The condition is tracked in evidence, not suppressed.
+- `gate6.py` gains `is_gz_shutdown_defect`; `classify_logs` routes matching
+  lines to a `shutdown_defect` list that `no_unclassified_error_or_fatal` does
+  not count. The full list is written to the gate 6 result under
+  `log_classification`.
+
+Guards against masking a real failure:
+
+- Attribution in Gates 1-5 requires **both** that `metrics.json` exists and
+  that a valid server stop was requested. A crash before scoring completes
+  stays blocking.
+- Only `[gazebo-1]` may be excused for a crash signal (`139`, `-11`, `-9`) or a
+  `Segmentation fault` / `failed to terminate` signature. A crash in any other
+  process stays blocking.
+- Group-signal deaths (`-2`, `-15`) are excused only when the runner actually
+  had to escalate, which is recorded as `escalated` in `process_outcomes.json`.
+  Without escalation a signalled death is unexplained and blocks.
+- `Traceback` is never attributable to the defect.
+- Six unit tests in `test_gate1_scoring.py` pin each of these, including the
+  negative cases.
+
+Known limitation, accepted deliberately:
+
+- `gate6.is_gz_shutdown_defect` has no `scored_complete` / `stop_requested`
+  guard, because it scans a whole log tree rather than one scored run. It
+  therefore excuses a `[gazebo-1]` crash signature or a signalled death
+  wherever it appears, including mid-repetition. The protection is that Gate
+  6's preflight and per-repetition sub-gate results fail independently of this
+  classification, so a mid-run crash still fails Gate 6 through the affected
+  gate rather than through `no_unclassified_error_or_fatal`. This is weaker
+  than the Gates 1-5 guard and is the place to tighten first if a real crash is
+  ever missed.
+- Consequence to accept openly: a Gate 1/2/4/5 PASS no longer means the
+  simulator exited cleanly. It means every scored check passed and any unclean
+  exit matched the recorded upstream signature. Read
+  `upstream_defects.gz_sim_shutdown.observed` to tell the two apart.
+
+## 2026-08-22 — Reap orphaned simulators and assign Gate 6 sub-gate domains explicitly
+
+Status: implemented, tests green, uncommitted. Operator asked for both changes
+after the 2026-08-22 Gate 6 run failed its last two checks.
+
+Decision:
+
+- `araco_gate6_evidence` reaps leftover `gz sim` servers after every sub-gate,
+  and assigns each sub-gate an explicit `--domain-id`.
+- Neither change touches the gate contract. No check was added, removed, or
+  relaxed, and the reaping is recorded as evidence rather than hidden.
+
+The fix, and the hardening, are not the same thing:
+
+- **Reaping is the fix.** The upstream gz-sim teardown hang leaves the real
+  server alive — it is a child of the `/bin/sh` wrapper, so signalling the
+  launch process group misses it, and being deadlocked in `futex_do_wait` it
+  ignores SIGTERM. Four such servers accumulated during one Gate 6 run, one at
+  75% CPU. They starved the next sub-gate until its own `/clock` publishing
+  stuttered and the supervisor latched `REASON_TIME_DISCONTINUITY`, which broke
+  repetition 1 at gate 3 and failed both remaining checks.
+- **Explicit domains are hardening only.** An earlier reading of this failure
+  blamed `/clock` crosstalk on a shared DDS domain. **That was wrong and is
+  withdrawn.** `araco_gate1_evidence` already isolates every run with
+  `ROS_DOMAIN_ID = 100 + os.getpid() % 100` and a unique `GZ_PARTITION`, and the
+  domains recorded in the failing run were all distinct. What the explicit
+  assignment removes is a narrow residual risk: `pid % 100` collides whenever
+  two sub-gate pids differ by exactly 100, which is reachable across 24
+  sub-gates that each spawn dozens of processes. Worth closing, but it was not
+  the cause.
+
+Implementation:
+
+- `gate6.sub_gate_domain_id(index, base)` assigns ids in the existing 100-199
+  band, distinct for any attempt under 100 sub-gates. A full attempt is 24: six
+  preflight plus six in each of three repetitions.
+- `gate6.orphan_server_pids(output, exclude)` parses `pgrep -f` output. Matching
+  is on the **argument list**, never the process name: the server's name is
+  `ruby`, so `pgrep -x "gz sim"` silently matches nothing. An orphan sampler
+  written that way reported zero servers through a run that leaked four.
+- `reap_orphan_servers()` sends SIGTERM with a 2 s grace, then SIGKILL with
+  another 2 s, and records which signal worked per pid. The grace is short
+  because a deadlocked server never answers SIGTERM, and the wait is only paid
+  when a server actually leaked.
+- Reaping runs only after a sub-gate has returned, so any surviving server is
+  leaked by definition and safe to kill.
+- Gate 0 is skipped for `--domain-id`: it composes configuration only and its
+  parser does not accept the flag.
+- Every reaped pid reaches the result under `metrics.orphan_servers_reaped`
+  with its scope, gate, and signal. Reaping stops a leak from poisoning the next
+  sub-gate, but it is still an occurrence of the upstream defect and must stay
+  visible.
+- Four unit tests added in `test_gate6.py`. Package suite: 71 tests, 0 failures.
+
+Deliberately not done:
+
+- No new pass/fail check for orphan reaping. That would be a contract change,
+  and the contract question was settled separately on 2026-08-20.
+- No change to `suite_wall_budget` or its thresholds. See the open question
+  recorded in `WORKING_STATE.md`: `planned_complete_suite_sim_s` is 100.0 while
+  Gate 4 alone now consumes 77.8 simulated seconds, so the budget may be stale
+  relative to how much the suite has grown. That is a threshold decision and
+  needs its own evidence.
