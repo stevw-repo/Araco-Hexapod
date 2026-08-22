@@ -70,7 +70,8 @@ def launch_exit_code(line):
 
 
 def classify_launch_log(text, scored_complete, stop_requested, escalated):
-    """Split launch-log error lines into the known shutdown defect and the rest.
+    """
+    Split launch-log error lines into the known shutdown defect and the rest.
 
     A line is only ever attributed to the upstream defect once the gate has
     finished scoring and a server stop was requested.  If scoring did not

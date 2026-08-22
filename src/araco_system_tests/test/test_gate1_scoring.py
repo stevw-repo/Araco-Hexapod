@@ -32,13 +32,13 @@ def test_state_path_collapses_only_adjacent_duplicates():
 
 
 GZ_SEGFAULT = (
-    "[ERROR] [gazebo-1]: process has died [pid 1, exit code 139, "
+    '[ERROR] [gazebo-1]: process has died [pid 1, exit code 139, '
     "cmd 'ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim -r -s'].")
 NODE_CRASH = (
-    "[ERROR] [locomotion_node-5]: process has died [pid 2, exit code 1, "
+    '[ERROR] [locomotion_node-5]: process has died [pid 2, exit code 1, '
     "cmd 'locomotion_node'].")
 NODE_SIGINT = (
-    "[ERROR] [locomotion_node-5]: process has died [pid 2, exit code -2, "
+    '[ERROR] [locomotion_node-5]: process has died [pid 2, exit code -2, '
     "cmd 'locomotion_node'].")
 
 
