@@ -2791,3 +2791,101 @@ Deliberately not done:
   Gate 4 alone now consumes 77.8 simulated seconds, so the budget may be stale
   relative to how much the suite has grown. That is a threshold decision and
   needs its own evidence.
+
+## 2026-08-22 — Force the simulator backend dead when Gate 5's graceful stop hangs
+
+Status: implemented, package suite green (434 tests, 0 failures), Gate 5 proven
+in both variants of the defect, and Gate 6 verified at twenty of twenty-one
+checks on 2026-08-23. Operator chose option 2 of the three recorded in
+`WORKING_STATE.md` after the 2026-08-22 campaign established this as the top
+blocker.
+
+Problem: `backend_process_loss_quiesces_runtime`, the 29th Gate 5 scorer check,
+was a deterministic function of which Defect C variant occurred — crash PASS,
+hang FAIL, five observations of five. Gate 6 runs Gate 5 four times, so at
+roughly even odds it could not pass reliably.
+
+Decision:
+
+- The final Gate 5 scenario now removes the backend **for certain**. It issues
+  the same graceful `/server_control stop`, waits 3 s for the server to exit,
+  and SIGKILLs it if it has not. Only then does it assert that the runtime
+  quiesces within 2 s.
+- The scored property is *"the runtime quiesces when the backend is lost"*.
+  When the server deadlocks it is still alive and still publishing, so the
+  scenario's premise is unmet and the old FAIL was **not a true negative**. It
+  was an upstream hang presenting as an Araco safety failure.
+- **The check is not relaxed.** Quiescence is still asserted in full, over the
+  same 2 s window, against a premise that now actually holds. Nothing is
+  excused on the strength of a log signature — that is option 3, which stays
+  rejected for the reason the 2026-08-20 decision gave.
+
+Implementation, all in `scripts/araco_gate5_score`:
+
+- `stop_backend_process()` returns the graceful outcome, the server pids it saw,
+  and every pid it had to force. Forcing must not hide that the defect occurred.
+- `_server_pids()` matches on the **argument list**, never the process name, for
+  the reason `gate6.orphan_server_pids` already records: the server's name is
+  `ruby`, so `pgrep -x "gz sim"` silently matches nothing.
+- `_running()` reads process state from `/proc` rather than using
+  `os.kill(pid, 0)`, which succeeds on a zombie. A killed server lingers as a
+  zombie until its `/bin/sh` wrapper is reaped, and would otherwise be counted
+  as still alive.
+- The grace wait **spins rclpy** instead of sleeping. The quiesce measurement
+  that follows reads subscription receipts, and those only advance while the
+  node is spun; sleeping through the wait would have made a still-publishing
+  runtime look quiesced. This is the one place where the simple version of the
+  change is silently wrong.
+- `gone` requires that at least one server was actually seen, so a pgrep pattern
+  that matches nothing fails the check rather than passing it vacuously.
+- `metrics.backend_process_stopped` now reports **the backend being gone**, not
+  the outcome of the quiesce check. The runner's `backend_process_loss_proven`
+  check and its skip of the redundant orderly shutdown read that field, and they
+  were previously keyed to a value that conflated the two.
+
+One classification change was required, and was found by experiment rather than
+by reading:
+
+- `ros2 launch` tracks the `ruby` **wrapper**, not the server, which is its
+  child. Killing the server leaves the wrapper exiting **137** (128 + 9), and
+  137 was not in `GAZEBO_CRASH_EXIT_CODES`. Without adding it, forcing the kill
+  would have converted a `backend_process_loss_quiesces_runtime` failure into a
+  `launch_log_clean` failure — a fix that moved the failure rather than removing
+  it. Measured directly by killing a healthy server under a live launch.
+- 137 is accepted only on a `[gazebo-1]` line, and only once scoring has
+  completed and a stop was requested. Any other process dying that way still
+  blocks. Two unit tests cover both halves.
+
+Evidence:
+
+- Six standalone Gate 5 runs, `log/gate_5_20260822_forcekill_01` through `_05`,
+  all PASS at 29/29. Four drew the crash variant and needed no kill, which shows
+  the graceful path is untouched. `_05` drew the **hang** variant, forced pid
+  27632 dead, and passed — the case that failed five of five before.
+- A controlled deadlock reproduction (orderly shutdown, then server stop) left
+  the server in `futex_do_wait` at 174% CPU. The real helper cleared it in 3.3 s.
+  In that reproduction the graceful `gz service` call returned `data: true` and
+  rc 0 **while the server was deadlocked**, confirming that the request result
+  never was the discriminator.
+- The hang-variant run finished with `launch_return_code: 0`, `escalated: false`,
+  and no orphaned server. The same variant previously ended at rc `-15` with the
+  runner signalling the whole process group.
+- `upstream_defects.gz_sim_shutdown.observed` remains `true` on both variants.
+  The defect is still reported; only its consequence for a scored safety
+  assertion is removed.
+- `log/gate_6_20260822_forcekill_01`, finished 2026-08-23: preflight gates 0-5
+  pass, **all three repetitions complete with no retry**, and all twelve
+  repetition-comparison checks pass on their first evaluation. Preflight gate 5
+  drew the hang variant and passed by forcing pid 33314 dead — the same event
+  that ended the previous Gate 6 run at its preflight. The single remaining
+  failure, `suite_wall_budget`, is the stale-threshold question flagged in the
+  preceding entry, now with evidence: 298.3 s, 292.1 s, and 323.4 s against a
+  derived 260.0 s limit. No threshold was changed.
+
+Scope, deliberately narrow:
+
+- Only Gate 5 forces the kill, because only Gate 5 scores backend loss. Gates
+  1-4 still tear down through the runner's orderly shutdown followed by the
+  server stop, which is the documented reliable trigger for the hang, so
+  `araco_gate6_evidence` reaping stays load-bearing for them.
+- The upstream defect is not fixed and filing it remains open.

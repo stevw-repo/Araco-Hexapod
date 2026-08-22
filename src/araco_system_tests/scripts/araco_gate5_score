@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
+import signal
 import subprocess
 import time
 
@@ -206,6 +208,82 @@ class Gate5Scorer(Node):
                 f'command failed ({completed.returncode}): '
                 f"{' '.join(command)}: {completed.stdout.strip()}")
         return completed.returncode == 0
+
+    @staticmethod
+    def _server_pids():
+        """
+        Return the simulator server pids.
+
+        Match on the argument list, never on the process name -- the server's
+        name is `ruby`, so `pgrep -x "gz sim"` silently matches nothing.
+        """
+        found = subprocess.run(
+            ['pgrep', '-f', '^gz sim'], text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL, check=False)
+        return [int(entry) for entry in found.stdout.split() if entry.isdigit()]
+
+    @staticmethod
+    def _running(pids):
+        """
+        Return the subset of pids still running.
+
+        A killed server can linger as a zombie until its `/bin/sh` wrapper is
+        reaped, and `os.kill(pid, 0)` succeeds on a zombie, so read the state
+        out of `/proc` instead.
+        """
+        running = []
+        for pid in pids:
+            try:
+                stat = Path(f'/proc/{pid}/stat').read_text(encoding='utf-8')
+                state = stat.rpartition(')')[2].split()[0]
+            except (OSError, IndexError):
+                continue
+            if state != 'Z':
+                running.append(pid)
+        return running
+
+    def stop_backend_process(self, grace=3.0):
+        """
+        Remove the simulator backend, forcing it dead if it will not stop.
+
+        The scored property is that the runtime quiesces once the backend is
+        lost.  The upstream gz-sim teardown defect deadlocks the server on
+        `/server_control stop` about half the time, and a deadlocked server is
+        still alive and still publishing, so the scenario's premise is unmet
+        rather than violated.  Escalating to SIGKILL restores the premise and
+        tests the real property instead of letting an upstream hang present as
+        an Araco safety failure.  Every forced pid is returned as evidence:
+        forcing must not hide that the upstream defect occurred.
+        """
+        servers = self._server_pids()
+        graceful = self.cli([
+            'gz', 'service', '-s', '/server_control',
+            '--reqtype', 'gz.msgs.ServerControl',
+            '--reptype', 'gz.msgs.Boolean', '--timeout', '3000',
+            '--req', 'stop: true'])
+        # Spin while the server exits.  The quiesce measurement that follows
+        # reads subscription receipts, which only advance while this node is
+        # spun; sleeping here would make the runtime look quiesced.
+        forced = []
+        if not self.wait(
+                lambda: not self._running(servers), grace, publish=False):
+            for pid in self._running(servers):
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                    forced.append(pid)
+                except ProcessLookupError:
+                    pass
+                except PermissionError as error:
+                    self.errors.append(
+                        f'could not force simulator {pid} dead: {error}')
+            self.wait(lambda: not self._running(servers), 2.0, publish=False)
+        return {
+            'graceful_stop_accepted': graceful,
+            'server_pids': servers,
+            'forced_pids': forced,
+            # A server must have been seen for the loss to have been proven.
+            'gone': bool(servers) and not self._running(servers),
+        }
 
     def lifecycle(self, node, transition):
         client = self.lifecycle_clients[node]
@@ -481,12 +559,8 @@ class Gate5Scorer(Node):
         # launch contract marks it required, so the complete simulator runtime
         # must quiesce rather than continue executing against a missing plant.
         checks['acquire_before_backend_process_loss'] = self.acquire()
-        backend_process_stop = self.cli([
-            'gz', 'service', '-s', '/server_control',
-            '--reqtype', 'gz.msgs.ServerControl',
-            '--reptype', 'gz.msgs.Boolean', '--timeout', '3000',
-            '--req', 'stop: true'])
         self.publish_enabled = False
+        backend = self.stop_backend_process()
         deadline = time.monotonic() + 2.0
         while time.monotonic() < deadline:
             rclpy.spin_once(self, timeout_sec=0.02)
@@ -496,7 +570,7 @@ class Gate5Scorer(Node):
             time.monotonic() - self.last_safe_receipt >= 0.5 and
             time.monotonic() - self.last_locomotion_receipt >= 0.5)
         checks['backend_process_loss_quiesces_runtime'] = (
-            backend_process_stop and runtime_streams_quiesced)
+            backend['gone'] and runtime_streams_quiesced)
 
         checks['safety_epochs_exact_across_one_restart'] = (
             self.epochs_valid_with_restarts(self.safety_path, 1))
@@ -509,8 +583,8 @@ class Gate5Scorer(Node):
                 'safety_path': self.safety_path,
                 'selection_path': self.selection_path,
                 'errors': self.errors,
-                'backend_process_stopped':
-                    checks['backend_process_loss_quiesces_runtime'],
+                'backend_process_stopped': backend['gone'],
+                'backend_process_loss': backend,
             },
         }
 

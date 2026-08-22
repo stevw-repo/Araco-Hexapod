@@ -40,12 +40,28 @@ NODE_CRASH = (
 NODE_SIGINT = (
     '[ERROR] [locomotion_node-5]: process has died [pid 2, exit code -2, '
     "cmd 'locomotion_node'].")
+# Observed exactly, from killing the server child of the launch-tracked wrapper.
+GZ_FORCED_KILL = (
+    '[ERROR] [gazebo-1]: process has died [pid 3, exit code 137, '
+    "cmd 'ruby /opt/ros/jazzy/opt/gz_tools_vendor/bin/gz sim -r -s'].")
+NODE_FORCED_KILL = (
+    '[ERROR] [locomotion_node-5]: process has died [pid 4, exit code 137, '
+    "cmd 'locomotion_node'].")
 
 
 def test_gz_shutdown_crash_is_classified_not_counted_as_failure():
     result = classify_launch_log(GZ_SEGFAULT, True, True, False)
     assert result['unclassified'] == []
     assert len(result['shutdown_defect']) == 1
+
+
+def test_forced_server_kill_is_classified_through_the_wrapper_exit():
+    # Gate 5 forces a deadlocked server dead; launch reports the wrapper's 137.
+    result = classify_launch_log(GZ_FORCED_KILL, True, True, False)
+    assert result['unclassified'] == []
+    assert len(result['shutdown_defect']) == 1
+    # 137 is only ever the simulator's; any other process dying that way blocks.
+    assert classify_launch_log(NODE_FORCED_KILL, True, True, True)['unclassified']
 
 
 def test_shutdown_defect_requires_completed_scoring_and_stop_request():

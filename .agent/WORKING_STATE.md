@@ -788,10 +788,11 @@ All three are runner changes, so none was made. Note this is the *harness*
 reacting to the upstream defect, a different question from the Defect C gate
 contract already settled on 2026-08-20.
 
-## Gate 5's last scorer check is decided by which Defect C variant occurs
+## Gate 5's last scorer check is decided by which Defect C variant occurs — FIXED 2026-08-22
 
-**Established 2026-08-22 by direct experiment.** This is now the top blocker,
-and it is not covered by the 2026-08-20 contract decision.
+**Established 2026-08-22 by direct experiment, and fixed the same day by option
+2 below.** It was the top blocker. The diagnosis is kept in full because the fix
+only makes sense against it; see "Resolved" at the end of this section.
 
 `backend_process_loss_quiesces_runtime` is the 29th Gate 5 scorer check. Its
 outcome tracks the Defect C variant exactly, with no exceptions in five
@@ -813,7 +814,7 @@ publishing, so the check cannot pass. **The check is not flaky.** It is a
 deterministic function of a non-deterministic upstream outcome, which the
 2026-08-18 3-vs-3 repetition put at roughly 50/50.
 
-### This is why Gate 6 cannot pass yet
+### This is why Gate 6 could not pass (before the fix)
 
 Gate 6 runs Gate 5 four times: once in preflight and once per repetition. At
 roughly even odds per run, all four landing on the crash variant is about a 6%
@@ -857,6 +858,137 @@ The check also failed on 2026-08-18 in
    recommended.** It would excuse a genuine safety assertion on the strength of
    a log signature, which is exactly the line the 2026-08-20 decision drew and
    should keep.
+
+### Resolved 2026-08-22 — the scenario now forces the backend dead
+
+The operator chose **option 2**. The final Gate 5 scenario issues the same
+graceful `/server_control stop`, waits 3 s for the server to exit, SIGKILLs it
+if it has not, and only then asserts that the runtime quiesces within 2 s. The
+check is not relaxed: quiescence is still asserted in full, over the same
+window, against a premise that now actually holds. See the `DECISIONS.md` entry
+of the same date for the reasoning and the full implementation notes.
+
+Proven in both variants:
+
+| Run | Variant | Forced | `quiesce` |
+| --- | --- | --- | --- |
+| `gate_5_20260822_forcekill_01` | crash | — | **PASS** |
+| `gate_5_20260822_forcekill_02` | crash | — | **PASS** |
+| `gate_5_20260822_forcekill_03` | crash | — | **PASS** |
+| `gate_5_20260822_forcekill_04` | crash | — | **PASS** |
+| `gate_5_20260822_forcekill_05` | **hang** | pid 27632 | **PASS** |
+
+All five are 29/29 with no failing runner check. The hang variant is the case
+that failed five of five before. The four crash-variant runs needed no kill,
+which is the evidence that the graceful path is untouched.
+
+Two findings came out of the work, both by experiment:
+
+- **The graceful stop request was never the discriminator.** In a controlled
+  deadlock reproduction — orderly shutdown, then server stop, leaving the server
+  in `futex_do_wait` at 174% CPU — the `gz service` call still returned
+  `data: true` and rc `0`. The old check's `backend_process_stop` conjunct was
+  therefore true in both variants; only the quiesce measurement ever moved.
+- **`ros2 launch` tracks the `ruby` wrapper, not the server.** Killing the
+  server child leaves the wrapper exiting **137** (128 + 9), which was not in
+  `GAZEBO_CRASH_EXIT_CODES`. Left unhandled, forcing the kill would have turned
+  a `backend_process_loss_quiesces_runtime` failure into a `launch_log_clean`
+  failure — moving the failure rather than removing it. 137 is now classified,
+  on `[gazebo-1]` lines only.
+
+The forced kill also removes the teardown escalation: the hang-variant run
+finished at `launch_return_code: 0` with `escalated: false` and left no orphan,
+where that variant previously ended at rc `-15` with the runner signalling the
+whole process group. Reaping in `araco_gate6_evidence` stays load-bearing all
+the same, because gates 1-4 still tear down through the orderly shutdown
+followed by the server stop, which is the documented reliable hang trigger.
+
+`upstream_defects.gz_sim_shutdown.observed` stays `true` on both variants. The
+defect is still reported; only its consequence for a scored safety assertion is
+removed.
+
+## Gate 6 at 2026-08-23 — twenty of twenty-one checks, three complete repetitions
+
+`log/gate_6_20260822_forcekill_01`, started 2026-08-22 and finished 2026-08-23,
+the first run after the Gate 5 forced-kill fix.
+
+**`three_complete_no_retry_repetitions` passes.** All three repetitions ran all
+six sub-gates with no retry, which unlocks the twelve comparison checks that can
+only be evaluated once three repetitions exist. Every one of them passes:
+`identical_behavior_fingerprints`, `identical_case_sets`,
+`exact_discrete_outcomes`, `median_real_time_factor`, and the eight per-case
+`*_physical_repeatability` checks.
+
+The check list grew from nine to twenty-one for that reason, so the counts are
+not directly comparable run to run. Substantively: everything that failed before
+now passes, and one check fails that had never been reached on its merits.
+
+| Check | Result |
+| --- | --- |
+| `package_tests`, `package_test_results` | PASS |
+| `sanitizers`, `no_sanitizer_diagnostic` | PASS |
+| `no_lifecycle_deadlock` | PASS |
+| `no_unclassified_error_or_fatal` | PASS |
+| `gates_0_through_5_preflight` | PASS |
+| `three_complete_no_retry_repetitions` | **PASS — first time** |
+| twelve repetition-comparison checks | **PASS — first time evaluated** |
+| `suite_wall_budget` | FAIL |
+
+Preflight gate 5 drew the **hang** variant and passed, forcing pid 33314 dead.
+That is precisely the event that ended the previous Gate 6 run at its preflight.
+
+### `suite_wall_budget` now fails on duration, not on arity
+
+The previous failure was arity: only one repetition ran, so `len(...) == 1 != 3`.
+This time all three ran and each exceeded the limit:
+
+| Repetition | Wall | Over 260.0 s by |
+| --- | --- | --- |
+| 1 | 298.3 s | 38.3 s |
+| 2 | 292.1 s | 32.1 s |
+| 3 | 323.4 s | 63.4 s |
+
+The limit is derived, not configured directly:
+
+```python
+suite_wall_limit = (
+    2.0 * thresholds['planned_complete_suite_sim_s'] +
+    thresholds['startup_artifact_allowance_s'])
+```
+
+which is `2.0 * 100.0 + 60.0 = 260.0` s. Sub-gate launch wall alone accounts for
+almost all of it — 285 s, 283 s, and 306 s respectively:
+
+| Repetition | gate 1 | gate 2 | gate 3 | gate 4 | gate 5 |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 29 s | 27 s | 72 s | 115 s | 42 s |
+| 2 | 34 s | 26 s | 68 s | 113 s | 42 s |
+| 3 | 36 s | 36 s | 76 s | 118 s | 41 s |
+
+**This is the stale-threshold question recorded on 2026-08-22, now with
+evidence.** `planned_complete_suite_sim_s` is still 100.0 while Gate 4 alone
+consumes 77.8 simulated seconds; the budget was set when the suite was smaller.
+No threshold was changed. It is a contract number, so it is the operator's call,
+and it needs its own decision entry rather than being quietly raised to whatever
+this run happened to measure.
+
+### One reaped orphan was recorded as `SURVIVED`, most likely wrongly
+
+`metrics.orphan_servers_reaped` holds six records for this run. Five ended in
+`SIGKILL`; one — gate 3 of repetition 1, pid 34875 — is recorded as `SURVIVED`.
+
+That record is probably an artifact of how the reaper tests liveness.
+`_process_alive()` in `araco_gate6_evidence` uses `os.kill(pid, 0)`, **which
+succeeds on a zombie**, and a SIGKILLed server lingers as a zombie until its
+`/bin/sh` wrapper reaps it. The Gate 5 scorer avoids this by reading process
+state out of `/proc` instead. Supporting evidence, though not proof: no `gz sim`
+process was alive after the run, and repetition 1 went on to pass — a genuinely
+surviving server at high CPU is what starved a sub-gate in the previous
+campaign, and gate 4 of repetition 1 ran 115 s, in line with the other two.
+
+Not fixed here: it is a different gate's runner and it overstates leakage rather
+than hiding it, so it corrupts evidence in the safe direction. Worth closing
+with the same `/proc` check the scorer uses.
 
 ## Gates 2-5 run stale code unless the workspace is rebuilt (found 2026-08-22)
 
@@ -906,35 +1038,41 @@ that found it.
   Gemini driver, calibration, latency, and gimbal-angle feedback also remain
   unimplemented.
 - Saved-database relocalization and Nav2 remain blocked on a clean route pass.
-- The Gate 1-6 shutdown-defect classification added by `8865e3c` has unit
-  tests but has never run against a live gate. The first rerun must confirm
-  that real logs match the intended signatures, that
-  `upstream_defects.gz_sim_shutdown.observed` is reported truthfully, and
-  that a clean-exit run still reports `observed: false` rather than
-  silently passing everything.
-- Code work through `8865e3c` is committed on
-  `fix/gate0-tests-and-relay-exec-bit` and pushed. The 2026-08-22 lint fixes to
-  `gate1.py`, `gate6.py`, and `test_gate1_scoring.py`, and the updates to
-  this file and `DECISIONS.md`, are **uncommitted**; no commit was authorized
-  by the request that made them. Gate runs from this tree therefore report
-  `source_revision: unreported-dirty-or-installed-tree`, as the 2026-08-18
-  run did. Fingerprints are unaffected: documentation content is not part of
-  artifact identity, which the 2026-08-22 Gate 0 run confirms empirically by
-  reproducing every recorded fingerprint exactly.
+- The Gate 1-6 shutdown-defect classification added by `8865e3c` has now run
+  live, across the 2026-08-22 campaign and the 2026-08-23 Gate 6 run. Real logs
+  matched the intended signatures on all three variants of the defect, and
+  `no_unclassified_error_or_fatal` passed over a whole Gate 6 log tree. The
+  earlier note that it had never run live is withdrawn.
+- `suite_wall_budget` is the only failing Gate 6 check, and it is a threshold
+  question rather than a behavior one. Raising it without a decision entry would
+  be fitting the contract to the measurement.
+- Gate 6's orphan reaper can report a killed-but-unreaped server as `SURVIVED`,
+  because `_process_alive()` uses `os.kill(pid, 0)`, which succeeds on a zombie.
+  It overstates leakage rather than hiding it. One such record appears in
+  `log/gate_6_20260822_forcekill_01`.
+- The 2026-08-23 Gate 6 run was made from a dirty tree: `git_revision` records
+  `37e1f12` with five modified files, so it reports
+  `source_revision: unreported-dirty-or-installed-tree`. Those five files — the
+  Gate 5 forced-kill fix, the 137 classification, its tests, and these two
+  documents — are **uncommitted**; no commit was authorized by the request that
+  made them. Fingerprints are unaffected — the run reproduced every recorded
+  fingerprint across three repetitions, which is what
+  `identical_behavior_fingerprints` checks.
 
 ## Exact next step
 
-Route 09 remains blocked on Gate 6. **Gates 0-5 all pass** as of 2026-08-22,
-and Gate 6 passes seven of its nine checks including preflight Gates 0-5 for the
-first time. The two that remain, `three_complete_no_retry_repetitions` and
-`suite_wall_budget`, are a single event: an orphaned simulator left by the
-Defect C hang keeps publishing `/clock` on the shared DDS domain and faults a
-later sub-gate with `REASON_TIME_DISCONTINUITY`.
+Route 09 remains blocked on Gate 6, by one check. **Gates 0-5 all pass**, now
+in both variants of the upstream defect, and Gate 6 passes twenty of its
+twenty-one checks including all three complete repetitions and every
+repetition-comparison check.
 
-**One decision is outstanding: how to isolate Gate 6's sub-gates from orphaned
-servers.** Three options are recorded in the Gate 6 section; the recommendation
-is per-sub-gate `ROS_DOMAIN_ID` plus reaping between sub-gates. It is a runner
-change, so it is the operator's call.
+**One decision is outstanding: `suite_wall_budget`.** All three repetitions
+completed and each exceeded the 260.0 s limit — 298.3 s, 292.1 s, 323.4 s. The
+limit is derived from `planned_complete_suite_sim_s`, which is still 100.0 while
+Gate 4 alone consumes 77.8 simulated seconds. Either the budget is stale and
+should be raised with its own decision entry, or the suite is genuinely too slow
+and should be trimmed. Both are contract changes, so it is the operator's call.
+Nothing was changed on this run.
 
 Required order:
 
@@ -962,11 +1100,16 @@ Required order:
    Three defects were found and fixed along the way — stale renamed installs,
    unlinted code in `8865e3c`, and a contaminated first attempt caused by
    orphaned servers. Gate 6 improved from one passing check to seven.
-7. **Current step. Decide how to isolate Gate 6's sub-gates**, then rerun Gate
-   6 alone. Gates 0-5 do not need rerunning unless their inputs change. Before
-   any sequential run, and after it, check `pgrep -f '^gz sim'` and SIGKILL what
-   it finds.
-8. Then run route 09.
+7. Done 2026-08-22/23. Gate 6's sub-gates were isolated by reaping plus
+   explicit domains (`8463d3d`), and Gate 5's scored quiesce check was fixed by
+   forcing the backend dead when the graceful stop hangs. Gate 6 now reaches
+   twenty of twenty-one checks with three complete repetitions.
+8. **Current step. Decide `suite_wall_budget`** — raise the stale threshold with
+   its own decision entry, or trim the suite. Evidence is in the Gate 6 section
+   above. Then rerun Gate 6 alone; Gates 0-5 do not need rerunning unless their
+   inputs change. Before any sequential run, and after it, check
+   `pgrep -f '^gz sim'` and SIGKILL what it finds.
+9. Then run route 09.
 
 Reproduction for Defect C, which does not need the gate harness:
 

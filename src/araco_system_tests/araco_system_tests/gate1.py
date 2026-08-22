@@ -56,9 +56,13 @@ def state_path(states):
 LAUNCH_ERROR_TOKENS = (
     'Traceback (most recent call last)', 'process has died', '[ERROR]',
     'Segmentation fault')
-# SIGSEGV (139 or -11) and SIGKILL (-9) are the crash forms.  -2 and -15 appear
-# when the runner has to signal the process group because the server deadlocked.
-GAZEBO_CRASH_EXIT_CODES = (139, -11, -9)
+# SIGSEGV (139 or -11) and SIGKILL (-9) are the crash forms.  137 is that same
+# SIGKILL observed one level up: launch tracks the `ruby` wrapper, not the
+# server, so killing the server child leaves the wrapper exiting 128 + 9.  Gate
+# 5 produces it deliberately when it forces a deadlocked server dead to reach
+# its own premise.  -2 and -15 appear when the runner has to signal the process
+# group because the server deadlocked.
+GAZEBO_CRASH_EXIT_CODES = (139, -11, -9, 137)
 TEARDOWN_SIGNAL_EXIT_CODES = (-2, -15)
 _EXIT_CODE = re.compile(r'exit code (-?\d+)')
 
